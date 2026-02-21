@@ -3,70 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Robot Tooth Battle</title>
-
+<title>Tooth City Defender</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
 body{
 margin:0;
-background:radial-gradient(circle at top,#0f2027,#203a43,#000);
 font-family:'Inter',sans-serif;
+background:linear-gradient(180deg,#0c1220,#101a33);
 color:white;
 text-align:center;
 overflow:hidden;
 }
 
-.container{padding:20px;}
-
 h1{
 font-family:'Orbitron',sans-serif;
-font-size:26px;
-margin:10px 0;
+margin:12px 0;
+font-size:22px;
 }
 
 .timer{
-font-size:64px;
+font-size:60px;
 font-weight:800;
-margin:15px 0;
+margin:10px 0;
 transition:0.3s;
 }
 
-.red{color:#ff3b3b;}
+.red{color:#ff4d4d;}
 .flash{animation:flash 0.5s infinite;}
-
 @keyframes flash{
 0%{opacity:1;}
-50%{opacity:0.3;}
+50%{opacity:0.4;}
 100%{opacity:1;}
 }
 
-.robot-wrapper{
-height:160px;
-display:flex;
-justify-content:center;
-align-items:center;
-}
-
 .robot{
-width:120px;
-transition:transform 0.4s ease;
-}
-
-.shake{animation:shake 0.4s;}
-
-@keyframes shake{
-0%{transform:translateX(0);}
-25%{transform:translateX(-6px);}
-50%{transform:translateX(6px);}
-75%{transform:translateX(-4px);}
-100%{transform:translateX(0);}
+font-size:90px;
+transition:0.4s;
 }
 
 .health-bar{
 height:12px;
-width:85%;
-margin:10px auto;
+width:80%;
+margin:8px auto;
 background:#222;
 border-radius:6px;
 overflow:hidden;
@@ -76,44 +55,63 @@ overflow:hidden;
 height:100%;
 width:100%;
 background:linear-gradient(to right,#ff3b3b,#ffcc00);
-transition:width 0.6s ease;
+transition:width 0.5s ease;
 }
 
-.buttons button{
-padding:12px 20px;
+button{
+padding:12px 18px;
 margin:6px;
 border:none;
 border-radius:14px;
 font-weight:600;
 background:linear-gradient(145deg,#1f4068,#162447);
 color:white;
-box-shadow:0 6px 18px rgba(0,0,0,0.6);
+box-shadow:0 4px 16px rgba(0,0,0,0.5);
 }
 
-input{
-padding:8px;
-border-radius:8px;
-border:none;
-margin:6px;
+.city{
+display:flex;
+justify-content:center;
+gap:8px;
+margin-top:10px;
 }
 
-.stats{font-size:14px;margin-top:8px;opacity:0.85;}
-
-.parent-panel{
-position:absolute;
-bottom:10px;
-width:100%;
-font-size:12px;
-opacity:0.6;
+.building{
+width:18px;
+height:18px;
+background:#333;
+border-radius:4px;
 }
 
-.loot-overlay{
+.built{
+background:linear-gradient(180deg,#5cffc8,#00c896);
+}
+
+.calendar{
+display:grid;
+grid-template-columns:repeat(7,1fr);
+gap:4px;
+width:90%;
+margin:10px auto;
+}
+
+.day{
+height:22px;
+background:#222;
+border-radius:4px;
+}
+
+.day.done{
+background:#00c896;
+}
+
+.overlay{
 position:fixed;
 top:0;
 left:0;
 width:100%;
 height:100%;
-background:rgba(0,0,0,0.85);
+background:rgba(0,0,0,0.9);
 display:none;
 justify-content:center;
 align-items:center;
@@ -121,96 +119,66 @@ flex-direction:column;
 z-index:10;
 }
 
-.loot-box{
-width:140px;
-height:140px;
-background:linear-gradient(145deg,#444,#111);
-border-radius:20px;
-display:flex;
-justify-content:center;
-align-items:center;
-font-size:50px;
-animation:pulse 1.2s infinite;
-}
-
-@keyframes pulse{
-0%{transform:scale(1);}
-50%{transform:scale(1.05);}
-100%{transform:scale(1);}
-}
-
-.crystals{
+.reward{
 font-size:28px;
-margin-top:20px;
+margin:10px;
 }
 
-.quadrant{
-font-size:13px;
-opacity:0.7;
-margin-top:6px;
+.parent{
+position:absolute;
+bottom:6px;
+width:100%;
+font-size:12px;
+opacity:0.6;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
-<h1>Robot Tooth Battle</h1>
-
-<input id="nameInput" placeholder="Enter your name">
-<button onclick="saveName()">Save</button>
+<h1>Tooth City Defender</h1>
 
 <div class="timer" id="timer">2:00</div>
 
-<div class="robot-wrapper">
-<svg class="robot" id="robotSVG" viewBox="0 0 100 100">
-<rect x="20" y="25" width="60" height="50" rx="10" fill="#888"/>
-<circle id="eye1" cx="40" cy="50" r="6" fill="red"/>
-<circle id="eye2" cx="60" cy="50" r="6" fill="red"/>
-<rect id="mouth" x="35" y="65" width="30" height="6" fill="black"/>
-</svg>
-</div>
+<div class="robot" id="robot">🤖</div>
 
 <div class="health-bar">
 <div class="health-fill" id="healthFill"></div>
 </div>
 
-<div class="quadrant" id="quadrantText">Top Left</div>
-
-<div class="buttons">
+<div>
 <button onclick="startTimer()">Start</button>
 <button onclick="pauseTimer()">Pause</button>
 <button onclick="resetTimer()">Reset</button>
 </div>
 
-<div class="stats">
-<div id="greeting"></div>
-<div id="daily"></div>
-<div id="streak"></div>
-<div id="crystalCount"></div>
+<h3>Tooth City</h3>
+<div class="city" id="city"></div>
+
+<h3>30 Day Chain</h3>
+<div class="calendar" id="calendar"></div>
+
+<div id="stats"></div>
+
+<div class="parent">
+<button onclick="resetAll()">Parent Reset</button>
 </div>
 
-</div>
-
-<div class="parent-panel">
-<button onclick="adjustDaily(1)">+ Day</button>
-<button onclick="adjustStreak(1)">+ Streak</button>
-</div>
-
-<div class="loot-overlay" id="lootOverlay">
-<div class="loot-box" onclick="openLoot()">🎁</div>
-<div class="crystals" id="lootResult"></div>
-<button onclick="closeLoot()">Close</button>
+<div class="overlay" id="overlay">
+<div class="reward" id="rewardText"></div>
+<button onclick="closeOverlay()">Continue</button>
 </div>
 
 <script>
-let totalTime=120;
-let timeLeft=120;
+let total=120;
+let time=120;
 let interval=null;
-let robotHealth=100;
+let health=100;
+let dayCount=parseInt(localStorage.getItem("dayCount")||0);
+let crystals=parseInt(localStorage.getItem("crystals")||0);
+let streak=parseInt(localStorage.getItem("streak")||0);
+
 let audioCtx;
-let quadrants=["Top Left","Top Right","Bottom Left","Bottom Right"];
 
 function initAudio(){
 audioCtx=new(window.AudioContext||window.webkitAudioContext)();
@@ -226,35 +194,36 @@ osc.stop(audioCtx.currentTime+dur);
 }
 
 function haptic(){
-if(navigator.vibrate) navigator.vibrate(100);
+if(navigator.vibrate) navigator.vibrate(80);
 }
 
-function saveName(){
-localStorage.setItem("playerName",document.getElementById("nameInput").value);
-updateGreeting();
+function buildCity(){
+const city=document.getElementById("city");
+city.innerHTML="";
+for(let i=0;i<10;i++){
+let b=document.createElement("div");
+b.className="building";
+if(i<Math.floor(dayCount/3)) b.classList.add("built");
+city.appendChild(b);
+}
 }
 
-function updateGreeting(){
-let name=localStorage.getItem("playerName")||"Hero";
-document.getElementById("greeting").innerText="Brushing warrior: "+name;
+function buildCalendar(){
+const cal=document.getElementById("calendar");
+cal.innerHTML="";
+for(let i=1;i<=30;i++){
+let d=document.createElement("div");
+d.className="day";
+if(i<=dayCount) d.classList.add("done");
+cal.appendChild(d);
+}
 }
 
 function updateStats(){
-document.getElementById("daily").innerText="Today: "+(localStorage.getItem("dailyCount")||0);
-document.getElementById("streak").innerText="Streak: "+(localStorage.getItem("streak")||0)+" days";
-document.getElementById("crystalCount").innerText="Crystals: "+(localStorage.getItem("crystals")||0);
-}
-
-function adjustDaily(v){
-let d=parseInt(localStorage.getItem("dailyCount")||0);
-localStorage.setItem("dailyCount",d+v);
-updateStats();
-}
-
-function adjustStreak(v){
-let s=parseInt(localStorage.getItem("streak")||0);
-localStorage.setItem("streak",s+v);
-updateStats();
+document.getElementById("stats").innerText=
+"Day: "+dayCount+
+" | Streak: "+streak+
+" | Crystals: "+crystals;
 }
 
 function startTimer(){
@@ -277,12 +246,11 @@ runMain();
 
 function runMain(){
 interval=setInterval(()=>{
-timeLeft--;
+time--;
 updateTimer();
 updateRobot();
-updateQuadrant();
 
-if(timeLeft<=0){
+if(time<=0){
 clearInterval(interval);
 interval=null;
 victory();
@@ -291,63 +259,70 @@ victory();
 }
 
 function updateTimer(){
-let m=Math.floor(timeLeft/60);
-let s=timeLeft%60;
+let m=Math.floor(time/60);
+let s=time%60;
 let display=m+":"+(s<10?"0"+s:s);
 let t=document.getElementById("timer");
 t.innerText=display;
 
-if(timeLeft<=10){
+if(time<=10){
 t.classList.add("red","flash");
 tone(900,0.1);
 }
 }
 
-function updateQuadrant(){
-let elapsed=120-timeLeft;
-let index=Math.floor(elapsed/30);
-document.getElementById("quadrantText").innerText=quadrants[index]||"Finish Strong";
-}
-
 function updateRobot(){
-let elapsed=120-timeLeft;
+let elapsed=120-time;
 if(elapsed%30===0 && elapsed!==0){
-robotHealth-=25;
-document.getElementById("robotSVG").classList.add("shake");
-setTimeout(()=>document.getElementById("robotSVG").classList.remove("shake"),400);
+health-=25;
+document.getElementById("healthFill").style.width=health+"%";
+document.getElementById("robot").style.transform="scale(0.9)";
+setTimeout(()=>document.getElementById("robot").style.transform="scale(1)",200);
 tone(200,0.2);
 haptic();
 }
 
-document.getElementById("healthFill").style.width=robotHealth+"%";
-
-let mouth=document.getElementById("mouth");
-if(robotHealth>75) mouth.setAttribute("height","6");
-else if(robotHealth>50) mouth.setAttribute("height","3");
-else if(robotHealth>25) mouth.setAttribute("height","1");
-else mouth.setAttribute("height","0");
+if(dayCount>0 && dayCount%7===6){
+document.getElementById("robot").innerText="👹";
+}else{
+document.getElementById("robot").innerText="🤖";
+}
 }
 
 function victory(){
-tone(1200,0.3);
+tone(1200,0.4);
 haptic();
-document.getElementById("lootOverlay").style.display="flex";
 
-let daily=parseInt(localStorage.getItem("dailyCount")||0);
-localStorage.setItem("dailyCount",daily+1);
+dayCount++;
+streak++;
+let baseReward=10;
+let streakBonus=Math.floor(streak/5)*5;
+let reward=baseReward+streakBonus;
+
+if(dayCount%7===0){
+reward+=20;
+}
+
+crystals+=reward;
+
+localStorage.setItem("dayCount",dayCount);
+localStorage.setItem("streak",streak);
+localStorage.setItem("crystals",crystals);
+
+showReward(reward);
+}
+
+function showReward(amount){
+document.getElementById("overlay").style.display="flex";
+document.getElementById("rewardText").innerText=
+"You defeated the robot!\nEarned "+amount+" crystals 💎";
+buildCity();
+buildCalendar();
 updateStats();
 }
 
-function openLoot(){
-let reward=Math.floor(Math.random()*15)+5;
-let current=parseInt(localStorage.getItem("crystals")||0);
-localStorage.setItem("crystals",current+reward);
-document.getElementById("lootResult").innerText="You earned "+reward+" crystals 💎";
-updateStats();
-}
-
-function closeLoot(){
-document.getElementById("lootOverlay").style.display="none";
+function closeOverlay(){
+document.getElementById("overlay").style.display="none";
 resetTimer();
 }
 
@@ -359,14 +334,27 @@ interval=null;
 function resetTimer(){
 clearInterval(interval);
 interval=null;
-timeLeft=120;
-robotHealth=100;
+time=120;
+health=100;
+document.getElementById("healthFill").style.width="100%";
 document.getElementById("timer").classList.remove("red","flash");
 document.getElementById("timer").innerText="2:00";
-document.getElementById("healthFill").style.width="100%";
 }
 
-updateGreeting();
+function resetAll(){
+if(confirm("Reset all progress?")){
+localStorage.clear();
+dayCount=0;
+crystals=0;
+streak=0;
+buildCity();
+buildCalendar();
+updateStats();
+}
+}
+
+buildCity();
+buildCalendar();
 updateStats();
 </script>
 
