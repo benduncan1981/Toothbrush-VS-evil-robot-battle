@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Robot Tooth Battle</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin:0;
+    background: radial-gradient(circle at top, #0f2027, #203a43, #000);
+    font-family: 'Inter', sans-serif;
+    color:white;
+    text-align:center;
+    overflow:hidden;
+}
+
+.container {
+    padding:20px;
+}
+
+h1 {
+    font-family:'Orbitron', sans-serif;
+    font-size:26px;
+    margin:10px 0;
+}
+
+.timer {
+    font-size:64px;
+    font-weight:800;
+    margin:20px 0;
+    transition:0.3s;
+}
+
+.flash {
+    animation: flash 0.5s infinite;
+}
+
+@keyframes flash {
+    0% {opacity:1;}
+    50% {opacity:0.3;}
+    100% {opacity:1;}
+}
+
+.red {
+    color:#ff3b3b;
+}
+
+.robot {
+    font-size:120px;
+    transition: transform 0.5s ease, filter 0.5s ease;
+}
+
+.damage {
+    transform: scale(0.9) rotate(-5deg);
+    filter: brightness(0.6);
+}
+
+.buttons button {
+    padding:12px 20px;
+    margin:8px;
+    border:none;
+    border-radius:12px;
+    font-size:16px;
+    font-weight:600;
+    background: linear-gradient(145deg,#1f4068,#162447);
+    color:white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+input {
+    padding:8px;
+    border-radius:8px;
+    border:none;
+    margin:8px;
+}
+
+.stats {
+    margin-top:10px;
+    font-size:14px;
+    opacity:0.8;
+}
+
+.parent-panel {
+    position:absolute;
+    bottom:10px;
+    width:100%;
+    font-size:12px;
+    opacity:0.6;
+}
+
+.parent-panel button {
+    font-size:12px;
+    padding:6px 10px;
+    margin:3px;
+}
+
+.health-bar {
+    height:10px;
+    width:80%;
+    margin:10px auto;
+    background:#333;
+    border-radius:5px;
+}
+
+.health-fill {
+    height:100%;
+    width:100%;
+    background:linear-gradient(to right, #ff3b3b, #ffcc00);
+    border-radius:5px;
+    transition:width 1s ease;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>Robot Tooth Battle</h1>
+
+<div>
+    <input id="nameInput" placeholder="Enter your name">
+    <button onclick="saveName()">Save</button>
+</div>
+
+<div class="timer" id="timer">2:00</div>
+
+<div class="robot" id="robot">🤖</div>
+
+<div class="health-bar">
+    <div class="health-fill" id="healthFill"></div>
+</div>
+
+<div class="buttons">
+    <button onclick="startTimer()">Start</button>
+    <button onclick="pauseTimer()">Pause</button>
+    <button onclick="resetTimer()">Reset</button>
+</div>
+
+<div class="stats">
+    <div id="greeting"></div>
+    <div id="daily"></div>
+    <div id="streak"></div>
+</div>
+
+</div>
+
+<div class="parent-panel">
+    Parent Controls:
+    <button onclick="adjustDaily(1)">+ Day</button>
+    <button onclick="adjustDaily(-1)">- Day</button>
+    <button onclick="adjustStreak(1)">+ Streak</button>
+    <button onclick="adjustStreak(-1)">- Streak</button>
+</div>
+
+<script>
+let totalTime = 120;
+let timeLeft = totalTime;
+let interval = null;
+let preCountdown = 5;
+let robotHealth = 100;
+let damageStep = 25;
+let audioCtx;
+
+function initAudio(){
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function beep(){
+    const osc = audioCtx.createOscillator();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+    osc.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.15);
+}
+
+function saveName(){
+    const name = document.getElementById("nameInput").value;
+    localStorage.setItem("playerName", name);
+    updateGreeting();
+}
+
+function updateGreeting(){
+    const name = localStorage.getItem("playerName") || "Hero";
+    document.getElementById("greeting").innerText = "Brushing warrior: " + name;
+}
+
+function updateStats(){
+    const daily = localStorage.getItem("dailyCount") || 0;
+    const streak = localStorage.getItem("streak") || 0;
+    document.getElementById("daily").innerText = "Today: " + daily;
+    document.getElementById("streak").innerText = "Streak: " + streak + " days";
+}
+
+function adjustDaily(val){
+    let daily = parseInt(localStorage.getItem("dailyCount") || 0);
+    daily = Math.max(0, daily + val);
+    localStorage.setItem("dailyCount", daily);
+    updateStats();
+}
+
+function adjustStreak(val){
+    let streak = parseInt(localStorage.getItem("streak") || 0);
+    streak = Math.max(0, streak + val);
+    localStorage.setItem("streak", streak);
+    updateStats();
+}
+
+function startTimer(){
+    if(!audioCtx) initAudio();
+    if(interval) return;
+
+    let count = preCountdown;
+    document.getElementById("timer").innerText = count;
+    interval = setInterval(()=>{
+        count--;
+        if(count > 0){
+            document.getElementById("timer").innerText = count;
+        } else {
+            clearInterval(interval);
+            interval = null;
+            runMainTimer();
+        }
+    },1000);
+}
+
+function runMainTimer(){
+    interval = setInterval(()=>{
+        timeLeft--;
+        updateTimerDisplay();
+        updateRobot();
+
+        if(timeLeft <= 0){
+            clearInterval(interval);
+            interval = null;
+            victory();
+        }
+    },1000);
+}
+
+function updateTimerDisplay(){
+    let minutes = Math.floor(timeLeft / 60);
+    let seconds = timeLeft % 60;
+    let display = minutes + ":" + (seconds < 10 ? "0"+seconds : seconds);
+    const timerEl = document.getElementById("timer");
+    timerEl.innerText = display;
+
+    if(timeLeft <= 10){
+        timerEl.classList.add("red");
+        timerEl.classList.add("flash");
+        beep();
+    }
+}
+
+function updateRobot(){
+    let elapsed = totalTime - timeLeft;
+    if(elapsed % 30 === 0 && elapsed !== 0){
+        robotHealth -= damageStep;
+        document.getElementById("robot").classList.add("damage");
+        setTimeout(()=>document.getElementById("robot").classList.remove("damage"),300);
+    }
+
+    document.getElementById("healthFill").style.width = robotHealth + "%";
+
+    const robot = document.getElementById("robot");
+    if(robotHealth > 75) robot.innerText = "🤖";
+    else if(robotHealth > 50) robot.innerText = "😠";
+    else if(robotHealth > 25) robot.innerText = "😫";
+    else robot.innerText = "💀";
+}
+
+function pauseTimer(){
+    clearInterval(interval);
+    interval = null;
+}
+
+function resetTimer(){
+    clearInterval(interval);
+    interval = null;
+    timeLeft = totalTime;
+    robotHealth = 100;
+    document.getElementById("timer").classList.remove("red","flash");
+    document.getElementById("timer").innerText = "2:00";
+    document.getElementById("robot").innerText = "🤖";
+    document.getElementById("healthFill").style.width = "100%";
+}
+
+function victory(){
+    document.getElementById("robot").innerText = "💥";
+    let daily = parseInt(localStorage.getItem("dailyCount") || 0);
+    localStorage.setItem("dailyCount", daily + 1);
+    updateStats();
+}
+
+updateGreeting();
+updateStats();
+</script>
+
+</body>
+</html>
