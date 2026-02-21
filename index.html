@@ -8,291 +8,362 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
-body {
-    margin:0;
-    background: radial-gradient(circle at top, #0f2027, #203a43, #000);
-    font-family: 'Inter', sans-serif;
-    color:white;
-    text-align:center;
-    overflow:hidden;
+body{
+margin:0;
+background:radial-gradient(circle at top,#0f2027,#203a43,#000);
+font-family:'Inter',sans-serif;
+color:white;
+text-align:center;
+overflow:hidden;
 }
 
-.container {
-    padding:20px;
+.container{padding:20px;}
+
+h1{
+font-family:'Orbitron',sans-serif;
+font-size:26px;
+margin:10px 0;
 }
 
-h1 {
-    font-family:'Orbitron', sans-serif;
-    font-size:26px;
-    margin:10px 0;
+.timer{
+font-size:64px;
+font-weight:800;
+margin:15px 0;
+transition:0.3s;
 }
 
-.timer {
-    font-size:64px;
-    font-weight:800;
-    margin:20px 0;
-    transition:0.3s;
+.red{color:#ff3b3b;}
+.flash{animation:flash 0.5s infinite;}
+
+@keyframes flash{
+0%{opacity:1;}
+50%{opacity:0.3;}
+100%{opacity:1;}
 }
 
-.flash {
-    animation: flash 0.5s infinite;
+.robot-wrapper{
+height:160px;
+display:flex;
+justify-content:center;
+align-items:center;
 }
 
-@keyframes flash {
-    0% {opacity:1;}
-    50% {opacity:0.3;}
-    100% {opacity:1;}
+.robot{
+width:120px;
+transition:transform 0.4s ease;
 }
 
-.red {
-    color:#ff3b3b;
+.shake{animation:shake 0.4s;}
+
+@keyframes shake{
+0%{transform:translateX(0);}
+25%{transform:translateX(-6px);}
+50%{transform:translateX(6px);}
+75%{transform:translateX(-4px);}
+100%{transform:translateX(0);}
 }
 
-.robot {
-    font-size:120px;
-    transition: transform 0.5s ease, filter 0.5s ease;
+.health-bar{
+height:12px;
+width:85%;
+margin:10px auto;
+background:#222;
+border-radius:6px;
+overflow:hidden;
 }
 
-.damage {
-    transform: scale(0.9) rotate(-5deg);
-    filter: brightness(0.6);
+.health-fill{
+height:100%;
+width:100%;
+background:linear-gradient(to right,#ff3b3b,#ffcc00);
+transition:width 0.6s ease;
 }
 
-.buttons button {
-    padding:12px 20px;
-    margin:8px;
-    border:none;
-    border-radius:12px;
-    font-size:16px;
-    font-weight:600;
-    background: linear-gradient(145deg,#1f4068,#162447);
-    color:white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+.buttons button{
+padding:12px 20px;
+margin:6px;
+border:none;
+border-radius:14px;
+font-weight:600;
+background:linear-gradient(145deg,#1f4068,#162447);
+color:white;
+box-shadow:0 6px 18px rgba(0,0,0,0.6);
 }
 
-input {
-    padding:8px;
-    border-radius:8px;
-    border:none;
-    margin:8px;
+input{
+padding:8px;
+border-radius:8px;
+border:none;
+margin:6px;
 }
 
-.stats {
-    margin-top:10px;
-    font-size:14px;
-    opacity:0.8;
+.stats{font-size:14px;margin-top:8px;opacity:0.85;}
+
+.parent-panel{
+position:absolute;
+bottom:10px;
+width:100%;
+font-size:12px;
+opacity:0.6;
 }
 
-.parent-panel {
-    position:absolute;
-    bottom:10px;
-    width:100%;
-    font-size:12px;
-    opacity:0.6;
+.loot-overlay{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.85);
+display:none;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+z-index:10;
 }
 
-.parent-panel button {
-    font-size:12px;
-    padding:6px 10px;
-    margin:3px;
+.loot-box{
+width:140px;
+height:140px;
+background:linear-gradient(145deg,#444,#111);
+border-radius:20px;
+display:flex;
+justify-content:center;
+align-items:center;
+font-size:50px;
+animation:pulse 1.2s infinite;
 }
 
-.health-bar {
-    height:10px;
-    width:80%;
-    margin:10px auto;
-    background:#333;
-    border-radius:5px;
+@keyframes pulse{
+0%{transform:scale(1);}
+50%{transform:scale(1.05);}
+100%{transform:scale(1);}
 }
 
-.health-fill {
-    height:100%;
-    width:100%;
-    background:linear-gradient(to right, #ff3b3b, #ffcc00);
-    border-radius:5px;
-    transition:width 1s ease;
+.crystals{
+font-size:28px;
+margin-top:20px;
+}
+
+.quadrant{
+font-size:13px;
+opacity:0.7;
+margin-top:6px;
 }
 </style>
 </head>
 
 <body>
+
 <div class="container">
 
 <h1>Robot Tooth Battle</h1>
 
-<div>
-    <input id="nameInput" placeholder="Enter your name">
-    <button onclick="saveName()">Save</button>
-</div>
+<input id="nameInput" placeholder="Enter your name">
+<button onclick="saveName()">Save</button>
 
 <div class="timer" id="timer">2:00</div>
 
-<div class="robot" id="robot">🤖</div>
-
-<div class="health-bar">
-    <div class="health-fill" id="healthFill"></div>
+<div class="robot-wrapper">
+<svg class="robot" id="robotSVG" viewBox="0 0 100 100">
+<rect x="20" y="25" width="60" height="50" rx="10" fill="#888"/>
+<circle id="eye1" cx="40" cy="50" r="6" fill="red"/>
+<circle id="eye2" cx="60" cy="50" r="6" fill="red"/>
+<rect id="mouth" x="35" y="65" width="30" height="6" fill="black"/>
+</svg>
 </div>
 
+<div class="health-bar">
+<div class="health-fill" id="healthFill"></div>
+</div>
+
+<div class="quadrant" id="quadrantText">Top Left</div>
+
 <div class="buttons">
-    <button onclick="startTimer()">Start</button>
-    <button onclick="pauseTimer()">Pause</button>
-    <button onclick="resetTimer()">Reset</button>
+<button onclick="startTimer()">Start</button>
+<button onclick="pauseTimer()">Pause</button>
+<button onclick="resetTimer()">Reset</button>
 </div>
 
 <div class="stats">
-    <div id="greeting"></div>
-    <div id="daily"></div>
-    <div id="streak"></div>
+<div id="greeting"></div>
+<div id="daily"></div>
+<div id="streak"></div>
+<div id="crystalCount"></div>
 </div>
 
 </div>
 
 <div class="parent-panel">
-    Parent Controls:
-    <button onclick="adjustDaily(1)">+ Day</button>
-    <button onclick="adjustDaily(-1)">- Day</button>
-    <button onclick="adjustStreak(1)">+ Streak</button>
-    <button onclick="adjustStreak(-1)">- Streak</button>
+<button onclick="adjustDaily(1)">+ Day</button>
+<button onclick="adjustStreak(1)">+ Streak</button>
+</div>
+
+<div class="loot-overlay" id="lootOverlay">
+<div class="loot-box" onclick="openLoot()">🎁</div>
+<div class="crystals" id="lootResult"></div>
+<button onclick="closeLoot()">Close</button>
 </div>
 
 <script>
-let totalTime = 120;
-let timeLeft = totalTime;
-let interval = null;
-let preCountdown = 5;
-let robotHealth = 100;
-let damageStep = 25;
+let totalTime=120;
+let timeLeft=120;
+let interval=null;
+let robotHealth=100;
 let audioCtx;
+let quadrants=["Top Left","Top Right","Bottom Left","Bottom Right"];
 
 function initAudio(){
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+audioCtx=new(window.AudioContext||window.webkitAudioContext)();
 }
 
-function beep(){
-    const osc = audioCtx.createOscillator();
-    osc.type = "square";
-    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-    osc.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.15);
+function tone(freq,dur){
+const osc=audioCtx.createOscillator();
+osc.type="square";
+osc.frequency.setValueAtTime(freq,audioCtx.currentTime);
+osc.connect(audioCtx.destination);
+osc.start();
+osc.stop(audioCtx.currentTime+dur);
+}
+
+function haptic(){
+if(navigator.vibrate) navigator.vibrate(100);
 }
 
 function saveName(){
-    const name = document.getElementById("nameInput").value;
-    localStorage.setItem("playerName", name);
-    updateGreeting();
+localStorage.setItem("playerName",document.getElementById("nameInput").value);
+updateGreeting();
 }
 
 function updateGreeting(){
-    const name = localStorage.getItem("playerName") || "Hero";
-    document.getElementById("greeting").innerText = "Brushing warrior: " + name;
+let name=localStorage.getItem("playerName")||"Hero";
+document.getElementById("greeting").innerText="Brushing warrior: "+name;
 }
 
 function updateStats(){
-    const daily = localStorage.getItem("dailyCount") || 0;
-    const streak = localStorage.getItem("streak") || 0;
-    document.getElementById("daily").innerText = "Today: " + daily;
-    document.getElementById("streak").innerText = "Streak: " + streak + " days";
+document.getElementById("daily").innerText="Today: "+(localStorage.getItem("dailyCount")||0);
+document.getElementById("streak").innerText="Streak: "+(localStorage.getItem("streak")||0)+" days";
+document.getElementById("crystalCount").innerText="Crystals: "+(localStorage.getItem("crystals")||0);
 }
 
-function adjustDaily(val){
-    let daily = parseInt(localStorage.getItem("dailyCount") || 0);
-    daily = Math.max(0, daily + val);
-    localStorage.setItem("dailyCount", daily);
-    updateStats();
+function adjustDaily(v){
+let d=parseInt(localStorage.getItem("dailyCount")||0);
+localStorage.setItem("dailyCount",d+v);
+updateStats();
 }
 
-function adjustStreak(val){
-    let streak = parseInt(localStorage.getItem("streak") || 0);
-    streak = Math.max(0, streak + val);
-    localStorage.setItem("streak", streak);
-    updateStats();
+function adjustStreak(v){
+let s=parseInt(localStorage.getItem("streak")||0);
+localStorage.setItem("streak",s+v);
+updateStats();
 }
 
 function startTimer(){
-    if(!audioCtx) initAudio();
-    if(interval) return;
+if(!audioCtx) initAudio();
+if(interval) return;
 
-    let count = preCountdown;
-    document.getElementById("timer").innerText = count;
-    interval = setInterval(()=>{
-        count--;
-        if(count > 0){
-            document.getElementById("timer").innerText = count;
-        } else {
-            clearInterval(interval);
-            interval = null;
-            runMainTimer();
-        }
-    },1000);
+let pre=5;
+document.getElementById("timer").innerText=pre;
+interval=setInterval(()=>{
+pre--;
+if(pre>0){
+document.getElementById("timer").innerText=pre;
+}else{
+clearInterval(interval);
+interval=null;
+runMain();
+}
+},1000);
 }
 
-function runMainTimer(){
-    interval = setInterval(()=>{
-        timeLeft--;
-        updateTimerDisplay();
-        updateRobot();
+function runMain(){
+interval=setInterval(()=>{
+timeLeft--;
+updateTimer();
+updateRobot();
+updateQuadrant();
 
-        if(timeLeft <= 0){
-            clearInterval(interval);
-            interval = null;
-            victory();
-        }
-    },1000);
+if(timeLeft<=0){
+clearInterval(interval);
+interval=null;
+victory();
+}
+},1000);
 }
 
-function updateTimerDisplay(){
-    let minutes = Math.floor(timeLeft / 60);
-    let seconds = timeLeft % 60;
-    let display = minutes + ":" + (seconds < 10 ? "0"+seconds : seconds);
-    const timerEl = document.getElementById("timer");
-    timerEl.innerText = display;
+function updateTimer(){
+let m=Math.floor(timeLeft/60);
+let s=timeLeft%60;
+let display=m+":"+(s<10?"0"+s:s);
+let t=document.getElementById("timer");
+t.innerText=display;
 
-    if(timeLeft <= 10){
-        timerEl.classList.add("red");
-        timerEl.classList.add("flash");
-        beep();
-    }
+if(timeLeft<=10){
+t.classList.add("red","flash");
+tone(900,0.1);
+}
+}
+
+function updateQuadrant(){
+let elapsed=120-timeLeft;
+let index=Math.floor(elapsed/30);
+document.getElementById("quadrantText").innerText=quadrants[index]||"Finish Strong";
 }
 
 function updateRobot(){
-    let elapsed = totalTime - timeLeft;
-    if(elapsed % 30 === 0 && elapsed !== 0){
-        robotHealth -= damageStep;
-        document.getElementById("robot").classList.add("damage");
-        setTimeout(()=>document.getElementById("robot").classList.remove("damage"),300);
-    }
-
-    document.getElementById("healthFill").style.width = robotHealth + "%";
-
-    const robot = document.getElementById("robot");
-    if(robotHealth > 75) robot.innerText = "🤖";
-    else if(robotHealth > 50) robot.innerText = "😠";
-    else if(robotHealth > 25) robot.innerText = "😫";
-    else robot.innerText = "💀";
+let elapsed=120-timeLeft;
+if(elapsed%30===0 && elapsed!==0){
+robotHealth-=25;
+document.getElementById("robotSVG").classList.add("shake");
+setTimeout(()=>document.getElementById("robotSVG").classList.remove("shake"),400);
+tone(200,0.2);
+haptic();
 }
 
-function pauseTimer(){
-    clearInterval(interval);
-    interval = null;
-}
+document.getElementById("healthFill").style.width=robotHealth+"%";
 
-function resetTimer(){
-    clearInterval(interval);
-    interval = null;
-    timeLeft = totalTime;
-    robotHealth = 100;
-    document.getElementById("timer").classList.remove("red","flash");
-    document.getElementById("timer").innerText = "2:00";
-    document.getElementById("robot").innerText = "🤖";
-    document.getElementById("healthFill").style.width = "100%";
+let mouth=document.getElementById("mouth");
+if(robotHealth>75) mouth.setAttribute("height","6");
+else if(robotHealth>50) mouth.setAttribute("height","3");
+else if(robotHealth>25) mouth.setAttribute("height","1");
+else mouth.setAttribute("height","0");
 }
 
 function victory(){
-    document.getElementById("robot").innerText = "💥";
-    let daily = parseInt(localStorage.getItem("dailyCount") || 0);
-    localStorage.setItem("dailyCount", daily + 1);
-    updateStats();
+tone(1200,0.3);
+haptic();
+document.getElementById("lootOverlay").style.display="flex";
+
+let daily=parseInt(localStorage.getItem("dailyCount")||0);
+localStorage.setItem("dailyCount",daily+1);
+updateStats();
+}
+
+function openLoot(){
+let reward=Math.floor(Math.random()*15)+5;
+let current=parseInt(localStorage.getItem("crystals")||0);
+localStorage.setItem("crystals",current+reward);
+document.getElementById("lootResult").innerText="You earned "+reward+" crystals 💎";
+updateStats();
+}
+
+function closeLoot(){
+document.getElementById("lootOverlay").style.display="none";
+resetTimer();
+}
+
+function pauseTimer(){
+clearInterval(interval);
+interval=null;
+}
+
+function resetTimer(){
+clearInterval(interval);
+interval=null;
+timeLeft=120;
+robotHealth=100;
+document.getElementById("timer").classList.remove("red","flash");
+document.getElementById("timer").innerText="2:00";
+document.getElementById("healthFill").style.width="100%";
 }
 
 updateGreeting();
