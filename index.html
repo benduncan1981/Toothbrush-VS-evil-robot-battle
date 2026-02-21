@@ -9,9 +9,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <style>
-    /* =========================
+    /* ============================================================
        GLOBAL RESET & BASE
-       ========================= */
+       ============================================================ */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -29,25 +29,30 @@
 
     body {
       display: flex;
-      align-items: center;
+      align-items: stretch;
       justify-content: center;
     }
 
-    /* =========================
+    /* ============================================================
        LAYOUT WRAPPER
-       ========================= */
+       Portrait-focused, full-height on iPhone 15
+       ============================================================ */
     #app {
       width: 100%;
-      max-width: 520px;
+      max-width: 480px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
       padding: 8px;
     }
 
-    /* =========================
+    /* ============================================================
        HEADER / TITLE
-       ========================= */
+       ============================================================ */
     #titleBar {
       text-align: center;
       margin-bottom: 6px;
+      flex: 0 0 auto;
     }
 
     #gameTitle {
@@ -61,19 +66,20 @@
       opacity: 0.8;
     }
 
-    /* =========================
+    /* ============================================================
        HUD
-       ========================= */
+       ============================================================ */
     #hud {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin: 6px 0;
       font-size: 8px;
+      flex: 0 0 auto;
     }
 
     #timerDisplay {
-      font-size: 16px;
+      font-size: 18px;
     }
 
     #scoreDisplay,
@@ -85,18 +91,20 @@
       text-align: center;
       font-size: 8px;
       margin-bottom: 4px;
+      flex: 0 0 auto;
     }
 
-    /* =========================
+    /* ============================================================
        PROGRESS BAR
-       ========================= */
+       ============================================================ */
     #progressWrapper {
       width: 100%;
-      height: 10px;
+      height: 12px;
       border: 2px solid #44ffcc;
       margin-bottom: 6px;
       position: relative;
       background: #111111;
+      flex: 0 0 auto;
     }
 
     #progressFill {
@@ -106,16 +114,20 @@
       transition: width 0.2s linear;
     }
 
-    /* =========================
+    /* ============================================================
        GAME CANVAS AREA
-       ========================= */
+       Takes most of vertical space
+       ============================================================ */
     #gameContainer {
       position: relative;
       width: 100%;
-      height: 260px;
+      flex: 1 1 auto;
       border: 3px solid #44ffcc;
       background: #000000;
       overflow: hidden;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
     }
 
     #gameCanvas {
@@ -140,19 +152,20 @@
       opacity: 0.25;
     }
 
-    /* =========================
+    /* ============================================================
        BOTTOM TEXT
-       ========================= */
+       ============================================================ */
     #bottomHint {
       margin-top: 4px;
       font-size: 7px;
       text-align: center;
       opacity: 0.8;
+      flex: 0 0 auto;
     }
 
-    /* =========================
-       START / OVERLAY
-       ========================= */
+    /* ============================================================
+       START / INTRO OVERLAY
+       ============================================================ */
     #overlay {
       position: fixed;
       inset: 0;
@@ -194,9 +207,9 @@
       transform: translateY(1px);
     }
 
-    /* =========================
+    /* ============================================================
        LOOT BOX OVERLAY
-       ========================= */
+       ============================================================ */
     #lootOverlay {
       position: fixed;
       inset: 0;
@@ -216,8 +229,8 @@
     }
 
     #lootBox {
-      width: 120px;
-      height: 120px;
+      width: 140px;
+      height: 140px;
       border-radius: 8px;
       background: linear-gradient(135deg, #ffcc00, #ff6600);
       box-shadow: 0 0 0 4px #ffffff, 0 0 20px #ffcc00;
@@ -254,11 +267,12 @@
     #lootHint {
       font-size: 7px;
       opacity: 0.8;
+      margin-bottom: 8px;
     }
 
-    /* =========================
+    /* ============================================================
        FLASH / HYPE EFFECTS
-       ========================= */
+       ============================================================ */
     .flashTimer {
       animation: flashTimer 0.3s linear infinite;
     }
@@ -280,14 +294,24 @@
       100% { transform: translate(0, 0); }
     }
 
-    /* =========================
+    .lootPulse {
+      animation: lootPulse 0.6s ease-in-out infinite;
+    }
+
+    @keyframes lootPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 4px #ffffff, 0 0 20px #ffcc00; }
+      50% { transform: scale(1.05); box-shadow: 0 0 0 4px #ffffff, 0 0 30px #ffff66; }
+    }
+
+    /* ============================================================
        PARENT CONTROLS
-       ========================= */
+       ============================================================ */
     #parentBar {
-      margin-top: 8px;
+      margin-top: 4px;
       font-size: 7px;
       text-align: right;
       opacity: 0.6;
+      flex: 0 0 auto;
     }
 
     #parentBar button {
@@ -344,6 +368,9 @@
       margin-top: 4px;
       background: #444444;
       border-radius: 3px;
+      border: none;
+      color: #ffffff;
+      cursor: pointer;
     }
 
     #parentPanelClose {
@@ -357,30 +384,60 @@
       margin-top: 4px;
       opacity: 0.7;
     }
+
+    /* ============================================================
+       RESPONSIVE TWEAKS
+       ============================================================ */
+    @media (max-height: 700px) {
+      #gameTitle {
+        font-size: 12px;
+      }
+      #subtitle {
+        font-size: 7px;
+      }
+      #timerDisplay {
+        font-size: 16px;
+      }
+      #bottomHint {
+        font-size: 6px;
+      }
+    }
+
+    @media (min-height: 900px) {
+      #gameContainer {
+        border-width: 4px;
+      }
+      #progressWrapper {
+        height: 14px;
+      }
+      #timerDisplay {
+        font-size: 20px;
+      }
+    }
   </style>
 </head>
 <body>
-  <!-- =========================
+  <!-- ============================================================
        OVERLAY: START / INTRO
-       ========================= -->
+       ============================================================ -->
   <div id="overlay">
     <h1>TOOTH BLASTER 2084</h1>
     <p>
 BRUSH TO POWER UP.
 
-2 MINUTES • 4 ZONES • 1 BOSS
+5 SECOND COUNTDOWN • 2 MINUTES • 4 ZONES • 1 BOSS
 
 Tap START, then start brushing like a maniac.
     </p>
     <button id="startButton" class="bigButton">START MISSION</button>
   </div>
 
-  <!-- =========================
+  <!-- ============================================================
        LOOT BOX OVERLAY
-       ========================= -->
+       ============================================================ -->
   <div id="lootOverlay">
     <div id="lootTitle">MISSION COMPLETE!</div>
-    <div id="lootBox">
+    <div id="lootBox" class="lootPulse">
       <div id="lootBoxLabel">TAP TO OPEN</div>
     </div>
     <div id="lootInfo"></div>
@@ -388,9 +445,9 @@ Tap START, then start brushing like a maniac.
     <button id="lootCloseButton" class="bigButton">OK</button>
   </div>
 
-  <!-- =========================
+  <!-- ============================================================
        MAIN APP
-       ========================= -->
+       ============================================================ -->
   <div id="app">
     <div id="titleBar">
       <div id="gameTitle">TOOTH BLASTER 2084</div>
@@ -410,7 +467,7 @@ Tap START, then start brushing like a maniac.
     </div>
 
     <div id="gameContainer">
-      <canvas id="gameCanvas" width="260" height="260"></canvas>
+      <canvas id="gameCanvas" width="320" height="480"></canvas>
       <div id="crtOverlay"></div>
     </div>
 
@@ -424,9 +481,9 @@ Tap START, then start brushing like a maniac.
     </div>
   </div>
 
-  <!-- =========================
+  <!-- ============================================================
        PARENT PANEL
-       ========================= -->
+       ============================================================ -->
   <div id="parentPanel">
     <div id="parentPanelClose">[X]</div>
     <h3>Parent Controls</h3>
@@ -450,12 +507,15 @@ Tap START, then start brushing like a maniac.
 
   <script>
     // ============================================================
-    // GLOBAL GAME STATE
+    // GLOBAL CONSTANTS
     // ============================================================
     const TOTAL_TIME = 120;          // 2 minutes
     const PRE_COUNTDOWN = 5;         // 5 seconds before main timer
     const FPS = 60;                  // target frames per second
 
+    // ============================================================
+    // GLOBAL STATE
+    // ============================================================
     let timeLeft = TOTAL_TIME;
     let preTimeLeft = PRE_COUNTDOWN;
     let inPreCountdown = false;
@@ -469,15 +529,16 @@ Tap START, then start brushing like a maniac.
 
     let lastFrameTime = 0;
     let accumulatedTime = 0;
+    let secondTickAccumulator = 0;
 
     let audioCtx = null;
     let gameLoopId = null;
-    let secondTickAccumulator = 0;
 
     let bossHealth = 100;
     let bossActive = false;
 
     let lootOpenedThisRun = false;
+    let lastRunCrystals = 0;
 
     // ============================================================
     // DOM ELEMENTS
@@ -510,6 +571,33 @@ Tap START, then start brushing like a maniac.
     const parentCrystalsEl = document.getElementById('parentCrystals');
     const parentApplyEl = document.getElementById('parentApply');
     const parentResetEl = document.getElementById('parentReset');
+
+    // ============================================================
+    // WORLD STRUCTURE
+    // ============================================================
+    const world = {
+      hero: {
+        x: 40,
+        y: 260,
+        w: 20,
+        h: 20,
+        frame: 0,
+        frameTime: 0
+      },
+      enemies: [],
+      enemySpawnTimer: 0,
+      enemySpawnInterval: 0.9,
+      backgroundOffset: 0,
+      backgroundSpeed: 40,
+      boss: {
+        x: 220,
+        y: 120,
+        w: 50,
+        h: 50
+      },
+      particles: [],
+      foregroundBits: []
+    };
 
     // ============================================================
     // LOCAL STORAGE HELPERS
@@ -584,6 +672,10 @@ Tap START, then start brushing like a maniac.
     }
 
     function updateZoneDisplay() {
+      if (!inGame && !inPreCountdown) {
+        zoneDisplayEl.textContent = 'READY FOR NEXT MISSION';
+        return;
+      }
       if (timeLeft > 90) {
         zoneDisplayEl.textContent = 'ZONE: 1 • TOP LEFT';
       } else if (timeLeft > 60) {
@@ -602,61 +694,64 @@ Tap START, then start brushing like a maniac.
     }
 
     // ============================================================
-    // GAME WORLD: SIMPLE 8-BIT STYLE
+    // WORLD RESET
     // ============================================================
-    const world = {
-      hero: {
-        x: 40,
-        y: 130,
-        w: 16,
-        h: 16,
-        frame: 0,
-        frameTime: 0
-      },
-      enemies: [],
-      enemySpawnTimer: 0,
-      enemySpawnInterval: 0.9, // seconds
-      backgroundOffset: 0,
-      backgroundSpeed: 30,
-      boss: {
-        x: 200,
-        y: 80,
-        w: 40,
-        h: 40
-      },
-      particles: []
-    };
-
     function resetWorld() {
       world.enemies = [];
       world.particles = [];
+      world.foregroundBits = [];
       world.backgroundOffset = 0;
       world.enemySpawnTimer = 0;
       bossHealth = 100;
       bossActive = false;
+      world.hero.x = 40;
+      world.hero.y = 260;
+      world.hero.frame = 0;
+      world.hero.frameTime = 0;
+      spawnInitialForeground();
     }
 
+    function spawnInitialForeground() {
+      world.foregroundBits = [];
+      for (let i = 0; i < 20; i++) {
+        world.foregroundBits.push({
+          x: Math.random() * canvas.width,
+          y: 320 + Math.random() * 120,
+          w: 8 + Math.random() * 8,
+          h: 4,
+          speed: 20 + Math.random() * 20
+        });
+      }
+    }
+
+    // ============================================================
+    // ENEMIES & PARTICLES
+    // ============================================================
     function spawnEnemy() {
-      const y = 40 + Math.random() * 160;
+      const y = 60 + Math.random() * 260;
       const speed = 40 + Math.random() * 40;
+      const type = Math.random() < 0.5 ? 'drone' : 'ufo';
       world.enemies.push({
         x: canvas.width + 20,
         y,
-        w: 14,
-        h: 14,
+        w: 18,
+        h: 18,
         speed,
-        alive: true
+        alive: true,
+        type,
+        frame: 0,
+        frameTime: 0
       });
     }
 
     function addParticle(x, y, color) {
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 8; i++) {
         world.particles.push({
           x,
           y,
-          vx: (Math.random() - 0.5) * 60,
-          vy: (Math.random() - 0.5) * 60,
-          life: 0.4,
+          vx: (Math.random() - 0.5) * 80,
+          vy: (Math.random() - 0.5) * 80,
+          life: 0.4 + Math.random() * 0.2,
           color
         });
       }
@@ -681,9 +776,19 @@ Tap START, then start brushing like a maniac.
         world.hero.frame = (world.hero.frame + 1) % 2;
       }
 
+      // Foreground bits
+      for (let f of world.foregroundBits) {
+        f.x -= f.speed * dt;
+        if (f.x + f.w < 0) {
+          f.x = canvas.width + Math.random() * 40;
+          f.y = 320 + Math.random() * 120;
+        }
+      }
+
       // Enemy spawn
       world.enemySpawnTimer += dt;
-      if (world.enemySpawnTimer >= world.enemySpawnInterval) {
+      const spawnInterval = bossActive ? 1.2 : 0.9;
+      if (world.enemySpawnTimer >= spawnInterval) {
         world.enemySpawnTimer = 0;
         if (!bossActive || Math.random() > 0.4) {
           spawnEnemy();
@@ -694,18 +799,21 @@ Tap START, then start brushing like a maniac.
       for (let e of world.enemies) {
         if (!e.alive) continue;
         e.x -= e.speed * dt;
+        e.frameTime += dt;
+        if (e.frameTime > 0.2) {
+          e.frameTime = 0;
+          e.frame = (e.frame + 1) % 2;
+        }
         if (e.x + e.w < 0) {
           e.alive = false;
-          // Missed enemy: break chain
           streak = 0;
           updateHUD();
         }
       }
       world.enemies = world.enemies.filter(e => e.alive);
 
-      // Auto-fire logic: we simulate hits over time
-      // More hits as time goes on
-      const fireRate = bossActive ? 6 : 4;
+      // Auto-fire logic
+      const fireRate = bossActive ? 7 : 5;
       const expectedHits = fireRate * dt;
       const wholeHits = Math.floor(expectedHits);
       for (let i = 0; i < wholeHits; i++) {
@@ -722,7 +830,7 @@ Tap START, then start brushing like a maniac.
     }
 
     function autoHit() {
-      // Prefer hitting enemies, then boss
+      // Prefer enemies, then boss
       if (world.enemies.length > 0) {
         const e = world.enemies[Math.floor(Math.random() * world.enemies.length)];
         if (e && e.alive) {
@@ -757,7 +865,7 @@ Tap START, then start brushing like a maniac.
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Simple starfield
+      // Starfield
       ctx.fillStyle = '#222222';
       for (let x = world.backgroundOffset; x < canvas.width + 40; x += 16) {
         for (let y = 0; y < canvas.height; y += 16) {
@@ -778,6 +886,14 @@ Tap START, then start brushing like a maniac.
         ctx.fillStyle = 'rgba(160, 0, 160, 0.3)';
       }
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Simple skyline silhouettes
+      ctx.fillStyle = '#111122';
+      for (let i = 0; i < 8; i++) {
+        const bx = (i * 50 + (world.backgroundOffset * 0.5)) % (canvas.width + 60) - 30;
+        const bh = 40 + (i % 3) * 20;
+        ctx.fillRect(bx, canvas.height - bh - 80, 30, bh);
+      }
     }
 
     function drawHero() {
@@ -787,26 +903,45 @@ Tap START, then start brushing like a maniac.
       ctx.fillRect(h.x, h.y, h.w, h.h);
       // Helmet stripe
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(h.x + 4, h.y + 2, 8, 3);
+      ctx.fillRect(h.x + 4, h.y + 2, 10, 3);
+      // Visor
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(h.x + 4, h.y + 6, 8, 4);
       // Arm cannon
       ctx.fillStyle = '#ffff00';
-      ctx.fillRect(h.x + h.w, h.y + 5, 6, 6);
-      // Simple walk frame
+      ctx.fillRect(h.x + h.w, h.y + 6, 6, 8);
+      // Legs
       if (h.frame === 0) {
         ctx.fillStyle = '#003344';
-        ctx.fillRect(h.x + 3, h.y + h.h - 3, 4, 3);
+        ctx.fillRect(h.x + 3, h.y + h.h - 4, 5, 4);
       } else {
         ctx.fillStyle = '#003344';
-        ctx.fillRect(h.x + 9, h.y + h.h - 3, 4, 3);
+        ctx.fillRect(h.x + 9, h.y + h.h - 4, 5, 4);
+      }
+      // Simple muzzle flash
+      if (Math.random() < 0.3 && inGame) {
+        ctx.fillStyle = '#ffff88';
+        ctx.fillRect(h.x + h.w + 6, h.y + 8, 4, 4);
       }
     }
 
     function drawEnemies() {
       for (let e of world.enemies) {
-        ctx.fillStyle = '#ff3366';
-        ctx.fillRect(e.x, e.y, e.w, e.h);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(e.x + 3, e.y + 3, 3, 3);
+        if (e.type === 'drone') {
+          ctx.fillStyle = '#ff3366';
+          ctx.fillRect(e.x, e.y, e.w, e.h);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(e.x + 4, e.y + 4, 4, 4);
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(e.x + 5, e.y + 5, 2, 2);
+        } else {
+          ctx.fillStyle = '#ffcc00';
+          ctx.fillRect(e.x, e.y, e.w, e.h);
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(e.x + 3, e.y + 3, 12, 4);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(e.x + 6, e.y + 8, 4, 4);
+        }
       }
     }
 
@@ -814,7 +949,6 @@ Tap START, then start brushing like a maniac.
       if (!bossActive && bossHealth <= 0) return;
       if (!bossActive && timeLeft > 30) return;
 
-      // Boss becomes active in last 30 seconds
       if (!bossActive && timeLeft <= 30) {
         bossActive = true;
         gameContainerEl.classList.add('screenShake');
@@ -826,20 +960,22 @@ Tap START, then start brushing like a maniac.
       const b = world.boss;
       ctx.fillStyle = '#ff00ff';
       ctx.fillRect(b.x, b.y, b.w, b.h);
+
       // Eyes
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(b.x + 8, b.y + 10, 6, 6);
-      ctx.fillRect(b.x + 26, b.y + 10, 6, 6);
+      ctx.fillRect(b.x + 8, b.y + 12, 8, 8);
+      ctx.fillRect(b.x + 30, b.y + 12, 8, 8);
       ctx.fillStyle = '#000000';
-      ctx.fillRect(b.x + 10, b.y + 12, 2, 2);
-      ctx.fillRect(b.x + 28, b.y + 12, 2, 2);
+      ctx.fillRect(b.x + 11, b.y + 15, 3, 3);
+      ctx.fillRect(b.x + 33, b.y + 15, 3, 3);
+
       // Mouth
       ctx.fillStyle = '#000000';
-      ctx.fillRect(b.x + 10, b.y + 26, 20, 4);
+      ctx.fillRect(b.x + 10, b.y + 30, 30, 6);
 
       // Health bar
-      const barWidth = 60;
-      const barHeight = 6;
+      const barWidth = 80;
+      const barHeight = 8;
       const barX = canvas.width / 2 - barWidth / 2;
       const barY = 10;
       ctx.fillStyle = '#ffffff';
@@ -856,12 +992,20 @@ Tap START, then start brushing like a maniac.
       }
     }
 
+    function drawForeground() {
+      ctx.fillStyle = '#222222';
+      for (let f of world.foregroundBits) {
+        ctx.fillRect(f.x, f.y, f.w, f.h);
+      }
+    }
+
     function renderGame() {
       drawBackground();
       drawHero();
       drawEnemies();
       drawBoss();
       drawParticles();
+      drawForeground();
     }
 
     // ============================================================
@@ -875,14 +1019,12 @@ Tap START, then start brushing like a maniac.
       accumulatedTime += delta;
       secondTickAccumulator += delta;
 
-      // Fixed timestep for game logic
       const step = 1 / FPS;
       while (accumulatedTime >= step) {
         accumulatedTime -= step;
         updateGame(step);
       }
 
-      // Handle 1-second timer ticks
       while (secondTickAccumulator >= 1) {
         secondTickAccumulator -= 1;
         handleSecondTick();
@@ -965,7 +1107,6 @@ Tap START, then start brushing like a maniac.
       inGame = false;
       inLoot = true;
 
-      // Basic reward calculation
       const baseCrystals = 10;
       const scoreBonus = Math.floor(score / 50);
       const streakBonus = Math.max(0, streak);
@@ -973,7 +1114,7 @@ Tap START, then start brushing like a maniac.
 
       crystals += runCrystals;
       daysPlayed += 1;
-      streak += 1; // successful run extends streak
+      streak += 1;
 
       saveProgress();
       updateHUD();
@@ -989,14 +1130,13 @@ Tap START, then start brushing like a maniac.
     // ============================================================
     // LOOT BOX
     // ============================================================
-    let lastRunCrystals = 0;
-
     function showLootBox(runCrystals) {
       lastRunCrystals = runCrystals;
       lootOpenedThisRun = false;
       lootBoxLabelEl.textContent = 'TAP TO OPEN';
       lootInfoEl.textContent = '';
       lootOverlayEl.style.display = 'flex';
+      lootBoxEl.classList.add('lootPulse');
     }
 
     function openLootBox() {
@@ -1008,6 +1148,8 @@ Tap START, then start brushing like a maniac.
       vibrate(80);
 
       lootBoxLabelEl.textContent = 'OPENED!';
+      lootBoxEl.classList.remove('lootPulse');
+
       lootInfoEl.textContent =
         'SCORE: ' + score +
         '\nSTREAK: ' + streak +
@@ -1073,6 +1215,7 @@ Tap START, then start brushing like a maniac.
     lootCloseButtonEl.addEventListener('click', () => {
       lootOverlayEl.style.display = 'none';
       overlayEl.style.display = 'flex';
+      updateZoneDisplay();
     });
 
     parentButtonEl.addEventListener('click', openParentPanel);
@@ -1080,13 +1223,43 @@ Tap START, then start brushing like a maniac.
     parentApplyEl.addEventListener('click', applyParentChanges);
     parentResetEl.addEventListener('click', parentResetAll);
 
+    // Prevent scroll / zoom on double tap in Safari
+    document.addEventListener('touchmove', function(e) {
+      if (e.target === canvas || e.target === gameContainerEl) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
     // ============================================================
     // INIT
     // ============================================================
+    function resizeCanvasToContainer() {
+      const rect = gameContainerEl.getBoundingClientRect();
+      const targetWidth = rect.width;
+      const targetHeight = rect.height;
+
+      const baseWidth = 320;
+      const baseHeight = 480;
+
+      const scale = Math.min(targetWidth / baseWidth, targetHeight / baseHeight);
+
+      canvas.width = baseWidth;
+      canvas.height = baseHeight;
+
+      canvas.style.width = (baseWidth * scale) + 'px';
+      canvas.style.height = (baseHeight * scale) + 'px';
+    }
+
+    window.addEventListener('resize', () => {
+      resizeCanvasToContainer();
+      renderGame();
+    });
+
     loadProgress();
     updateTimerDisplay();
     updateZoneDisplay();
     updateProgressBar();
+    resizeCanvasToContainer();
     renderGame();
   </script>
 </body>
