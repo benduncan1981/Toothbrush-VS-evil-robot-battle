@@ -2,1327 +2,481 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Tooth Blaster 2084</title>
+  <title>Tooth Runner 2084</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-  <!--
-    TOOTH BLASTER 2084
-    8-bit toothbrush timer arcade
-    Target: iPhone 15 portrait, Safari
-    Features:
-      - 5 second pre-countdown
-      - 2 minute auto-play battle
-      - 4 zones (quadrants)
-      - Boss in final 30 seconds
-      - Loot box reward
-      - LocalStorage streak/days/crystals
-      - Parent controls (passcode 1202)
-      - Dynamic canvas sizing to fit viewport
-  -->
-
-  <!-- Retro font -->
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-
   <style>
-    /* ============================================================
-       GLOBAL RESET & BASE
-       ============================================================ */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html,
-    body {
-      width: 100%;
-      height: 100%;
-      background: #000000;
-      color: #ffffff;
-      font-family: 'Press Start 2P', system-ui, monospace;
-      overflow: hidden;
-    }
-
-    body {
-      display: flex;
-      align-items: stretch;
-      justify-content: center;
-    }
-
-    /* ============================================================
-       LAYOUT WRAPPER
-       Portrait-focused, full-height on iPhone 15
-       NOTE: we do NOT force 100vh here because iOS Safari lies.
-       We let the browser size naturally and then compute canvas size.
-       ============================================================ */
-    #app {
-      width: 100%;
-      max-width: 480px;
-      display: flex;
-      flex-direction: column;
-      padding: 8px;
-    }
-
-    /* ============================================================
-       HEADER / TITLE
-       ============================================================ */
-    #titleBar {
-      text-align: center;
-      margin-bottom: 6px;
-      flex: 0 0 auto;
-    }
-
-    #gameTitle {
-      font-size: 14px;
-      letter-spacing: 1px;
-      margin-bottom: 4px;
-    }
-
-    #subtitle {
-      font-size: 8px;
-      opacity: 0.8;
-    }
-
-    /* ============================================================
-       HUD
-       ============================================================ */
-    #hud {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 6px 0;
-      font-size: 8px;
-      flex: 0 0 auto;
-    }
-
-    #timerDisplay {
-      font-size: 18px;
-    }
-
-    #scoreDisplay,
-    #streakDisplay {
-      font-size: 8px;
-    }
-
-    #zoneDisplay {
-      text-align: center;
-      font-size: 8px;
-      margin-bottom: 4px;
-      flex: 0 0 auto;
-    }
-
-    /* ============================================================
-       PROGRESS BAR
-       ============================================================ */
-    #progressWrapper {
-      width: 100%;
-      height: 12px;
-      border: 2px solid #44ffcc;
-      margin-bottom: 6px;
-      position: relative;
-      background: #111111;
-      flex: 0 0 auto;
-    }
-
-    #progressFill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, #44ff44, #ffff00);
-      transition: width 0.2s linear;
-    }
-
-    /* ============================================================
-       GAME CANVAS AREA
-       Takes most of vertical space
-       ============================================================ */
-    #gameContainer {
-      position: relative;
-      width: 100%;
-      flex: 1 1 auto;
-      border: 3px solid #44ffcc;
-      background: #000000;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #gameCanvas {
-      image-rendering: pixelated;
-      display: block;
-    }
-
-    /* CRT overlay (optional visual flavour) */
-    #crtOverlay {
-      pointer-events: none;
-      position: absolute;
-      inset: 0;
-      background: repeating-linear-gradient(
-        to bottom,
-        rgba(255, 255, 255, 0.06),
-        rgba(255, 255, 255, 0.06) 1px,
-        rgba(0, 0, 0, 0.0) 2px
-      );
-      mix-blend-mode: soft-light;
-      opacity: 0.25;
-    }
-
-    /* ============================================================
-       BOTTOM TEXT
-       ============================================================ */
-    #bottomHint {
-      margin-top: 4px;
-      font-size: 7px;
-      text-align: center;
-      opacity: 0.8;
-      flex: 0 0 auto;
-    }
-
-    /* ============================================================
-       START / INTRO OVERLAY
-       ============================================================ */
-    #overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.92);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 12px;
-      z-index: 10;
-    }
-
-    #overlay h1 {
-      font-size: 16px;
-      margin-bottom: 8px;
-    }
-
-    #overlay p {
-      font-size: 8px;
-      margin-bottom: 8px;
-      line-height: 1.6;
-      white-space: pre-line;
-    }
-
-    .bigButton {
-      font-family: 'Press Start 2P', system-ui, monospace;
-      font-size: 10px;
-      padding: 10px 16px;
-      border: none;
-      background: #44ffcc;
-      color: #000000;
-      margin: 4px;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-
-    .bigButton:active {
-      transform: translateY(1px);
-    }
-
-    /* ============================================================
-       LOOT BOX OVERLAY
-       ============================================================ */
-    #lootOverlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.92);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 12px;
-      z-index: 20;
-    }
-
-    #lootTitle {
-      font-size: 14px;
-      margin-bottom: 8px;
-    }
-
-    #lootBox {
-      width: 140px;
-      height: 140px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, #ffcc00, #ff6600);
-      box-shadow: 0 0 0 4px #ffffff, 0 0 20px #ffcc00;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 8px;
-      cursor: pointer;
-      position: relative;
-    }
-
-    #lootBox::before {
-      content: '';
-      position: absolute;
-      width: 80%;
-      height: 8px;
-      background: rgba(0, 0, 0, 0.3);
-      top: 50%;
-      left: 10%;
-      transform: translateY(-50%);
-    }
-
-    #lootBoxLabel {
-      font-size: 10px;
-      z-index: 1;
-    }
-
-    #lootInfo {
-      font-size: 8px;
-      white-space: pre-line;
-      margin-bottom: 8px;
-    }
-
-    #lootHint {
-      font-size: 7px;
-      opacity: 0.8;
-      margin-bottom: 8px;
-    }
-
-    /* ============================================================
-       FLASH / HYPE EFFECTS
-       ============================================================ */
-    .flashTimer {
-      animation: flashTimer 0.3s linear infinite;
-    }
-
-    @keyframes flashTimer {
-      0%,
-      100% {
-        color: #ffffff;
-      }
-      50% {
-        color: #ff4444;
-      }
-    }
-
-    .screenShake {
-      animation: screenShake 0.4s linear 1;
-    }
-
-    @keyframes screenShake {
-      0% {
-        transform: translate(0, 0);
-      }
-      25% {
-        transform: translate(-3px, 2px);
-      }
-      50% {
-        transform: translate(3px, -2px);
-      }
-      75% {
-        transform: translate(-2px, -3px);
-      }
-      100% {
-        transform: translate(0, 0);
-      }
-    }
-
-    .lootPulse {
-      animation: lootPulse 0.6s ease-in-out infinite;
-    }
-
-    @keyframes lootPulse {
-      0%,
-      100% {
-        transform: scale(1);
-        box-shadow: 0 0 0 4px #ffffff, 0 0 20px #ffcc00;
-      }
-      50% {
-        transform: scale(1.05);
-        box-shadow: 0 0 0 4px #ffffff, 0 0 30px #ffff66;
-      }
-    }
-
-    /* ============================================================
-       PARENT CONTROLS
-       ============================================================ */
-    #parentBar {
-      margin-top: 4px;
-      font-size: 7px;
-      text-align: right;
-      opacity: 0.6;
-      flex: 0 0 auto;
-    }
-
-    #parentBar button {
-      font-family: 'Press Start 2P', system-ui, monospace;
-      font-size: 7px;
-      padding: 4px 6px;
-      border: none;
-      background: #333333;
-      color: #ffffff;
-      cursor: pointer;
-      border-radius: 3px;
-    }
-
-    #parentPanel {
-      position: fixed;
-      right: 4px;
-      bottom: 4px;
-      width: 260px;
-      max-width: 90%;
-      background: rgba(0, 0, 0, 0.95);
-      border: 2px solid #444444;
-      padding: 8px;
-      font-size: 7px;
-      display: none;
-      z-index: 30;
-    }
-
-    #parentPanel h3 {
-      font-size: 8px;
-      margin-bottom: 4px;
-    }
-
-    #parentPanel label {
-      display: block;
-      margin-top: 4px;
-      margin-bottom: 2px;
-    }
-
-    #parentPanel input {
-      width: 100%;
-      font-size: 8px;
-      padding: 2px;
-      margin-bottom: 4px;
-      background: #111111;
-      color: #ffffff;
-      border: 1px solid #444444;
-      font-family: 'Press Start 2P', system-ui, monospace;
-    }
-
-    #parentPanel button {
-      font-size: 7px;
-      padding: 4px 6px;
-      margin-right: 4px;
-      margin-top: 4px;
-      background: #444444;
-      border-radius: 3px;
-      border: none;
-      color: #ffffff;
-      cursor: pointer;
-    }
-
-    #parentPanelClose {
-      float: right;
-      cursor: pointer;
-      font-size: 8px;
-    }
-
-    #parentPanel small {
-      display: block;
-      margin-top: 4px;
-      opacity: 0.7;
-    }
-
-    /* ============================================================
-       RESPONSIVE TWEAKS
-       ============================================================ */
-    @media (max-height: 700px) {
-      #gameTitle {
-        font-size: 12px;
-      }
-      #subtitle {
-        font-size: 7px;
-      }
-      #timerDisplay {
-        font-size: 16px;
-      }
-      #bottomHint {
-        font-size: 6px;
-      }
-    }
-
-    @media (min-height: 900px) {
-      #gameContainer {
-        border-width: 4px;
-      }
-      #progressWrapper {
-        height: 14px;
-      }
-      #timerDisplay {
-        font-size: 20px;
-      }
-    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{width:100%;height:100%;background:#000;color:#fff;font-family:'Press Start 2P',system-ui,monospace;overflow:hidden}
+    body{display:flex;justify-content:center;align-items:stretch}
+    #app{width:100%;max-width:480px;padding:8px;display:flex;flex-direction:column}
+    #titleBar{text-align:center;margin-bottom:6px}
+    #gameTitle{font-size:16px;color:#44ffcc;text-shadow:0 0 6px #44ffcc}
+    #subtitle{font-size:8px;opacity:.8}
+    #hud{display:flex;justify-content:space-between;align-items:center;margin:6px 0;font-size:8px}
+    #timerDisplay{font-size:20px;color:#ffff66;text-shadow:0 0 6px #ffff66}
+    #zoneDisplay{font-size:8px;margin-top:4px;opacity:.9}
+    #progressBarOuter{width:100%;height:12px;border:2px solid #44ffcc;background:#111;margin-bottom:6px;position:relative}
+    #progressBarInner{width:0;height:100%;background:linear-gradient(90deg,#44ff44,#ffff00);transition:width .2s linear}
+    #gameContainer{position:relative;width:100%;flex:1 1 auto;border:3px solid #44ffcc;background:#000;overflow:hidden;display:flex;justify-content:center;align-items:center;min-height:0}
+    #gameCanvas{image-rendering:pixelated;display:block}
+    #crtOverlay{pointer-events:none;position:absolute;inset:0;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.05),rgba(255,255,255,.05) 1px,rgba(0,0,0,0) 2px);mix-blend-mode:soft-light;opacity:.25}
+    #bottomHint{margin-top:4px;font-size:7px;text-align:center;opacity:.8}
+    #parentBar{margin-top:6px;font-size:7px;text-align:right;opacity:.6}
+    #parentBar button{font-size:7px;padding:4px 6px;background:#333;color:#fff;border:none;border-radius:3px;cursor:pointer}
+    #startOverlay,#lootOverlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:20px;z-index:20}
+    #lootOverlay{display:none;z-index:30}
+    #startOverlay h1{font-size:20px;margin-bottom:12px;color:#44ffcc;text-shadow:0 0 6px #44ffcc}
+    #startMissionText{font-size:10px;line-height:1.6;margin-bottom:16px;white-space:pre-line;opacity:.9}
+    #startButton,#lootOkButton{font-size:12px;padding:12px 20px;background:#44ffcc;color:#000;border:none;border-radius:6px;cursor:pointer;box-shadow:0 0 10px #44ffcc}
+    #startButton:active,#lootOkButton:active{transform:translateY(2px)}
+    #lootTitle{font-size:18px;margin-bottom:12px;color:#ffcc00;text-shadow:0 0 6px #ffcc00}
+    #lootBox{width:140px;height:140px;background:linear-gradient(135deg,#ffcc00,#ff6600);border-radius:10px;box-shadow:0 0 0 4px #fff,0 0 20px #ffcc00;display:flex;justify-content:center;align-items:center;margin-bottom:12px;cursor:pointer;position:relative}
+    #lootBox::before{content:'';position:absolute;width:80%;height:10px;background:rgba(0,0,0,.3);top:50%;left:10%;transform:translateY(-50%)}
+    #lootBoxLabel{font-size:12px;z-index:2}
+    #lootResult{font-size:10px;white-space:pre-line;margin-bottom:12px}
+    .lootPulse{animation:lootPulse .7s ease-in-out infinite}
+    @keyframes lootPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 4px #fff,0 0 20px #ffcc00}50%{transform:scale(1.08);box-shadow:0 0 0 4px #fff,0 0 30px #ffff66}}
+    #parentPanel{position:fixed;right:4px;bottom:4px;width:260px;max-width:90%;background:rgba(0,0,0,.95);border:2px solid #444;padding:10px;font-size:7px;display:none;z-index:40}
+    #parentPanelHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+    #parentPanelHeader span{font-size:9px}
+    #parentCloseButton{font-size:8px;padding:2px 4px;background:#333;color:#fff;border:none;cursor:pointer}
+    #parentContent label{display:block;margin-top:6px;margin-bottom:2px}
+    #parentContent input{width:100%;font-size:8px;padding:3px;background:#111;color:#fff;border:1px solid #444;margin-bottom:4px}
+    #parentContent button{font-size:8px;padding:4px 6px;background:#444;color:#fff;border:none;border-radius:3px;margin-right:4px;cursor:pointer}
+    .flash{animation:flashAnim .2s linear 3}
+    @keyframes flashAnim{0%,100%{background:#000}50%{background:#441111}}
+    .screenShake{animation:shakeAnim .4s linear 1}
+    @keyframes shakeAnim{0%{transform:translate(0,0)}25%{transform:translate(-3px,2px)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,-3px)}100%{transform:translate(0,0)}}
+    @media(max-height:700px){#gameTitle{font-size:14px}#subtitle{font-size:7px}#timerDisplay{font-size:16px}#bottomHint{font-size:6px}}
+    @media(min-height:900px){#gameContainer{border-width:4px}#progressBarOuter{height:14px}#timerDisplay{font-size:22px}}
   </style>
 </head>
 <body>
-  <!-- ============================================================
-       OVERLAY: START / INTRO
-       ============================================================ -->
-  <div id="overlay">
-    <h1>TOOTH BLASTER 2084</h1>
-    <p>
-BRUSH TO POWER UP.
+  <div id="startOverlay">
+    <h1>TOOTH RUNNER 2084</h1>
+    <p id="startMissionText">
+MISSION: REBUILD TOOTH CITY
 
-5 SECOND COUNTDOWN • 2 MINUTES • 4 ZONES • 1 BOSS
-
-Tap START, then start brushing like a maniac.
+5 SECOND COUNTDOWN • 2 MINUTE RUN • AUTO‑PLAY
     </p>
-    <button id="startButton" class="bigButton">START MISSION</button>
+    <button id="startButton">START MISSION</button>
   </div>
 
-  <!-- ============================================================
-       LOOT BOX OVERLAY
-       ============================================================ -->
   <div id="lootOverlay">
-    <div id="lootTitle">MISSION COMPLETE!</div>
+    <h2 id="lootTitle">MISSION COMPLETE!</h2>
     <div id="lootBox" class="lootPulse">
-      <div id="lootBoxLabel">TAP TO OPEN</div>
+      <span id="lootBoxLabel">TAP TO OPEN</span>
     </div>
-    <div id="lootInfo"></div>
-    <div id="lootHint">One loot box per run. Brush again to earn more.</div>
-    <button id="lootCloseButton" class="bigButton">OK</button>
+    <div id="lootResult"></div>
+    <button id="lootOkButton">OK</button>
   </div>
 
-  <!-- ============================================================
-       MAIN APP
-       ============================================================ -->
+  <div id="parentPanel">
+    <div id="parentPanelHeader">
+      <span>Parent Controls</span>
+      <button id="parentCloseButton">X</button>
+    </div>
+    <div id="parentContent">
+      <label for="parentPass">Passcode (1202):</label>
+      <input type="password" id="parentPass">
+      <label for="parentStreak">Streak:</label>
+      <input type="number" id="parentStreak" min="0">
+      <label for="parentDays">Days Played:</label>
+      <input type="number" id="parentDays" min="0">
+      <label for="parentCrystals">Crystals:</label>
+      <input type="number" id="parentCrystals" min="0">
+      <button id="parentApplyButton">Apply</button>
+      <button id="parentResetButton">Reset All</button>
+      <small>Values are stored locally on this device only.</small>
+    </div>
+  </div>
+
   <div id="app">
-    <div id="titleBar">
-      <div id="gameTitle">TOOTH BLASTER 2084</div>
-      <div id="subtitle">BRUSH = LASER • 2× A DAY = MAX POWER</div>
-    </div>
+    <header id="titleBar">
+      <div id="gameTitle">TOOTH RUNNER 2084</div>
+      <div id="subtitle">BRUSH • RUN • LOOT • BUILD TOOTH CITY</div>
+    </header>
 
-    <div id="hud">
-      <div id="scoreDisplay">SCORE: 00000</div>
-      <div id="timerDisplay">2:00</div>
-      <div id="streakDisplay">STREAK: 0</div>
-    </div>
+    <section id="hud">
+      <div id="hudLeft">
+        <div id="streakDisplay">STREAK: 0</div>
+        <div id="daysDisplay">DAYS: 0</div>
+      </div>
+      <div id="hudCenter">
+        <div id="timerDisplay">2:00</div>
+        <div id="zoneDisplay">ZONE 1 • ENAMEL DISTRICT</div>
+      </div>
+      <div id="hudRight">
+        <div id="crystalDisplay">CRYSTALS: 0</div>
+        <div id="skinDisplay">SKIN: DEFAULT</div>
+      </div>
+    </section>
 
-    <div id="zoneDisplay">ZONE: 1 • TOP LEFT</div>
+    <section id="progressBarSection">
+      <div id="progressBarOuter">
+        <div id="progressBarInner"></div>
+      </div>
+    </section>
 
-    <div id="progressWrapper">
-      <div id="progressFill"></div>
-    </div>
-
-    <div id="gameContainer">
-      <!-- Base canvas resolution; we will scale it dynamically -->
+    <main id="gameContainer">
       <canvas id="gameCanvas" width="320" height="480"></canvas>
       <div id="crtOverlay"></div>
-    </div>
+    </main>
 
-    <div id="bottomHint">
-      WATCH THE BATTLE WHILE YOU BRUSH • BOSS APPEARS IN THE FINAL SECONDS
-    </div>
+    <footer id="bottomHint">
+      WATCH THE RUN WHILE YOU BRUSH • LOOT BOX AFTER EACH MISSION
+    </footer>
 
     <div id="parentBar">
       <span>Parent controls</span>
-      <button id="parentButton">OPEN</button>
+      <button id="parentOpenButton">OPEN</button>
     </div>
   </div>
 
-  <!-- ============================================================
-       PARENT PANEL
-       ============================================================ -->
-  <div id="parentPanel">
-    <div id="parentPanelClose">[X]</div>
-    <h3>Parent Controls</h3>
-    <label for="parentPass">Passcode (1202):</label>
-    <input type="password" id="parentPass" placeholder="Enter passcode">
-
-    <label for="parentStreak">Streak:</label>
-    <input type="number" id="parentStreak" min="0">
-
-    <label for="parentDays">Days Played:</label>
-    <input type="number" id="parentDays" min="0">
-
-    <label for="parentCrystals">Crystals:</label>
-    <input type="number" id="parentCrystals" min="0">
-
-    <button id="parentApply">Apply</button>
-    <button id="parentReset">Reset All</button>
-
-    <small>Values are stored in local storage on this device only.</small>
-  </div>
-
   <script>
-    // ============================================================
-    // GLOBAL CONSTANTS
-    // ============================================================
-    const TOTAL_TIME = 120;          // 2 minutes
-    const PRE_COUNTDOWN = 5;         // 5 seconds before main timer
-    const FPS = 60;                  // target frames per second
+    const startOverlay=document.getElementById('startOverlay');
+    const startButton=document.getElementById('startButton');
+    const lootOverlay=document.getElementById('lootOverlay');
+    const lootBox=document.getElementById('lootBox');
+    const lootBoxLabel=document.getElementById('lootBoxLabel');
+    const lootResult=document.getElementById('lootResult');
+    const lootOkButton=document.getElementById('lootOkButton');
+    const parentPanel=document.getElementById('parentPanel');
+    const parentOpenButton=document.getElementById('parentOpenButton');
+    const parentCloseButton=document.getElementById('parentCloseButton');
+    const parentPassInput=document.getElementById('parentPass');
+    const parentStreakInput=document.getElementById('parentStreak');
+    const parentDaysInput=document.getElementById('parentDays');
+    const parentCrystalsInput=document.getElementById('parentCrystals');
+    const parentApplyButton=document.getElementById('parentApplyButton');
+    const parentResetButton=document.getElementById('parentResetButton');
+    const timerDisplay=document.getElementById('timerDisplay');
+    const zoneDisplay=document.getElementById('zoneDisplay');
+    const streakDisplay=document.getElementById('streakDisplay');
+    const daysDisplay=document.getElementById('daysDisplay');
+    const crystalDisplay=document.getElementById('crystalDisplay');
+    const skinDisplay=document.getElementById('skinDisplay');
+    const progressBarInner=document.getElementById('progressBarInner');
+    const gameContainer=document.getElementById('gameContainer');
+    const canvas=document.getElementById('gameCanvas');
+    const ctx=canvas.getContext('2d');
 
-    // ============================================================
-    // GLOBAL STATE
-    // ============================================================
-    let timeLeft = TOTAL_TIME;
-    let preTimeLeft = PRE_COUNTDOWN;
-    let inPreCountdown = false;
-    let inGame = false;
-    let inLoot = false;
+    const RUN_DURATION=120;
+    const PRE_COUNTDOWN=5;
+    const ZONE_LENGTH=30;
+    const FPS=60;
+    const DT=1/FPS;
 
-    let score = 0;
-    let streak = 0;
-    let daysPlayed = 0;
-    let crystals = 0;
-
-    let lastFrameTime = 0;
-    let accumulatedTime = 0;
-    let secondTickAccumulator = 0;
-
-    let audioCtx = null;
-    let gameLoopId = null;
-
-    let bossHealth = 100;
-    let bossActive = false;
-
-    let lootOpenedThisRun = false;
-    let lastRunCrystals = 0;
-
-    // ============================================================
-    // DOM ELEMENTS
-    // ============================================================
-    const overlayEl = document.getElementById('overlay');
-    const startButtonEl = document.getElementById('startButton');
-
-    const lootOverlayEl = document.getElementById('lootOverlay');
-    const lootBoxEl = document.getElementById('lootBox');
-    const lootBoxLabelEl = document.getElementById('lootBoxLabel');
-    const lootInfoEl = document.getElementById('lootInfo');
-    const lootCloseButtonEl = document.getElementById('lootCloseButton');
-
-    const scoreDisplayEl = document.getElementById('scoreDisplay');
-    const timerDisplayEl = document.getElementById('timerDisplay');
-    const streakDisplayEl = document.getElementById('streakDisplay');
-    const zoneDisplayEl = document.getElementById('zoneDisplay');
-    const progressFillEl = document.getElementById('progressFill');
-    const gameContainerEl = document.getElementById('gameContainer');
-
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-
-    const parentButtonEl = document.getElementById('parentButton');
-    const parentPanelEl = document.getElementById('parentPanel');
-    const parentPanelCloseEl = document.getElementById('parentPanelClose');
-    const parentPassEl = document.getElementById('parentPass');
-    const parentStreakEl = document.getElementById('parentStreak');
-    const parentDaysEl = document.getElementById('parentDays');
-    const parentCrystalsEl = document.getElementById('parentCrystals');
-    const parentApplyEl = document.getElementById('parentApply');
-    const parentResetEl = document.getElementById('parentReset');
-
-    // ============================================================
-    // WORLD STRUCTURE
-    // ============================================================
-    const world = {
-      hero: {
-        x: 40,
-        y: 260,
-        w: 20,
-        h: 20,
-        frame: 0,
-        frameTime: 0
-      },
-      enemies: [],
-      enemySpawnTimer: 0,
-      enemySpawnInterval: 0.9,
-      backgroundOffset: 0,
-      backgroundSpeed: 40,
-      boss: {
-        x: 220,
-        y: 120,
-        w: 50,
-        h: 50
-      },
-      particles: [],
-      foregroundBits: []
+    let state={
+      inPre:false,inRun:false,inLoot:false,
+      preTime:PRE_COUNTDOWN,timeLeft:RUN_DURATION,
+      zone:1,lastTs:0,acc:0,
+      score:0,streak:0,days:0,crystals:0,skin:'DEFAULT',
+      lootThisRun:0
     };
 
-    // ============================================================
-    // LOCAL STORAGE HELPERS
-    // ============================================================
-    function loadProgress() {
-      streak = parseInt(localStorage.getItem('tb_streak') || '0', 10);
-      daysPlayed = parseInt(localStorage.getItem('tb_days') || '0', 10);
-      crystals = parseInt(localStorage.getItem('tb_crystals') || '0', 10);
-      updateHUD();
+    let hero={x:60,y:320,w:24,h:24,vy:0,onGround:true,anim:0,animT:0};
+    let groundY=360;
+    let scrollX=0;
+    let obstacles=[];
+    let particles=[];
+
+    function formatTime(sec){
+      const m=Math.floor(sec/60);
+      const s=sec%60;
+      return m+':'+(s<10?'0'+s:s);
+    }
+    function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+
+    function loadProgress(){
+      state.streak=parseInt(localStorage.getItem('tr_streak')||'0',10);
+      state.days=parseInt(localStorage.getItem('tr_days')||'0',10);
+      state.crystals=parseInt(localStorage.getItem('tr_crystals')||'0',10);
+    }
+    function saveProgress(){
+      localStorage.setItem('tr_streak',state.streak);
+      localStorage.setItem('tr_days',state.days);
+      localStorage.setItem('tr_crystals',state.crystals);
     }
 
-    function saveProgress() {
-      localStorage.setItem('tb_streak', String(streak));
-      localStorage.setItem('tb_days', String(daysPlayed));
-      localStorage.setItem('tb_crystals', String(crystals));
+    function updateHUD(){
+      timerDisplay.textContent=formatTime(Math.max(0,Math.floor(state.timeLeft)));
+      streakDisplay.textContent='STREAK: '+state.streak;
+      daysDisplay.textContent='DAYS: '+state.days;
+      crystalDisplay.textContent='CRYSTALS: '+state.crystals;
+      skinDisplay.textContent='SKIN: '+state.skin;
+      zoneDisplay.textContent=
+        'ZONE '+state.zone+' • '+
+        (state.zone===1?'ENAMEL DISTRICT':
+         state.zone===2?'FLOSS HIGHWAY':
+         state.zone===3?'GUMLINE FORGE':
+         'CAVITY CORE');
+    }
+    function updateProgressBar(){
+      const elapsed=RUN_DURATION-state.timeLeft;
+      const r=clamp(elapsed/RUN_DURATION,0,1);
+      progressBarInner.style.width=(r*100)+'%';
     }
 
-    function resetProgress() {
-      streak = 0;
-      daysPlayed = 0;
-      crystals = 0;
-      saveProgress();
-      updateHUD();
+    function setZone(z){
+      state.zone=z;
+      gameContainer.classList.remove('zone1-bg','zone2-bg','zone3-bg','zone4-bg');
+      gameContainer.classList.add('zone'+z+'-bg');
+      gameContainer.classList.add('flash');
+      setTimeout(()=>gameContainer.classList.remove('flash'),250);
     }
 
-    // ============================================================
-    // AUDIO
-    // ============================================================
-    function initAudio() {
-      if (audioCtx) return;
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function resetWorld(){
+      hero.x=60;hero.y=groundY-hero.h;
+      hero.vy=0;hero.onGround=true;
+      hero.anim=0;hero.animT=0;
+      scrollX=0;obstacles=[];particles=[];
     }
 
-    function beep(freq, dur, vol = 0.2) {
-      if (!audioCtx) return;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.value = freq;
-      gain.gain.value = vol;
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + dur);
-    }
-
-    function vibrate(ms) {
-      if (navigator.vibrate) navigator.vibrate(ms);
-    }
-
-    // ============================================================
-    // HUD & TIMER
-    // ============================================================
-    function formatTime(seconds) {
-      const m = Math.floor(seconds / 60);
-      const s = seconds % 60;
-      return m + ':' + (s < 10 ? '0' + s : s);
-    }
-
-    function updateHUD() {
-      scoreDisplayEl.textContent = 'SCORE: ' + String(score).padStart(5, '0');
-      streakDisplayEl.textContent = 'STREAK: ' + streak;
-    }
-
-    function updateTimerDisplay() {
-      timerDisplayEl.textContent = formatTime(timeLeft);
-      if (timeLeft <= 10 && inGame) {
-        timerDisplayEl.classList.add('flashTimer');
-      } else {
-        timerDisplayEl.classList.remove('flashTimer');
-      }
-    }
-
-    function updateZoneDisplay() {
-      if (!inGame && !inPreCountdown) {
-        zoneDisplayEl.textContent = 'READY FOR NEXT MISSION';
-        return;
-      }
-      if (timeLeft > 90) {
-        zoneDisplayEl.textContent = 'ZONE: 1 • TOP LEFT';
-      } else if (timeLeft > 60) {
-        zoneDisplayEl.textContent = 'ZONE: 2 • TOP RIGHT';
-      } else if (timeLeft > 30) {
-        zoneDisplayEl.textContent = 'ZONE: 3 • BOTTOM LEFT';
-      } else {
-        zoneDisplayEl.textContent = 'ZONE: 4 • BOTTOM RIGHT';
-      }
-    }
-
-    function updateProgressBar() {
-      const elapsed = TOTAL_TIME - timeLeft;
-      const ratio = Math.max(0, Math.min(1, elapsed / TOTAL_TIME));
-      progressFillEl.style.width = (ratio * 100) + '%';
-    }
-
-    // ============================================================
-    // WORLD RESET
-    // ============================================================
-    function resetWorld() {
-      world.enemies = [];
-      world.particles = [];
-      world.foregroundBits = [];
-      world.backgroundOffset = 0;
-      world.enemySpawnTimer = 0;
-      bossHealth = 100;
-      bossActive = false;
-      world.hero.x = 40;
-      world.hero.y = 260;
-      world.hero.frame = 0;
-      world.hero.frameTime = 0;
-      spawnInitialForeground();
-    }
-
-    function spawnInitialForeground() {
-      world.foregroundBits = [];
-      for (let i = 0; i < 20; i++) {
-        world.foregroundBits.push({
-          x: Math.random() * canvas.width,
-          y: 320 + Math.random() * 120,
-          w: 8 + Math.random() * 8,
-          h: 4,
-          speed: 20 + Math.random() * 20
-        });
-      }
-    }
-
-    // ============================================================
-    // ENEMIES & PARTICLES
-    // ============================================================
-    function spawnEnemy() {
-      const y = 60 + Math.random() * 260;
-      const speed = 40 + Math.random() * 40;
-      const type = Math.random() < 0.5 ? 'drone' : 'ufo';
-      world.enemies.push({
-        x: canvas.width + 20,
-        y,
-        w: 18,
-        h: 18,
-        speed,
-        alive: true,
-        type,
-        frame: 0,
-        frameTime: 0
+    function spawnObstacle(){
+      const gap=80+Math.random()*80;
+      const w=20+Math.random()*20;
+      obstacles.push({
+        x:canvas.width+gap,
+        y:groundY-16,
+        w:w,h:16,
+        type:Math.random()<0.2?'tooth':'block'
       });
     }
 
-    function addParticle(x, y, color) {
-      for (let i = 0; i < 8; i++) {
-        world.particles.push({
-          x,
-          y,
-          vx: (Math.random() - 0.5) * 80,
-          vy: (Math.random() - 0.5) * 80,
-          life: 0.4 + Math.random() * 0.2,
+    function addParticles(x,y,color,count=8){
+      for(let i=0;i<count;i++){
+        particles.push({
+          x,y,
+          vx:(Math.random()-0.5)*80,
+          vy:(Math.random()-0.5)*80,
+          life:0.4+Math.random()*0.3,
           color
         });
       }
     }
 
-    // ============================================================
-    // GAME UPDATE
-    // ============================================================
-    function updateGame(dt) {
-      if (!inGame) return;
-
-      // Background scroll
-      world.backgroundOffset -= world.backgroundSpeed * dt;
-      if (world.backgroundOffset < -canvas.width) {
-        world.backgroundOffset += canvas.width;
-      }
-
-      // Hero animation
-      world.hero.frameTime += dt;
-      if (world.hero.frameTime > 0.15) {
-        world.hero.frameTime = 0;
-        world.hero.frame = (world.hero.frame + 1) % 2;
-      }
-
-      // Foreground bits
-      for (let f of world.foregroundBits) {
-        f.x -= f.speed * dt;
-        if (f.x + f.w < 0) {
-          f.x = canvas.width + Math.random() * 40;
-          f.y = 320 + Math.random() * 120;
-        }
-      }
-
-      // Enemy spawn
-      world.enemySpawnTimer += dt;
-      const spawnInterval = bossActive ? 1.2 : 0.9;
-      if (world.enemySpawnTimer >= spawnInterval) {
-        world.enemySpawnTimer = 0;
-        if (!bossActive || Math.random() > 0.4) {
-          spawnEnemy();
-        }
-      }
-
-      // Move enemies
-      for (let e of world.enemies) {
-        if (!e.alive) continue;
-        e.x -= e.speed * dt;
-        e.frameTime += dt;
-        if (e.frameTime > 0.2) {
-          e.frameTime = 0;
-          e.frame = (e.frame + 1) % 2;
-        }
-        if (e.x + e.w < 0) {
-          e.alive = false;
-          streak = 0;
-          updateHUD();
-        }
-      }
-      world.enemies = world.enemies.filter(e => e.alive);
-
-      // Auto-fire logic
-      const fireRate = bossActive ? 7 : 5;
-      const expectedHits = fireRate * dt;
-      const wholeHits = Math.floor(expectedHits);
-      for (let i = 0; i < wholeHits; i++) {
-        autoHit();
-      }
-
-      // Particles
-      for (let p of world.particles) {
-        p.life -= dt;
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-      }
-      world.particles = world.particles.filter(p => p.life > 0);
+    function startPre(){
+      state.inPre=true;state.inRun=false;state.inLoot=false;
+      state.preTime=PRE_COUNTDOWN;
+      timerDisplay.textContent='0:0'+PRE_COUNTDOWN;
     }
 
-    function autoHit() {
-      // Prefer enemies, then boss
-      if (world.enemies.length > 0) {
-        const e = world.enemies[Math.floor(Math.random() * world.enemies.length)];
-        if (e && e.alive) {
-          e.alive = false;
-          addParticle(e.x + e.w / 2, e.y + e.h / 2, '#ff6666');
-          score += 10;
-          streak += 1;
-          updateHUD();
-          beep(700 + Math.random() * 200, 0.05, 0.25);
-        }
-      } else if (bossActive) {
-        bossHealth -= 1;
-        if (bossHealth < 0) bossHealth = 0;
-        addParticle(world.boss.x + world.boss.w / 2, world.boss.y + world.boss.h / 2, '#ff00ff');
-        score += 5;
-        streak += 1;
-        updateHUD();
-        beep(400, 0.05, 0.3);
-        if (bossHealth === 0) {
-          bossActive = false;
-          score += 100;
-          updateHUD();
-          vibrate(80);
-        }
-      }
+    function startRun(){
+      state.inPre=false;state.inRun=true;state.inLoot=false;
+      state.timeLeft=RUN_DURATION;
+      state.zone=1;state.score=0;state.lootThisRun=0;
+      setZone(1);resetWorld();updateHUD();updateProgressBar();
     }
 
-    // ============================================================
-    // GAME RENDER
-    // ============================================================
-    function drawBackground() {
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Starfield
-      ctx.fillStyle = '#222222';
-      for (let x = world.backgroundOffset; x < canvas.width + 40; x += 16) {
-        for (let y = 0; y < canvas.height; y += 16) {
-          if ((x + y) % 32 === 0) {
-            ctx.fillRect(x, y, 2, 2);
-          }
-        }
-      }
-
-      // Zone tint
-      if (timeLeft > 90) {
-        ctx.fillStyle = 'rgba(0, 80, 160, 0.3)';
-      } else if (timeLeft > 60) {
-        ctx.fillStyle = 'rgba(0, 160, 80, 0.3)';
-      } else if (timeLeft > 30) {
-        ctx.fillStyle = 'rgba(160, 80, 0, 0.3)';
-      } else {
-        ctx.fillStyle = 'rgba(160, 0, 160, 0.3)';
-      }
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Simple skyline silhouettes
-      ctx.fillStyle = '#111122';
-      for (let i = 0; i < 8; i++) {
-        const bx = (i * 50 + (world.backgroundOffset * 0.5)) % (canvas.width + 60) - 30;
-        const bh = 40 + (i % 3) * 20;
-        ctx.fillRect(bx, canvas.height - bh - 80, 30, bh);
-      }
+    function endRun(){
+      if(state.inLoot)return;
+      state.inRun=false;state.inLoot=true;
+      const base=10;
+      const scoreBonus=Math.floor(state.score/50);
+      const streakBonus=Math.floor(state.streak/2);
+      const reward=base+scoreBonus+streakBonus;
+      state.crystals+=reward;
+      state.days+=1;
+      state.streak+=1;
+      state.lootThisRun=reward;
+      saveProgress();updateHUD();
+      lootOverlay.style.display='flex';
+      lootBoxLabel.textContent='TAP TO OPEN';
+      lootResult.textContent='';
+      lootBox.classList.add('lootPulse');
     }
 
-    function drawHero() {
-      const h = world.hero;
-      // Body
-      ctx.fillStyle = '#00ccff';
-      ctx.fillRect(h.x, h.y, h.w, h.h);
-      // Helmet stripe
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(h.x + 4, h.y + 2, 10, 3);
-      // Visor
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(h.x + 4, h.y + 6, 8, 4);
-      // Arm cannon
-      ctx.fillStyle = '#ffff00';
-      ctx.fillRect(h.x + h.w, h.y + 6, 6, 8);
-      // Legs
-      if (h.frame === 0) {
-        ctx.fillStyle = '#003344';
-        ctx.fillRect(h.x + 3, h.y + h.h - 4, 5, 4);
-      } else {
-        ctx.fillStyle = '#003344';
-        ctx.fillRect(h.x + 9, h.y + h.h - 4, 5, 4);
-      }
-      // Simple muzzle flash
-      if (Math.random() < 0.3 && inGame) {
-        ctx.fillStyle = '#ffff88';
-        ctx.fillRect(h.x + h.w + 6, h.y + 8, 4, 4);
-      }
-    }
-
-    function drawEnemies() {
-      for (let e of world.enemies) {
-        if (e.type === 'drone') {
-          ctx.fillStyle = '#ff3366';
-          ctx.fillRect(e.x, e.y, e.w, e.h);
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(e.x + 4, e.y + 4, 4, 4);
-          ctx.fillStyle = '#000000';
-          ctx.fillRect(e.x + 5, e.y + 5, 2, 2);
-        } else {
-          ctx.fillStyle = '#ffcc00';
-          ctx.fillRect(e.x, e.y, e.w, e.h);
-          ctx.fillStyle = '#000000';
-          ctx.fillRect(e.x + 3, e.y + 3, 12, 4);
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(e.x + 6, e.y + 8, 4, 4);
-        }
-      }
-    }
-
-    function drawBoss() {
-      if (!bossActive && bossHealth <= 0) return;
-      if (!bossActive && timeLeft > 30) return;
-
-      if (!bossActive && timeLeft <= 30) {
-        bossActive = true;
-        gameContainerEl.classList.add('screenShake');
-        setTimeout(() => gameContainerEl.classList.remove('screenShake'), 400);
-        beep(200, 0.2, 0.4);
-        beep(120, 0.2, 0.4);
-      }
-
-      const b = world.boss;
-      ctx.fillStyle = '#ff00ff';
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-
-      // Eyes
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(b.x + 8, b.y + 12, 8, 8);
-      ctx.fillRect(b.x + 30, b.y + 12, 8, 8);
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(b.x + 11, b.y + 15, 3, 3);
-      ctx.fillRect(b.x + 33, b.y + 15, 3, 3);
-
-      // Mouth
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(b.x + 10, b.y + 30, 30, 6);
-
-      // Health bar
-      const barWidth = 80;
-      const barHeight = 8;
-      const barX = canvas.width / 2 - barWidth / 2;
-      const barY = 10;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(barX, barY, barWidth, barHeight);
-      ctx.fillStyle = '#ff3366';
-      const healthRatio = Math.max(0, bossHealth / 100);
-      ctx.fillRect(barX + 1, barY + 1, (barWidth - 2) * healthRatio, barHeight - 2);
-    }
-
-    function drawParticles() {
-      for (let p of world.particles) {
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.x, p.y, 2, 2);
-      }
-    }
-
-    function drawForeground() {
-      ctx.fillStyle = '#222222';
-      for (let f of world.foregroundBits) {
-        ctx.fillRect(f.x, f.y, f.w, f.h);
-      }
-    }
-
-    function renderGame() {
-      drawBackground();
-      drawHero();
-      drawEnemies();
-      drawBoss();
-      drawParticles();
-      drawForeground();
-    }
-
-    // ============================================================
-    // MAIN LOOP
-    // ============================================================
-    function gameLoop(timestamp) {
-      if (!lastFrameTime) lastFrameTime = timestamp;
-      const delta = (timestamp - lastFrameTime) / 1000;
-      lastFrameTime = timestamp;
-
-      accumulatedTime += delta;
-      secondTickAccumulator += delta;
-
-      const step = 1 / FPS;
-      while (accumulatedTime >= step) {
-        accumulatedTime -= step;
-        updateGame(step);
-      }
-
-      while (secondTickAccumulator >= 1) {
-        secondTickAccumulator -= 1;
-        handleSecondTick();
-      }
-
-      renderGame();
-
-      gameLoopId = requestAnimationFrame(gameLoop);
-    }
-
-    function handleSecondTick() {
-      if (inPreCountdown) {
-        preTimeLeft--;
-        if (preTimeLeft <= 0) {
-          inPreCountdown = false;
-          inGame = true;
-          timeLeft = TOTAL_TIME;
-          updateTimerDisplay();
-          updateZoneDisplay();
-          updateProgressBar();
-          beep(800, 0.15, 0.4);
-        } else {
-          timerDisplayEl.textContent = '0:0' + preTimeLeft;
-          beep(500 + preTimeLeft * 50, 0.1, 0.3);
+    function update(dt){
+      if(state.inPre){
+        state.preTime-=dt;
+        if(state.preTime<=0){startRun();}
+        else{
+          const s=Math.ceil(state.preTime);
+          timerDisplay.textContent='0:0'+s;
         }
         return;
       }
+      if(!state.inRun)return;
 
-      if (inGame) {
-        timeLeft--;
-        if (timeLeft <= 0) {
-          timeLeft = 0;
-          updateTimerDisplay();
-          updateProgressBar();
-          endRun();
-        } else {
-          updateTimerDisplay();
-          updateZoneDisplay();
-          updateProgressBar();
+      state.timeLeft-=dt;
+      if(state.timeLeft<=0){
+        state.timeLeft=0;
+        updateHUD();updateProgressBar();
+        endRun();return;
+      }
+
+      const prevZone=state.zone;
+      const elapsed=RUN_DURATION-state.timeLeft;
+      const newZone=Math.floor(elapsed/ZONE_LENGTH)+1;
+      if(newZone!==prevZone && newZone>=1 && newZone<=4){setZone(newZone);}
+
+      if(Math.floor(state.timeLeft)!==Math.floor(state.timeLeft+dt)){
+        updateHUD();updateProgressBar();
+      }
+
+      const speed=140;
+      scrollX+=speed*dt;
+
+      hero.animT+=dt;
+      if(hero.animT>0.15){hero.animT=0;hero.anim=(hero.anim+1)%2;}
+
+      hero.vy+=600*dt;
+      hero.y+=hero.vy*dt;
+      if(hero.y+hero.h>=groundY){
+        hero.y=groundY-hero.h;
+        hero.vy=0;hero.onGround=true;
+      }
+
+      if(Math.random()<0.02)spawnObstacle();
+
+      for(let o of obstacles){o.x-=speed*dt;}
+      obstacles=obstacles.filter(o=>o.x+o.w>-20);
+
+      for(let o of obstacles){
+        if(o.x<hero.x+hero.w &&
+           o.x+o.w>hero.x &&
+           o.y<hero.y+hero.h &&
+           o.y+o.h>hero.y){
+          addParticles(hero.x+hero.w/2,hero.y+hero.h/2,'#ff6666',12);
+          state.streak=0;
+          state.score=Math.max(0,state.score-50);
+          updateHUD();
         }
       }
+
+      for(let p of particles){
+        p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
+      }
+      particles=particles.filter(p=>p.life>0);
+
+      state.score+=Math.floor(20*dt);
     }
 
-    // ============================================================
-    // RUN CONTROL
-    // ============================================================
-    function startRun() {
-      initAudio();
-      overlayEl.style.display = 'none';
-      resizeCanvasToContainer(); // ensure canvas fits once overlay is gone
-      lootOverlayEl.style.display = 'none';
-      lootOpenedThisRun = false;
+    function render(){
+      ctx.fillStyle='#000';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
 
-      inPreCountdown = true;
-      inGame = false;
-      inLoot = false;
-
-      preTimeLeft = PRE_COUNTDOWN;
-      timeLeft = TOTAL_TIME;
-      score = 0;
-
-      updateHUD();
-      timerDisplayEl.textContent = '0:0' + PRE_COUNTDOWN;
-      progressFillEl.style.width = '0%';
-      zoneDisplayEl.textContent = 'GET READY...';
-
-      resetWorld();
-
-      lastFrameTime = 0;
-      accumulatedTime = 0;
-      secondTickAccumulator = 0;
-
-      beep(400, 0.1, 0.3);
-      vibrate(60);
-
-      if (gameLoopId) cancelAnimationFrame(gameLoopId);
-      gameLoopId = requestAnimationFrame(gameLoop);
-    }
-
-    function endRun() {
-      inGame = false;
-      inLoot = true;
-
-      const baseCrystals = 10;
-      const scoreBonus = Math.floor(score / 50);
-      const streakBonus = Math.max(0, streak);
-      const runCrystals = baseCrystals + scoreBonus + Math.floor(streakBonus / 2);
-
-      crystals += runCrystals;
-      daysPlayed += 1;
-      streak += 1;
-
-      saveProgress();
-      updateHUD();
-
-      beep(800, 0.15, 0.4);
-      beep(1000, 0.15, 0.4);
-      beep(1200, 0.25, 0.5);
-      vibrate(120);
-
-      showLootBox(runCrystals);
-    }
-
-    // ============================================================
-    // LOOT BOX
-    // ============================================================
-    function showLootBox(runCrystals) {
-      lastRunCrystals = runCrystals;
-      lootOpenedThisRun = false;
-      lootBoxLabelEl.textContent = 'TAP TO OPEN';
-      lootInfoEl.textContent = '';
-      lootOverlayEl.style.display = 'flex';
-      lootBoxEl.classList.add('lootPulse');
-      resizeCanvasToContainer(); // when overlay appears, still keep layout sane
-    }
-
-    function openLootBox() {
-      if (lootOpenedThisRun) return;
-      lootOpenedThisRun = true;
-
-      beep(900, 0.15, 0.4);
-      beep(1100, 0.15, 0.4);
-      vibrate(80);
-
-      lootBoxLabelEl.textContent = 'OPENED!';
-      lootBoxEl.classList.remove('lootPulse');
-
-      lootInfoEl.textContent =
-        'SCORE: ' + score +
-        '\nSTREAK: ' + streak +
-        '\nCRYSTALS THIS RUN: ' + lastRunCrystals +
-        '\nTOTAL CRYSTALS: ' + crystals +
-        '\nDAYS PLAYED: ' + daysPlayed;
-    }
-
-    // ============================================================
-    // PARENT CONTROLS
-    // ============================================================
-    function openParentPanel() {
-      parentPanelEl.style.display = 'block';
-      parentPassEl.value = '';
-      parentStreakEl.value = streak;
-      parentDaysEl.value = daysPlayed;
-      parentCrystalsEl.value = crystals;
-    }
-
-    function closeParentPanel() {
-      parentPanelEl.style.display = 'none';
-    }
-
-    function applyParentChanges() {
-      const pass = parentPassEl.value.trim();
-      if (pass !== '1202') {
-        alert('Incorrect passcode.');
-        return;
+      ctx.fillStyle='#111';
+      for(let x=-(scrollX%40);x<canvas.width;x+=40){
+        ctx.fillRect(x,groundY,40,4);
       }
 
-      const newStreak = parseInt(parentStreakEl.value || '0', 10);
-      const newDays = parseInt(parentDaysEl.value || '0', 10);
-      const newCrystals = parseInt(parentCrystalsEl.value || '0', 10);
-
-      streak = isNaN(newStreak) ? 0 : newStreak;
-      daysPlayed = isNaN(newDays) ? 0 : newDays;
-      crystals = isNaN(newCrystals) ? 0 : newCrystals;
-
-      saveProgress();
-      updateHUD();
-      closeParentPanel();
-    }
-
-    function parentResetAll() {
-      const pass = parentPassEl.value.trim();
-      if (pass !== '1202') {
-        alert('Incorrect passcode.');
-        return;
+      ctx.fillStyle='#222';
+      for(let x=-(scrollX*0.5%80);x<canvas.width;x+=80){
+        ctx.fillRect(x,groundY-40,40,20);
       }
-      if (!confirm('Reset all progress?')) return;
-      resetProgress();
-      parentStreakEl.value = streak;
-      parentDaysEl.value = daysPlayed;
-      parentCrystalsEl.value = crystals;
-    }
 
-    // ============================================================
-    // DYNAMIC CANVAS SIZING FOR IPHONE 15 PORTRAIT
-    // ============================================================
-    function resizeCanvasToContainer() {
-      const appRect = document.getElementById('app').getBoundingClientRect();
+      ctx.fillStyle='#00ccff';
+      ctx.fillRect(hero.x,hero.y,hero.w,hero.h);
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(hero.x+4,hero.y+4,8,4);
+      ctx.fillStyle='#000000';
+      ctx.fillRect(hero.x+5,hero.y+5,3,2);
+      ctx.fillStyle='#ffff00';
+      ctx.fillRect(hero.x+hero.w-4,hero.y+10,6,4);
 
-      const titleH = document.getElementById('titleBar').offsetHeight;
-      const hudH = document.getElementById('hud').offsetHeight;
-      const zoneH = document.getElementById('zoneDisplay').offsetHeight;
-      const progressH = document.getElementById('progressWrapper').offsetHeight;
-      const bottomH = document.getElementById('bottomHint').offsetHeight;
-      const parentH = document.getElementById('parentBar').offsetHeight;
-
-      const uiHeight = titleH + hudH + zoneH + progressH + bottomH + parentH + 20;
-
-      const viewportH = window.innerHeight;
-
-      const available = viewportH - uiHeight;
-
-      const baseW = 320;
-      const baseH = 480;
-
-      const scale = Math.max(0.5, available / baseH);
-
-      canvas.width = baseW;
-      canvas.height = baseH;
-
-      canvas.style.width = (baseW * scale) + 'px';
-      canvas.style.height = (baseH * scale) + 'px';
-    }
-
-    // ============================================================
-    // EVENT LISTENERS
-    // ============================================================
-    startButtonEl.addEventListener('click', startRun);
-
-    lootBoxEl.addEventListener('click', openLootBox);
-    lootCloseButtonEl.addEventListener('click', () => {
-      lootOverlayEl.style.display = 'none';
-      overlayEl.style.display = 'flex';
-      updateZoneDisplay();
-      resizeCanvasToContainer();
-    });
-
-    parentButtonEl.addEventListener('click', openParentPanel);
-    parentPanelCloseEl.addEventListener('click', closeParentPanel);
-    parentApplyEl.addEventListener('click', applyParentChanges);
-    parentResetEl.addEventListener('click', parentResetAll);
-
-    // Prevent scroll / zoom on double tap in Safari
-    document.addEventListener('touchmove', function (e) {
-      if (e.target === canvas || e.target === gameContainerEl) {
-        e.preventDefault();
+      ctx.fillStyle='#ff8844';
+      for(let o of obstacles){
+        ctx.fillRect(o.x,o.y,o.w,o.h);
+        if(o.type==='tooth'){
+          ctx.fillStyle='#ffffff';
+          ctx.fillRect(o.x+2,o.y-6,o.w-4,6);
+          ctx.fillStyle='#ff8844';
+        }
       }
-    }, { passive: false });
 
-    window.addEventListener('resize', () => {
-      resizeCanvasToContainer();
-      renderGame();
+      for(let p of particles){
+        ctx.fillStyle=p.color;
+        ctx.fillRect(p.x,p.y,2,2);
+      }
+    }
+
+    function loop(ts){
+      if(!state.lastTs)state.lastTs=ts;
+      let delta=(ts-state.lastTs)/1000;
+      state.lastTs=ts;
+      if(delta>0.05)delta=0.05;
+      state.acc+=delta;
+      while(state.acc>=DT){
+        update(DT);
+        state.acc-=DT;
+      }
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    function resizeCanvas(){
+      const titleH=document.getElementById('titleBar').offsetHeight;
+      const hudH=document.getElementById('hud').offsetHeight;
+      const progH=document.getElementById('progressBarSection').offsetHeight;
+      const bottomH=document.getElementById('bottomHint').offsetHeight;
+      const parentH=document.getElementById('parentBar').offsetHeight;
+      const uiH=titleH+hudH+progH+bottomH+parentH+20;
+      const vh=window.innerHeight;
+      const avail=vh-uiH;
+      const baseW=320,baseH=480;
+      const scale=Math.max(0.5,avail/baseH);
+      canvas.width=baseW;canvas.height=baseH;
+      canvas.style.width=(baseW*scale)+'px';
+      canvas.style.height=(baseH*scale)+'px';
+    }
+
+    startButton.addEventListener('click',()=>{
+      startOverlay.style.display='none';
+      startPre();
     });
 
-    window.addEventListener('orientationchange', () => {
-      setTimeout(() => {
-        resizeCanvasToContainer();
-        renderGame();
-      }, 300);
+    lootBox.addEventListener('click',()=>{
+      if(!state.inLoot)return;
+      lootBoxLabel.textContent='OPENED!';
+      lootBox.classList.remove('lootPulse');
+      lootResult.textContent=
+        'CRYSTALS THIS RUN: '+state.lootThisRun+
+        '\nTOTAL CRYSTALS: '+state.crystals+
+        '\nSTREAK: '+state.streak+
+        '\nDAYS: '+state.days;
     });
 
-    // ============================================================
-    // INIT
-    // ============================================================
+    lootOkButton.addEventListener('click',()=>{
+      lootOverlay.style.display='none';
+      startOverlay.style.display='flex';
+      state.inLoot=false;
+    });
+
+    parentOpenButton.addEventListener('click',()=>{
+      parentPanel.style.display='block';
+      parentPassInput.value='';
+      parentStreakInput.value=state.streak;
+      parentDaysInput.value=state.days;
+      parentCrystalsInput.value=state.crystals;
+    });
+    parentCloseButton.addEventListener('click',()=>{parentPanel.style.display='none';});
+    parentApplyButton.addEventListener('click',()=>{
+      if(parentPassInput.value!=='1202'){alert('Incorrect passcode');return;}
+      state.streak=parseInt(parentStreakInput.value||'0',10);
+      state.days=parseInt(parentDaysInput.value||'0',10);
+      state.crystals=parseInt(parentCrystalsInput.value||'0',10);
+      saveProgress();updateHUD();
+      parentPanel.style.display='none';
+    });
+    parentResetButton.addEventListener('click',()=>{
+      if(parentPassInput.value!=='1202'){alert('Incorrect passcode');return;}
+      if(!confirm('Reset all progress?'))return;
+      state.streak=0;state.days=0;state.crystals=0;
+      saveProgress();updateHUD();
+      parentPanel.style.display='none';
+    });
+
+    window.addEventListener('resize',()=>{resizeCanvas();render();});
+    window.addEventListener('orientationchange',()=>{setTimeout(()=>{resizeCanvas();render();},300);});
+
     loadProgress();
-    updateTimerDisplay();
-    updateZoneDisplay();
+    updateHUD();
     updateProgressBar();
-    resizeCanvasToContainer();
-    renderGame();
+    resizeCanvas();
+    requestAnimationFrame(loop);
   </script>
 </body>
 </html>
