@@ -5,6 +5,21 @@
   <title>Tooth Blaster 2084</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
+  <!--
+    TOOTH BLASTER 2084
+    8-bit toothbrush timer arcade
+    Target: iPhone 15 portrait, Safari
+    Features:
+      - 5 second pre-countdown
+      - 2 minute auto-play battle
+      - 4 zones (quadrants)
+      - Boss in final 30 seconds
+      - Loot box reward
+      - LocalStorage streak/days/crystals
+      - Parent controls (passcode 1202)
+      - Dynamic canvas sizing to fit viewport
+  -->
+
   <!-- Retro font -->
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
@@ -18,7 +33,8 @@
       padding: 0;
     }
 
-    html, body {
+    html,
+    body {
       width: 100%;
       height: 100%;
       background: #000000;
@@ -36,11 +52,12 @@
     /* ============================================================
        LAYOUT WRAPPER
        Portrait-focused, full-height on iPhone 15
+       NOTE: we do NOT force 100vh here because iOS Safari lies.
+       We let the browser size naturally and then compute canvas size.
        ============================================================ */
     #app {
       width: 100%;
       max-width: 480px;
-      height: 100vh;
       display: flex;
       flex-direction: column;
       padding: 8px;
@@ -126,13 +143,11 @@
       background: #000000;
       overflow: hidden;
       display: flex;
-      align-items: stretch;
+      align-items: center;
       justify-content: center;
     }
 
     #gameCanvas {
-      width: 100%;
-      height: 100%;
       image-rendering: pixelated;
       display: block;
     }
@@ -278,8 +293,13 @@
     }
 
     @keyframes flashTimer {
-      0%, 100% { color: #ffffff; }
-      50% { color: #ff4444; }
+      0%,
+      100% {
+        color: #ffffff;
+      }
+      50% {
+        color: #ff4444;
+      }
     }
 
     .screenShake {
@@ -287,11 +307,21 @@
     }
 
     @keyframes screenShake {
-      0% { transform: translate(0, 0); }
-      25% { transform: translate(-3px, 2px); }
-      50% { transform: translate(3px, -2px); }
-      75% { transform: translate(-2px, -3px); }
-      100% { transform: translate(0, 0); }
+      0% {
+        transform: translate(0, 0);
+      }
+      25% {
+        transform: translate(-3px, 2px);
+      }
+      50% {
+        transform: translate(3px, -2px);
+      }
+      75% {
+        transform: translate(-2px, -3px);
+      }
+      100% {
+        transform: translate(0, 0);
+      }
     }
 
     .lootPulse {
@@ -299,8 +329,15 @@
     }
 
     @keyframes lootPulse {
-      0%, 100% { transform: scale(1); box-shadow: 0 0 0 4px #ffffff, 0 0 20px #ffcc00; }
-      50% { transform: scale(1.05); box-shadow: 0 0 0 4px #ffffff, 0 0 30px #ffff66; }
+      0%,
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 4px #ffffff, 0 0 20px #ffcc00;
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 4px #ffffff, 0 0 30px #ffff66;
+      }
     }
 
     /* ============================================================
@@ -467,6 +504,7 @@ Tap START, then start brushing like a maniac.
     </div>
 
     <div id="gameContainer">
+      <!-- Base canvas resolution; we will scale it dynamically -->
       <canvas id="gameCanvas" width="320" height="480"></canvas>
       <div id="crtOverlay"></div>
     </div>
@@ -1074,6 +1112,7 @@ Tap START, then start brushing like a maniac.
     function startRun() {
       initAudio();
       overlayEl.style.display = 'none';
+      resizeCanvasToContainer(); // ensure canvas fits once overlay is gone
       lootOverlayEl.style.display = 'none';
       lootOpenedThisRun = false;
 
@@ -1137,6 +1176,7 @@ Tap START, then start brushing like a maniac.
       lootInfoEl.textContent = '';
       lootOverlayEl.style.display = 'flex';
       lootBoxEl.classList.add('lootPulse');
+      resizeCanvasToContainer(); // when overlay appears, still keep layout sane
     }
 
     function openLootBox() {
@@ -1207,6 +1247,37 @@ Tap START, then start brushing like a maniac.
     }
 
     // ============================================================
+    // DYNAMIC CANVAS SIZING FOR IPHONE 15 PORTRAIT
+    // ============================================================
+    function resizeCanvasToContainer() {
+      const appRect = document.getElementById('app').getBoundingClientRect();
+
+      const titleH = document.getElementById('titleBar').offsetHeight;
+      const hudH = document.getElementById('hud').offsetHeight;
+      const zoneH = document.getElementById('zoneDisplay').offsetHeight;
+      const progressH = document.getElementById('progressWrapper').offsetHeight;
+      const bottomH = document.getElementById('bottomHint').offsetHeight;
+      const parentH = document.getElementById('parentBar').offsetHeight;
+
+      const uiHeight = titleH + hudH + zoneH + progressH + bottomH + parentH + 20;
+
+      const viewportH = window.innerHeight;
+
+      const available = viewportH - uiHeight;
+
+      const baseW = 320;
+      const baseH = 480;
+
+      const scale = Math.max(0.5, available / baseH);
+
+      canvas.width = baseW;
+      canvas.height = baseH;
+
+      canvas.style.width = (baseW * scale) + 'px';
+      canvas.style.height = (baseH * scale) + 'px';
+    }
+
+    // ============================================================
     // EVENT LISTENERS
     // ============================================================
     startButtonEl.addEventListener('click', startRun);
@@ -1216,6 +1287,7 @@ Tap START, then start brushing like a maniac.
       lootOverlayEl.style.display = 'none';
       overlayEl.style.display = 'flex';
       updateZoneDisplay();
+      resizeCanvasToContainer();
     });
 
     parentButtonEl.addEventListener('click', openParentPanel);
@@ -1224,37 +1296,27 @@ Tap START, then start brushing like a maniac.
     parentResetEl.addEventListener('click', parentResetAll);
 
     // Prevent scroll / zoom on double tap in Safari
-    document.addEventListener('touchmove', function(e) {
+    document.addEventListener('touchmove', function (e) {
       if (e.target === canvas || e.target === gameContainerEl) {
         e.preventDefault();
       }
     }, { passive: false });
-
-    // ============================================================
-    // INIT
-    // ============================================================
-    function resizeCanvasToContainer() {
-      const rect = gameContainerEl.getBoundingClientRect();
-      const targetWidth = rect.width;
-      const targetHeight = rect.height;
-
-      const baseWidth = 320;
-      const baseHeight = 480;
-
-      const scale = Math.min(targetWidth / baseWidth, targetHeight / baseHeight);
-
-      canvas.width = baseWidth;
-      canvas.height = baseHeight;
-
-      canvas.style.width = (baseWidth * scale) + 'px';
-      canvas.style.height = (baseHeight * scale) + 'px';
-    }
 
     window.addEventListener('resize', () => {
       resizeCanvasToContainer();
       renderGame();
     });
 
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        resizeCanvasToContainer();
+        renderGame();
+      }, 300);
+    });
+
+    // ============================================================
+    // INIT
+    // ============================================================
     loadProgress();
     updateTimerDisplay();
     updateZoneDisplay();
