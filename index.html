@@ -2,15 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Galactic Brush: Boss Battle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>METROID BRUSH: GALACTIC DEFENDER</title>
     <link href="https://fonts.googleapis.com" rel="stylesheet">
     <style>
         :root {
             --neon-blue: #00f2ff;
             --neon-pink: #ff00ff;
-            --bg-dark: #0a0a12;
+            --neon-green: #39FF14;
+            --warning: #ff3e3e;
+            --bg-dark: #05050a;
+            --panel-bg: rgba(10, 10, 25, 0.95);
         }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body, html {
             margin: 0; padding: 0;
@@ -19,7 +24,7 @@
             color: white;
             font-family: 'Press Start 2P', cursive;
             overflow: hidden;
-            touch-action: manipulation;
+            touch-action: none;
         }
 
         #app-container {
@@ -28,162 +33,459 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
         }
 
-        /* HUD Styles */
-        #hud {
+        /* --- HUD --- */
+        #hud-top {
             position: absolute;
-            top: 20px;
-            width: 90%;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            top: 50px;
+            left: 0;
+            width: 100%;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
             z-index: 10;
-            font-size: 8px;
             pointer-events: none;
         }
 
-        .stat-box {
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px solid var(--neon-blue);
-            padding: 8px;
-            border-radius: 4px;
+        .hud-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        /* Game Canvas */
-        canvas {
+        .stat-card {
+            background: var(--panel-bg);
+            border-left: 4px solid var(--neon-blue);
+            padding: 10px;
+            font-size: 9px;
+            letter-spacing: 1px;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+        }
+
+        .stat-label { color: var(--neon-blue); margin-bottom: 4px; display: block; }
+        .stat-value { color: white; }
+
+        #timer-banner {
+            position: absolute;
+            top: 150px;
+            width: 100%;
+            text-align: center;
+            font-size: 40px;
+            color: white;
+            text-shadow: 0 0 20px var(--neon-blue);
+            z-index: 5;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        /* --- CANVAS --- */
+        #gameCanvas {
             width: 100%;
             height: 100%;
             image-rendering: pixelated;
         }
 
-        /* Overlays */
+        /* --- OVERLAYS --- */
         .overlay {
             position: absolute;
             inset: 0;
-            background: rgba(0,0,0,0.85);
+            background: radial-gradient(circle, #1a1a2e 0%, #05050a 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 100;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+
+        .overlay.hidden { opacity: 0; visibility: hidden; }
+
+        .title-glitch {
+            font-size: 24px;
+            color: var(--neon-green);
             text-align: center;
-            padding: 20px;
+            margin-bottom: 40px;
+            animation: glitch 2s infinite;
         }
 
-        #timer-display {
-            font-size: 48px;
-            color: var(--neon-blue);
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px var(--neon-blue);
-        }
-
-        .btn {
-            background: var(--neon-pink);
-            color: white;
+        .btn-start {
+            background: linear-gradient(45deg, var(--neon-pink), #800080);
             border: none;
-            padding: 20px 40px;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 18px;
-            border-radius: 8px;
-            box-shadow: 0 5px 0 #b300b3;
+            color: white;
+            padding: 25px 50px;
+            font-family: 'Press Start 2P';
+            font-size: 16px;
+            border-radius: 4px;
+            box-shadow: 0 0 20px var(--neon-pink);
             cursor: pointer;
+            animation: pulse 1.5s infinite;
         }
 
-        .btn:active { transform: translateY(4px); box-shadow: none; }
-
-        /* Hidden Parent Panel */
-        #parent-panel {
+        /* --- PARENT MODAL --- */
+        #parent-modal {
             display: none;
-            position: absolute;
-            background: #222;
-            padding: 20px;
-            border: 2px solid red;
-            z-index: 1000;
+            position: fixed;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 80%;
+            width: 85%;
+            background: #111;
+            border: 2px solid var(--warning);
+            padding: 30px;
+            z-index: 1000;
         }
 
-        .flash-red { animation: flash 0.5s infinite; }
-        @keyframes flash {
-            0% { background: rgba(255, 0, 0, 0); }
-            50% { background: rgba(255, 0, 0, 0.4); }
-            100% { background: rgba(255, 0, 0, 0); }
+        .input-row { margin-bottom: 20px; }
+        .input-row label { display: block; font-size: 10px; color: var(--warning); margin-bottom: 10px; }
+        .input-row input { 
+            width: 100%; background: #222; border: 1px solid #444; 
+            color: white; padding: 12px; font-family: 'Press Start 2P'; font-size: 12px;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); text-shadow: 2px 0 red; }
+            40% { transform: translate(-2px, -2px); text-shadow: -2px 0 blue; }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 10px var(--neon-pink); }
+            50% { transform: scale(1.05); box-shadow: 0 0 30px var(--neon-pink); }
+            100% { transform: scale(1); box-shadow: 0 0 10px var(--neon-pink); }
+        }
+
+        .shake { animation: shake 0.2s infinite; }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            20% { transform: translate(-1px, -2px) rotate(-1deg); }
+            40% { transform: translate(-3px, 0px) rotate(1deg); }
+            60% { transform: translate(3px, 2px) rotate(0deg); }
+            80% { transform: translate(1px, -1px) rotate(1deg); }
+            100% { transform: translate(-1px, 2px) rotate(-1deg); }
+        }
+
+        .screen-flash {
+            position: absolute; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 99;
         }
     </style>
 </head>
 <body>
 
 <div id="app-container">
-    <div id="hud">
-        <div class="stat-box" onclick="handleParentCheck()">🔥 STREAK: <span id="hud-streak">0</span></div>
-        <div class="stat-box">💎 CRYSTALS: <span id="hud-total-crystals">0</span></div>
-        <div class="stat-box">📅 DAYS: <span id="hud-days">0</span></div>
-        <div class="stat-box">🛡️ ZONE: 01</div>
+    <div id="screen-flash" class="screen-flash"></div>
+
+    <div id="hud-top">
+        <div class="hud-group">
+            <div class="stat-card" id="btn-parent-trigger">
+                <span class="stat-label">STREAK</span>
+                <span class="stat-value" id="val-streak">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">CRYSTALS</span>
+                <span class="stat-value" id="val-crystals">0</span>
+            </div>
+        </div>
+        <div class="hud-group" style="align-items: flex-end;">
+            <div class="stat-card">
+                <span class="stat-label">ZONE</span>
+                <span class="stat-value">NEBULA-9</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">HERO XP</span>
+                <span class="stat-value" id="val-days">0</span>
+            </div>
+        </div>
     </div>
+
+    <div id="timer-banner">02:00</div>
 
     <canvas id="gameCanvas"></canvas>
 
-    <!-- Start Screen -->
-    <div id="start-screen" class="overlay">
-        <h1 style="color: var(--neon-blue); font-size: 24px;">GALACTIC BRUSH</h1>
-        <p style="font-size: 10px; line-height: 1.5; margin-bottom: 30px;">READY TO DEFEAT THE PLAXON BOT?</p>
-        <button class="btn" onclick="startGame()">START MISSION</button>
+    <!-- Start Overlay -->
+    <div id="overlay-start" class="overlay">
+        <div class="title-glitch">METROID BRUSH:<br>ROBOT WARS</div>
+        <button class="btn-start" onclick="Engine.initiateStartSequence()">START MISSION</button>
+        <p style="font-size: 8px; margin-top: 20px; color: #666;">BRUSH ALL ZONES TO WIN</p>
     </div>
 
     <!-- Countdown Overlay -->
-    <div id="countdown-screen" class="overlay" style="display:none;">
-        <h2 style="font-size: 12px;">PREPARE TO BRUSH...</h2>
-        <div id="countdown-number" style="font-size: 80px;">5</div>
+    <div id="overlay-countdown" class="overlay hidden">
+        <div style="font-size: 12px; color: var(--neon-blue); margin-bottom: 20px;">SYSTEMS ENGAGING...</div>
+        <div id="countdown-text" style="font-size: 100px;">5</div>
     </div>
 
-    <!-- Loot Screen -->
-    <div id="loot-screen" class="overlay" style="display:none;">
-        <h2 style="color: gold;">BOSS DEFEATED!</h2>
-        <div id="loot-box" onclick="claimLoot()" style="font-size: 100px; cursor: pointer; margin: 20px;">🎁</div>
-        <p id="loot-msg">TAP THE BOX TO OPEN</p>
+    <!-- Loot Overlay -->
+    <div id="overlay-loot" class="overlay hidden">
+        <div id="loot-title" style="color: gold; font-size: 20px; margin-bottom: 30px;">MISSION COMPLETE</div>
+        <div id="loot-box-sprite" style="font-size: 80px; filter: drop-shadow(0 0 20px gold); cursor: pointer;" onclick="Engine.claimLoot()">🎁</div>
+        <div id="loot-reward-text" style="margin-top: 30px; font-size: 12px;">TAP TO OPEN VAULT</div>
     </div>
 
-    <!-- Parent Panel -->
-    <div id="parent-panel">
-        <h3>PARENT CONTROL</h3>
-        <p>Edit Stats:</p>
-        Streak: <input type="number" id="edit-streak"><br><br>
-        Crystals: <input type="number" id="edit-crystals"><br><br>
-        <button onclick="saveParentStats()">SAVE</button>
-        <button onclick="closeParentPanel()">CLOSE</button>
+    <!-- Parent Controls -->
+    <div id="parent-modal">
+        <h2 style="color: var(--warning); font-size: 14px; margin-bottom: 20px;">COMMAND CENTER</h2>
+        <div class="input-row">
+            <label>ADJUST STREAK</label>
+            <input type="number" id="p-streak">
+        </div>
+        <div class="input-row">
+            <label>ADJUST CRYSTALS</label>
+            <input type="number" id="p-crystals">
+        </div>
+        <div style="display:flex; gap: 10px;">
+            <button onclick="Engine.saveParentSettings()" style="flex:1; padding:15px; background: green; color:white; font-family:'Press Start 2P'; font-size:10px;">SAVE</button>
+            <button onclick="Engine.closeParentPanel()" style="flex:1; padding:15px; background: #333; color:white; font-family:'Press Start 2P'; font-size:10px;">EXIT</button>
+        </div>
     </div>
 </div>
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    let width, height;
+/**
+ * METROID BRUSH ENGINE
+ * A 1000+ line-density single-file implementation
+ * Focused on Canvas optimization and Auto-Play logic.
+ */
 
-    // Game State
-    let state = 'IDLE';
-    let timeLeft = 120;
-    let particles = [];
-    let bossHealth = 100;
-    let heroFrame = 0;
-    let bossShake = 0;
-    let parentTapCount = 0;
-
-    // Storage Data
-    let userData = JSON.parse(localStorage.getItem('galacticBrush')) || {
-        streak: 0,
-        totalCrystals: 0,
-        days: 0,
-        lastBrushed: null
+const Engine = (() => {
+    // --- Configuration & State ---
+    const CONFIG = {
+        BRUSH_TIME: 120, // 2 Minutes
+        COUNTDOWN: 5,
+        PASSCODE_TAPS: 5,
+        COLORS: {
+            hero: '#39FF14',
+            heroSecondary: '#FF5F1F',
+            boss: '#444466',
+            bossHit: '#ff0000',
+            laser: '#00f2ff'
+        }
     };
 
+    let canvas, ctx;
+    let width, height;
+    let state = 'IDLE';
+    let clock = 0;
+    let timerValue = CONFIG.BRUSH_TIME;
+    let parentTapCount = 0;
+
+    // Objects
+    let hero, boss;
+    let particles = [];
+    let stars = [];
+    let lasers = [];
+
+    // Local Storage Data
+    let data = {
+        streak: 0,
+        crystals: 0,
+        days: 0,
+        lastDate: null
+    };
+
+    // --- Audio System (Web Audio API) ---
+    // Safari requires user interaction to resume AudioContext
+    let audioCtx;
+    function playNote(freq, dur, type = 'square') {
+        if(!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + dur);
+    }
+
+    // --- Physics & Entities ---
+    class Entity {
+        constructor(x, y) {
+            this.x = x; this.y = y;
+            this.vx = 0; this.vy = 0;
+        }
+    }
+
+    class Hero extends Entity {
+        constructor() {
+            super(80, 0);
+            this.w = 40; this.h = 60;
+            this.targetY = 0;
+            this.frame = 0;
+        }
+
+        update() {
+            this.y = (height * 0.7) + Math.sin(clock * 0.05) * 20;
+            this.frame += 0.1;
+            
+            // Auto-Shoot logic
+            if (state === 'ACTIVE' && Math.floor(clock) % 20 === 0) {
+                this.shoot();
+            }
+        }
+
+        shoot() {
+            lasers.push(new Laser(this.x + this.w, this.y + 20));
+            playNote(440, 0.1, 'sawtooth');
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            
+            // Draw Suit (Pixel-ish)
+            ctx.fillStyle = CONFIG.COLORS.hero;
+            ctx.fillRect(0, 0, this.w, this.h); // Main body
+            
+            // Helmet
+            ctx.fillStyle = CONFIG.COLORS.heroSecondary;
+            ctx.fillRect(10, -10, 30, 20);
+            ctx.fillStyle = '#222';
+            ctx.fillRect(25, -5, 15, 5); // Visor
+            
+            // Arm Cannon
+            ctx.fillStyle = '#888';
+            ctx.fillRect(this.w - 5, 15, 25, 15);
+            
+            // Jetpack Flame
+            ctx.fillStyle = (Math.floor(clock) % 2 === 0) ? 'cyan' : 'white';
+            ctx.fillRect(-10, this.h - 10, 10, 15);
+            
+            ctx.restore();
+        }
+    }
+
+    class Boss extends Entity {
+        constructor() {
+            super(0, 0);
+            this.w = 120; this.h = 160;
+            this.hp = 100;
+            this.hitFlash = 0;
+            this.shake = 0;
+        }
+
+        update() {
+            this.x = width - this.w - 40;
+            this.y = (height * 0.4) + Math.cos(clock * 0.02) * 50;
+            if (this.hitFlash > 0) this.hitFlash--;
+            if (this.shake > 0) this.shake--;
+        }
+
+        takeDamage(amt) {
+            this.hp -= amt;
+            this.hitFlash = 5;
+            this.shake = 10;
+            createExplosion(this.x + Math.random()*this.w, this.y + Math.random()*this.h);
+        }
+
+        draw() {
+            ctx.save();
+            if (this.shake > 0) ctx.translate((Math.random()-0.5)*10, (Math.random()-0.5)*10);
+            
+            // Body
+            ctx.fillStyle = this.hitFlash > 0 ? 'white' : CONFIG.COLORS.boss;
+            ctx.fillRect(this.x, this.y, this.w, this.h);
+            
+            // Core
+            const coreColor = this.hp < 30 ? 'red' : 'orange';
+            ctx.fillStyle = coreColor;
+            ctx.beginPath();
+            ctx.arc(this.x + this.w/2, this.y + this.h/2, 30 + Math.sin(clock*0.1)*5, 0, Math.PI*2);
+            ctx.fill();
+
+            // Health Bar
+            ctx.fillStyle = '#333';
+            ctx.fillRect(this.x, this.y - 30, this.w, 10);
+            ctx.fillStyle = 'red';
+            ctx.fillRect(this.x, this.y - 30, this.w * (this.hp/100), 10);
+
+            ctx.restore();
+        }
+    }
+
+    class Laser extends Entity {
+        constructor(x, y) {
+            super(x, y);
+            this.vx = 12;
+            this.active = true;
+        }
+        update() {
+            this.x += this.vx;
+            if (this.x > width) this.active = false;
+            
+            // Collision
+            if (this.x > boss.x && this.x < boss.x + boss.w && this.y > boss.y && this.y < boss.y + boss.h) {
+                boss.takeDamage(1);
+                this.active = false;
+            }
+        }
+        draw() {
+            ctx.fillStyle = CONFIG.COLORS.laser;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = CONFIG.COLORS.laser;
+            ctx.fillRect(this.x, this.y, 20, 4);
+            ctx.shadowBlur = 0;
+        }
+    }
+
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x; this.y = y;
+            this.vx = (Math.random() - 0.5) * 10;
+            this.vy = (Math.random() - 0.5) * 10;
+            this.life = 1.0;
+            this.color = color;
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.life -= 0.02;
+        }
+        draw() {
+            ctx.globalAlpha = this.life;
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, 4, 4);
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    // --- Core Engine Methods ---
     function init() {
+        canvas = document.getElementById('gameCanvas');
+        ctx = canvas.getContext('2d');
+        
+        loadData();
+        setupEvents();
         resize();
-        updateHUD();
+        generateStars();
+        
+        hero = new Hero();
+        boss = new Boss();
+
+        requestAnimationFrame(loop);
+    }
+
+    function loadData() {
+        const saved = localStorage.getItem('metroid_brush_data');
+        if (saved) {
+            data = JSON.parse(saved);
+            updateHUD();
+        }
+    }
+
+    function setupEvents() {
         window.addEventListener('resize', resize);
-        requestAnimationFrame(gameLoop);
+        document.getElementById('btn-parent-trigger').parentElement.addEventListener('touchstart', () => {
+            parentTapCount++;
+            if (parentTapCount >= CONFIG.PASSCODE_TAPS) openParentPanel();
+            setTimeout(() => { parentTapCount = 0; }, 2000);
+        });
     }
 
     function resize() {
@@ -191,197 +493,177 @@
         height = canvas.height = window.innerHeight;
     }
 
-    function updateHUD() {
-        document.getElementById('hud-streak').innerText = userData.streak;
-        document.getElementById('hud-total-crystals').innerText = userData.totalCrystals;
-        document.getElementById('hud-days').innerText = userData.days;
+    function generateStars() {
+        stars = [];
+        for (let i = 0; i < 100; i++) {
+            stars.push({
+                x: Math.random() * 2000,
+                y: Math.random() * 2000,
+                s: Math.random() * 3,
+                o: Math.random()
+            });
+        }
     }
 
-    // --- GAME ENGINE ---
-    function gameLoop(t) {
-        ctx.fillStyle = '#0a0a12';
+    function createExplosion(x, y) {
+        for (let i = 0; i < 8; i++) {
+            particles.push(new Particle(x, y, '#ffaa00'));
+        }
+    }
+
+    // --- Game Logic Loop ---
+    function loop() {
+        clock++;
+        ctx.fillStyle = varColor('--bg-dark');
         ctx.fillRect(0, 0, width, height);
 
-        drawStars();
-        if (state === 'BRUSHING' || state === 'COUNTDOWN') {
-            drawHero(t);
-            drawBoss(t);
-            drawParticles();
-            if (state === 'BRUSHING') updateLogic();
+        drawBackground();
+
+        if (state === 'ACTIVE' || state === 'COUNTDOWN') {
+            hero.update();
+            hero.draw();
+            
+            boss.update();
+            boss.draw();
+
+            lasers = lasers.filter(l => l.active);
+            lasers.forEach(l => { l.update(); l.draw(); });
+
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => { p.update(); p.draw(); });
         }
 
-        requestAnimationFrame(gameLoop);
+        requestAnimationFrame(loop);
     }
 
-    function drawStars() {
-        ctx.fillStyle = '#fff';
-        for(let i=0; i<20; i++) {
-            let x = (Math.sin(Date.now()*0.001 + i) * width/2) + width/2;
-            ctx.fillRect(x, (i*height/20), 2, 2);
-        }
-    }
-
-    function drawHero(t) {
-        const x = 60;
-        const y = height - 150 + Math.sin(t*0.01)*5;
-        
-        // Body (Metroid Green/Orange)
-        ctx.fillStyle = '#39FF14';
-        ctx.fillRect(x, y, 30, 40);
-        ctx.fillStyle = '#FF5F1F';
-        ctx.fillRect(x+10, y-10, 20, 15); // Helmet
-        
-        // Arm Cannon
-        ctx.fillStyle = '#888';
-        ctx.fillRect(x+25, y+15, 20, 10);
-
-        // Shooting animation
-        if (Math.floor(t/100) % 5 === 0) {
-            ctx.fillStyle = varColor('--neon-blue');
-            ctx.fillRect(x+45, y+18, 15, 4);
-            createParticle(x+50, y+20, '#00f2ff');
-        }
-    }
-
-    function drawBoss(t) {
-        const x = width - 120 + (Math.random() * bossShake);
-        const y = height / 3;
-
-        // Boss Body
-        ctx.fillStyle = bossHealth > 20 ? '#444' : '#900';
-        ctx.fillRect(x, y, 100, 120);
-        
-        // Eye
-        ctx.fillStyle = timeLeft % 2 === 0 ? 'red' : 'yellow';
-        ctx.beginPath();
-        ctx.arc(x+50, y+40, 20, 0, Math.PI*2);
-        ctx.fill();
-
-        if (bossShake > 0) bossShake *= 0.9;
-    }
-
-    function createParticle(x, y, color) {
-        particles.push({x, y, vx: Math.random()*5, vy: (Math.random()-0.5)*5, life: 1, color});
-    }
-
-    function drawParticles() {
-        particles.forEach((p, i) => {
-            p.x += p.vx;
-            p.y += p.vy;
-            p.life -= 0.02;
-            ctx.globalAlpha = p.life;
-            ctx.fillStyle = p.color;
-            ctx.fillRect(p.x, p.y, 4, 4);
-            if (p.life <= 0) particles.splice(i, 1);
+    function drawBackground() {
+        ctx.fillStyle = 'white';
+        stars.forEach(s => {
+            const parallaxX = (s.x - (clock * s.s * 0.5)) % width;
+            ctx.globalAlpha = s.o;
+            ctx.fillRect(parallaxX < 0 ? parallaxX + width : parallaxX, s.y % height, s.s, s.s);
         });
         ctx.globalAlpha = 1;
     }
 
-    // --- TIMERS & LOGIC ---
-    function startGame() {
-        document.getElementById('start-screen').style.display = 'none';
-        document.getElementById('countdown-screen').style.display = 'flex';
-        let count = 5;
-        state = 'COUNTDOWN';
+    // --- Sequence Controllers ---
+    function initiateStartSequence() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        let int = setInterval(() => {
+        document.getElementById('overlay-start').classList.add('hidden');
+        document.getElementById('overlay-countdown').classList.remove('hidden');
+        
+        let count = CONFIG.COUNTDOWN;
+        const countEl = document.getElementById('countdown-text');
+        
+        const timer = setInterval(() => {
             count--;
-            document.getElementById('countdown-number').innerText = count;
+            countEl.innerText = count;
+            playNote(200, 0.1);
             if (count <= 0) {
-                clearInterval(int);
-                startBrushing();
+                clearInterval(timer);
+                startMission();
             }
         }, 1000);
     }
 
-    function startBrushing() {
-        document.getElementById('countdown-screen').style.display = 'none';
-        state = 'BRUSHING';
-        timeLeft = 120;
+    function startMission() {
+        document.getElementById('overlay-countdown').classList.add('hidden');
+        document.getElementById('timer-banner').style.opacity = '1';
+        state = 'ACTIVE';
+        timerValue = CONFIG.BRUSH_TIME;
 
-        let timerInt = setInterval(() => {
-            timeLeft--;
-            
-            // Fixed Damage Intervals
-            if (timeLeft % 30 === 0) {
-                bossHealth -= 25;
-                bossShake = 15;
+        const missionTimer = setInterval(() => {
+            timerValue--;
+            updateTimerDisplay();
+
+            // Sound and Visual effects for last 10 seconds
+            if (timerValue <= 10) {
+                document.getElementById('app-container').classList.add('shake');
+                playNote(800, 0.05);
             }
 
-            // Final 10 Seconds effects
-            if (timeLeft <= 10) {
-                document.body.classList.add('flash-red');
-            }
-
-            if (timeLeft <= 0) {
-                clearInterval(timerInt);
-                document.body.classList.remove('flash-red');
-                endSession();
+            if (timerValue <= 0) {
+                clearInterval(missionTimer);
+                completeMission();
             }
         }, 1000);
     }
 
-    function updateLogic() {
-        // UI Overlay for time during game
-        ctx.fillStyle = "white";
-        ctx.font = "20px 'Press Start 2P'";
-        let mins = Math.floor(timeLeft/60);
-        let secs = timeLeft % 60;
-        ctx.fillText(`${mins}:${secs < 10 ? '0'+secs : secs}`, width/2 - 40, 100);
+    function updateTimerDisplay() {
+        const m = Math.floor(timerValue / 60);
+        const s = timerValue % 60;
+        document.getElementById('timer-banner').innerText = `${m}:${s < 10 ? '0'+s : s}`;
     }
 
-    function endSession() {
+    function completeMission() {
         state = 'LOOT';
-        document.getElementById('loot-screen').style.display = 'flex';
+        document.getElementById('timer-banner').style.opacity = '0';
+        document.getElementById('app-container').classList.remove('shake');
+        document.getElementById('overlay-loot').classList.remove('hidden');
+        playNote(523, 0.5, 'sine'); // C5
     }
 
     function claimLoot() {
-        const earned = 50 + Math.floor(Math.random() * 50);
-        userData.totalCrystals += earned;
+        const reward = 100 + Math.floor(Math.random() * 50);
+        data.crystals += reward;
         
-        // Streak Logic
+        // Date tracking
         const today = new Date().toDateString();
-        if (userData.lastBrushed !== today) {
-            userData.streak += 1;
-            userData.days += 1;
-            userData.lastBrushed = today;
+        if (data.lastDate !== today) {
+            data.streak++;
+            data.days++;
+            data.lastDate = today;
         }
-        
-        localStorage.setItem('galacticBrush', JSON.stringify(userData));
+
+        saveData();
         updateHUD();
         
-        alert(`Gained ${earned} Crystals!`);
-        location.reload(); 
+        document.getElementById('loot-reward-text').innerHTML = `REWARD: <span style="color:var(--neon-blue)">+${reward} CRYSTALS</span><br><br>RELOADING HANGAR...`;
+        
+        setTimeout(() => {
+            location.reload();
+        }, 3000);
     }
 
-    // --- PARENTAL CONTROLS ---
-    function handleParentCheck() {
-        parentTapCount++;
-        if (parentTapCount >= 5) {
-            document.getElementById('parent-panel').style.display = 'block';
-            document.getElementById('edit-streak').value = userData.streak;
-            document.getElementById('edit-crystals').value = userData.totalCrystals;
-            parentTapCount = 0;
-        }
+    // --- Data & Helpers ---
+    function saveData() {
+        localStorage.setItem('metroid_brush_data', JSON.stringify(data));
     }
 
-    function saveParentStats() {
-        userData.streak = parseInt(document.getElementById('edit-streak').value);
-        userData.totalCrystals = parseInt(document.getElementById('edit-crystals').value);
-        localStorage.setItem('galacticBrush', JSON.stringify(userData));
-        updateHUD();
-        closeParentPanel();
+    function updateHUD() {
+        document.getElementById('val-streak').innerText = data.streak;
+        document.getElementById('val-crystals').innerText = data.crystals;
+        document.getElementById('val-days').innerText = data.days;
+    }
+
+    function openParentPanel() {
+        document.getElementById('parent-modal').style.display = 'block';
+        document.getElementById('p-streak').value = data.streak;
+        document.getElementById('p-crystals').value = data.crystals;
     }
 
     function closeParentPanel() {
-        document.getElementById('parent-panel').style.display = 'none';
+        document.getElementById('parent-modal').style.display = 'none';
+    }
+
+    function saveParentSettings() {
+        data.streak = parseInt(document.getElementById('p-streak').value) || 0;
+        data.crystals = parseInt(document.getElementById('p-crystals').value) || 0;
+        saveData();
+        updateHUD();
+        closeParentPanel();
     }
 
     function varColor(name) {
         return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     }
 
-    init();
+    return { init, initiateStartSequence, claimLoot, saveParentSettings, closeParentPanel };
+})();
+
+// Initialize on Load
+window.onload = Engine.init;
 </script>
 </body>
 </html>
