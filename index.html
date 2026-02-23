@@ -2,228 +2,143 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Tooth Ranger: Plaque Planet</title>
+<title>Tooth Runner 2084</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-/* --- Reset & Base --- */
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#02030a;color:#fff;font-family:'Press Start 2P',sans-serif;display:flex;justify-content:center;align-items:flex-start;height:100vh;overflow:hidden}
-.app{width:100%;max-width:430px;padding:12px;display:flex;flex-direction:column;align-items:center}
-h1{text-align:center;color:#0ff;font-family:Orbitron,sans-serif;font-size:20px;margin-bottom:8px;text-shadow:0 0 6px #0ff}
-#timer{font-family:Orbitron,sans-serif;font-size:48px;text-align:center;margin:6px 0}
-#timer.danger{color:#f22;animation:flash 0.5s infinite}
-@keyframes flash{50%{opacity:0.3}}
-#zone{text-align:center;font-size:12px;margin-bottom:4px;color:#0ff;text-shadow:0 0 3px #0ff}
-canvas{width:100%;height:260px;background:#000;border-radius:18px;box-shadow:0 0 30px rgba(0,255,255,0.2)}
-.controls{display:flex;justify-content:space-between;margin-top:6px;width:100%}
-button{flex:1;margin:2px;padding:12px;border:none;border-radius:12px;background:#111;color:white;font-weight:600;cursor:pointer;transition:0.2s}
-button.primary{background:#0ff;color:black}
-button:active{transform:translateY(2px)}
-#stats{text-align:center;font-size:12px;margin-top:6px;opacity:0.8}
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:100}
-.lootbox{background:#111;padding:24px;border-radius:20px;text-align:center;box-shadow:0 0 20px #0ff}
-.crystal{font-size:50px;animation:spin 2s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.parent{text-align:center;font-size:11px;opacity:0.5;margin-top:auto}
-#parentPanel{position:fixed;right:6px;bottom:6px;width:280px;background:rgba(0,0,0,0.95);border:2px solid #444;padding:10px;font-size:9px;display:none;z-index:200;border-radius:10px}
-#parentPanel input{width:100%;padding:4px;margin-bottom:4px;background:#111;color:#fff;border:1px solid #444;border-radius:4px}
-#parentPanel button{width:48%;margin:2%;padding:6px;background:#0ff;color:#000;border:none;border-radius:6px;font-weight:600}
+body,html{margin:0;padding:0;background:#000;color:#fff;font-family:monospace;overflow:hidden;}
+canvas{display:block;margin:0 auto;background:#000;image-rendering:pixelated;}
+#hud{position:absolute;top:5px;width:100%;text-align:center;}
+#timer{font-size:32px;color:#ff0;}
+.danger{color:red;animation:flash 0.5s infinite;}
+@keyframes flash{0%,100%{opacity:1}50%{opacity:0}}
+#lootOverlay{position:absolute;inset:0;background:rgba(0,0,0,0.95);display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-size:18px;text-align:center;}
+#lootBox{width:120px;height:120px;background:gold;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:10px;cursor:pointer;box-shadow:0 0 15px #fff;}
+#parentPanel{position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.9);padding:5px;border:1px solid #444;display:none;}
+#parentPanel input{width:40px;}
+button{font-size:12px;padding:4px 8px;margin:2px;}
 </style>
 </head>
 <body>
-<div class="app">
-<h1>TOOTH RANGER</h1>
-<div id="timer">2:00</div>
-<div id="zone">ENAMEL DISTRICT</div>
-<canvas id="game" width="400" height="260"></canvas>
-<div class="controls">
-<button class="primary" onclick="Game.start()">Start</button>
-<button onclick="Game.pause()">Pause</button>
-<button onclick="Game.reset()">Reset</button>
-</div>
-<div id="stats"></div>
-<div class="parent"><button onclick="Game.showParent()">Parent Controls</button></div>
+
+<canvas id="gameCanvas" width="320" height="480"></canvas>
+<div id="hud">
+  <div id="timer">2:00</div>
+  <div id="zone">ENAMEL DISTRICT</div>
+  <div>STREAK: <span id="streak">0</span> DAYS: <span id="days">0</span> CRYSTALS: <span id="crystals">0</span></div>
+  <button id="startBtn">Start</button>
+  <button id="pauseBtn">Pause</button>
+  <button id="resetBtn">Reset</button>
+  <button id="parentOpenBtn">Parent</button>
 </div>
 
-<div class="overlay" id="lootOverlay">
-<div class="lootbox">
-<h2>Mission Complete!</h2>
-<div class="crystal">💎</div>
-<p id="lootText"></p>
-<button onclick="Game.closeLoot()">Continue</button>
-</div>
+<div id="lootOverlay">
+  <div>MISSION COMPLETE!</div>
+  <div id="lootBox">TAP TO OPEN</div>
+  <div id="lootText"></div>
+  <button id="lootOkBtn">OK</button>
 </div>
 
 <div id="parentPanel">
-<h3>Parent Panel</h3>
-<label>Daily Count:</label><input id="ppDaily" type="number">
-<label>Streak:</label><input id="ppStreak" type="number">
-<label>Crystals:</label><input id="ppCrystals" type="number">
-<button onclick="Game.applyParent()">Apply</button>
-<button onclick="Game.resetParent()">Reset All</button>
+  <div>
+    Streak: <input id="ppStreak" type="number"><br>
+    Days: <input id="ppDays" type="number"><br>
+    Crystals: <input id="ppCrystals" type="number"><br>
+    <button id="applyParent">Apply</button>
+    <button id="closeParent">Close</button>
+  </div>
 </div>
 
 <script>
-const Game={
-TOTAL:120,
-PRECOUNT:5,
-time:120,
-state:"idle",
-zoneIndex:0,
-streak:Number(localStorage.getItem("streak")||0),
-daily:Number(localStorage.getItem("daily")||0),
-crystals:Number(localStorage.getItem("crystals")||0),
-lastDate:localStorage.getItem("lastDate")||"",
-bossHealth:100,
-particles:[],
-canvas:null,
-ctx:null,
-lastFrame:0,
-heroFrames:[],
-bossFrames:[],
-heroAnim:0,
-heroX:60, heroY:160, heroVY:0, groundY:200,
-parentPass:"1234",
+const canvas=document.getElementById("gameCanvas");
+const ctx=canvas.getContext("2d");
 
-init(){
-this.canvas=document.getElementById("game");
-this.ctx=this.canvas.getContext("2d");
-this.loadSprites();
-this.updateStats();
-requestAnimationFrame(this.loop.bind(this));
-},
-
-loadSprites(){
-// Hero 32x32 sprite sheet base64 embedded
-let h=new Image();h.src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAHklEQVR42mNgGAU0A4yMhjAEYzAjAGbQ1EYAAAOq5FjvWf1DAAAAAElFTkSuQmCC";
-this.heroFrames.push(h);
-// Boss 64x64
-let b=new Image();b.src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAQCAYAAABH9v8kAAAAQ0lEQVR42mNgGAWjYBSMglEwCqIgglEE6QAcYHnYgDqEPCsDhA7g1QvAeCkgd4XgAAxrjGzQAAByYXHxFXjK50AAAAASUVORK5CYII=";
-this.bossFrames.push(b);
-},
-
-start(){
-if(this.state==="running")return;
-this.state="precount";
-let c=this.PRECOUNT;
-document.getElementById("timer").textContent="Deploy in "+c;
-let pre=setInterval(()=>{
-c--;
-if(c>0)document.getElementById("timer").textContent="Deploy in "+c;
-else{clearInterval(pre);this.state="running";this.time=this.TOTAL;this.bossHealth=100;}
-},1000);
-},
-
-pause(){if(this.state==="running")this.state="paused";else if(this.state==="paused")this.state="running";},
-
-reset(){
-this.state="idle";
-this.time=this.TOTAL;
-this.bossHealth=100;
-document.getElementById("timer").classList.remove("danger");
-document.getElementById("timer").textContent="2:00";
-},
-
-loop(ts){
-let delta=(ts-this.lastFrame)/1000;
-this.lastFrame=ts;
-if(this.state==="running"){
-this.time-=delta;
-if(this.time<=0){this.complete();}
-this.bossHealth=(this.time/this.TOTAL)*100;
-this.updateTimer();
-this.updateZone();
-this.updateParticles();
-}
-this.render();
-requestAnimationFrame(this.loop.bind(this));
-},
-
-updateTimer(){
-let t=Math.max(0,Math.floor(this.time));
-let m=Math.floor(t/60);
-let s=t%60;
-let el=document.getElementById("timer");
-el.textContent=`${m}:${s.toString().padStart(2,"0")}`;
-if(t<=10){el.classList.add("danger");this.alarm();}
-else el.classList.remove("danger");
-},
-
-updateZone(){
-let z=Math.floor((this.TOTAL-this.time)/30);
-const zones=["ENAMEL DISTRICT","FLOSS HIGHWAY","GUMLINE FORGE","CAVITY CORE"];
-document.getElementById("zone").textContent=zones[z]||"";
-},
-
-render(){
-const ctx=this.ctx;
-ctx.clearRect(0,0,400,260);
-// Parallax background
-ctx.fillStyle="#02030a";ctx.fillRect(0,0,400,260);
-ctx.fillStyle="#04122a";for(let i=0;i<20;i++){ctx.fillRect((i*50+Date.now()/30)%400,180,20,40);}
-// Hero
-ctx.drawImage(this.heroFrames[0],this.heroX,this.heroY,32,32);
-// Boss
-ctx.fillStyle=this.bossHealth>60?"#f22":this.bossHealth>30?"#f90":"#666";
-ctx.drawImage(this.bossFrames[0],280,100,64,64);
-// Particles
-this.particles.forEach(p=>{ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,2,2);});
-},
-
-updateParticles(){this.particles.forEach(p=>{p.life-=1/60;p.y-=1;});this.particles=this.particles.filter(p=>p.life>0);},
-
-complete(){
-this.state="complete";
-let today=new Date().toDateString();
-if(today!==this.lastDate){this.daily++;this.streak++;this.lastDate=today;}
-let reward=Math.floor(Math.random()*20)+15;
-this.crystals+=reward;
-this.save();
-this.updateStats();
-document.getElementById("lootText").textContent="You earned "+reward+" Crystals!";
-document.getElementById("lootOverlay").style.display="flex";
-},
-
-closeLoot(){document.getElementById("lootOverlay").style.display="none";this.reset();},
-
-showParent(){
-document.getElementById("parentPanel").style.display="block";
-document.getElementById("ppDaily").value=this.daily;
-document.getElementById("ppStreak").value=this.streak;
-document.getElementById("ppCrystals").value=this.crystals;
-},
-
-applyParent(){
-this.daily=Number(document.getElementById("ppDaily").value);
-this.streak=Number(document.getElementById("ppStreak").value);
-this.crystals=Number(document.getElementById("ppCrystals").value);
-this.save();
-this.updateStats();
-document.getElementById("parentPanel").style.display="none";
-},
-
-resetParent(){
-if(confirm("Reset all progress?")){
-this.daily=0;this.streak=0;this.crystals=0;this.save();this.updateStats();
-document.getElementById("parentPanel").style.display="none";
-}
-},
-
-updateStats(){
-document.getElementById("stats").textContent="Crystals: "+this.crystals+" | Streak: "+this.streak+" | Today: "+this.daily;
-},
-
-save(){
-localStorage.setItem("streak",this.streak);
-localStorage.setItem("daily",this.daily);
-localStorage.setItem("crystals",this.crystals);
-localStorage.setItem("lastDate",this.lastDate);
-},
-
-alarm(){try{let ctxA=new(window.AudioContext||window.webkitAudioContext)();let osc=ctxA.createOscillator();osc.frequency.value=600;osc.connect(ctxA.destination);osc.start();osc.stop(ctxA.currentTime+0.05);}catch(e){}}
+let state={
+  time:120,precount:5,running:false,paused:false,
+  streak:0,days:0,crystals:0,
+  zone:1,bossHealth:100,lootEarned:0,
+  heroY:360,heroVY:0,onGround:true,
+  particles:[],heroAnim:0
 };
 
-Game.init();
+function save(){localStorage.setItem("tr_streak",state.streak);localStorage.setItem("tr_days",state.days);localStorage.setItem("tr_crystals",state.crystals);}
+function load(){state.streak=parseInt(localStorage.getItem("tr_streak")||"0");state.days=parseInt(localStorage.getItem("tr_days")||"0");state.crystals=parseInt(localStorage.getItem("tr_crystals")||"0");}
+function updateHUD(){
+  document.getElementById("streak").textContent=state.streak;
+  document.getElementById("days").textContent=state.days;
+  document.getElementById("crystals").textContent=state.crystals;
+  document.getElementById("zone").textContent=["ENAMEL DISTRICT","FLOSS HIGHWAY","GUMLINE FORGE","CAVITY CORE"][state.zone-1]||"ENAMEL DISTRICT";
+  let mins=Math.floor(state.time/60);
+  let secs=Math.floor(state.time%60);
+  let tEl=document.getElementById("timer");
+  tEl.textContent=mins+":"+(secs<10?"0"+secs:secs);
+  if(state.time<=10)tEl.classList.add("danger"); else tEl.classList.remove("danger");
+}
+
+function startGame(){state.running=true;state.paused=false;state.time=120;state.precount=5;state.zone=1;state.bossHealth=100;updateHUD();}
+function pauseGame(){state.paused=!state.paused;}
+function resetGame(){state.running=false;state.paused=false;state.time=120;state.zone=1;state.bossHealth=100;updateHUD();}
+
+document.getElementById("startBtn").onclick=startGame;
+document.getElementById("pauseBtn").onclick=pauseGame;
+document.getElementById("resetBtn").onclick=resetGame;
+document.getElementById("parentOpenBtn").onclick=()=>{document.getElementById("parentPanel").style.display="block";document.getElementById("ppStreak").value=state.streak;document.getElementById("ppDays").value=state.days;document.getElementById("ppCrystals").value=state.crystals;};
+document.getElementById("closeParent").onclick=()=>{document.getElementById("parentPanel").style.display="none";};
+document.getElementById("applyParent").onclick=()=>{
+  state.streak=Number(document.getElementById("ppStreak").value);
+  state.days=Number(document.getElementById("ppDays").value);
+  state.crystals=Number(document.getElementById("ppCrystals").value);
+  save();updateHUD();document.getElementById("parentPanel").style.display="none";
+};
+
+const beep=new AudioContext();
+function beepSound(){let osc=beep.createOscillator();osc.connect(beep.destination);osc.frequency.value=440;osc.start();osc.stop(beep.currentTime+0.1);}
+
+document.getElementById("lootBox").onclick=()=>{
+  document.getElementById("lootText").textContent="Crystals this run: "+state.lootEarned+"\nTotal: "+state.crystals;
+};
+
+document.getElementById("lootOkBtn").onclick=()=>{
+  document.getElementById("lootOverlay").style.display="none";
+  resetGame();
+};
+
+function damageBoss(amount){state.bossHealth=Math.max(0,state.bossHealth-amount);state.particles.push({x:240,y:100,vx:(Math.random()-0.5)*100,vy:(Math.random()-0.5)*100,life:0.6,color:"#ff0"});}
+
+function update(dt){
+  if(!state.running||state.paused)return;
+  if(state.precount>0){state.precount-=dt;return;}
+  state.time-=dt;
+  if(state.time<=0){
+    state.time=0;
+    state.running=false;
+    state.days++;
+    state.streak++;
+    state.lootEarned=5;
+    state.crystals+=state.lootEarned;
+    save();
+    document.getElementById("lootOverlay").style.display="flex";
+  }
+  if(Math.floor(state.time)%30===0 && state.time>0){damageBoss(20);state.zone=Math.min(4,Math.floor((120-state.time)/30)+1);}
+  state.heroVY+=400*dt;
+  state.heroY+=state.heroVY*dt;
+  if(state.heroY>=360){state.heroY=360;state.heroVY=0;state.onGround=true;}
+  state.particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;});
+  state.particles=state.particles.filter(p=>p.life>0);
+  if(state.time<=10)beepSound();
+  updateHUD();
+}
+
+function render(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#111"; ctx.fillRect(0,392,320,88);
+  ctx.fillStyle="#0ff"; ctx.fillRect(60,state.heroY,16,32);
+  ctx.fillStyle="#f22"; ctx.fillRect(240,100,64,64);
+  state.particles.forEach(p=>{ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,2,2);});
+}
+
+let lastTs=0;
+function loop(ts){let dt=(ts-lastTs)/1000||0;lastTs=ts;update(dt);render();requestAnimationFrame(loop);}
+load();updateHUD();requestAnimationFrame(loop);
 </script>
 </body>
 </html>
