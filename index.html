@@ -2,136 +2,40 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tooth Ranger: Plaque Planet</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-:root{
-  --bg1:#060913;
-  --bg2:#0f1630;
-  --neon:#00f0ff;
-  --danger:#ff2e4d;
-  --panel:#111a3a;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-  background:radial-gradient(circle at top,var(--bg2),var(--bg1));
-  font-family:Inter,sans-serif;
-  color:white;
-  display:flex;
-  justify-content:center;
-}
-.app{
-  max-width:430px;
-  width:100%;
-  padding:16px;
-  display:flex;
-  flex-direction:column;
-  min-height:100vh;
-}
-h1{
-  font-family:Orbitron;
-  text-align:center;
-  font-size:18px;
-  margin-bottom:12px;
-  color:var(--neon);
-  letter-spacing:2px;
-}
-.timer{
-  font-family:Orbitron;
-  font-size:48px;
-  text-align:center;
-  margin:10px 0;
-}
-.timer.danger{
-  color:var(--danger);
-  animation:flash 0.5s infinite;
-}
-@keyframes flash{
-  50%{opacity:0.3}
-}
-.zone{
-  text-align:center;
-  font-size:12px;
-  color:var(--neon);
-  height:18px;
-}
-canvas{
-  width:100%;
-  height:260px;
-  background:black;
-  border-radius:18px;
-  margin:12px 0;
-  box-shadow:0 0 30px rgba(0,255,255,0.2);
-}
-.controls{
-  display:flex;
-  justify-content:space-between;
-}
-button{
-  flex:1;
-  margin:4px;
-  padding:12px;
-  border:none;
-  border-radius:12px;
-  background:var(--panel);
-  color:white;
-  font-weight:600;
-}
-button.primary{background:var(--neon);color:black}
-.stats{
-  margin-top:10px;
-  text-align:center;
-  font-size:12px;
-  opacity:0.8;
-}
-.parent{
-  margin-top:auto;
-  text-align:center;
-  font-size:11px;
-  opacity:0.5;
-}
-.overlay{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.85);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-}
-.lootbox{
-  background:var(--panel);
-  padding:24px;
-  border-radius:20px;
-  text-align:center;
-}
-.crystal{
-  font-size:50px;
-  animation:spin 2s linear infinite;
-}
-@keyframes spin{
-  to{transform:rotate(360deg)}
-}
+body{margin:0;background:#060913;color:white;font-family:sans-serif;display:flex;justify-content:center;}
+.app{width:100%;max-width:430px;padding:12px;display:flex;flex-direction:column;min-height:100vh;}
+h1{text-align:center;color:#0ff;font-family:Orbitron,sans-serif;font-size:20px;margin-bottom:8px;}
+#timer{font-family:Orbitron,sans-serif;font-size:48px;text-align:center;margin:6px 0;}
+#timer.danger{color:#f22;animation:flash 0.5s infinite;}
+@keyframes flash{50%{opacity:0.3}}
+#zone{text-align:center;font-size:12px;margin-bottom:4px;color:#0ff;}
+canvas{width:100%;height:260px;background:black;border-radius:18px;box-shadow:0 0 30px rgba(0,255,255,0.2);}
+.controls{display:flex;justify-content:space-between;margin-top:6px;}
+button{flex:1;margin:2px;padding:12px;border:none;border-radius:12px;background:#111;color:white;font-weight:600;}
+button.primary{background:#0ff;color:black;}
+#stats{text-align:center;font-size:12px;margin-top:6px;opacity:0.8;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;flex-direction:column;}
+.lootbox{background:#111;padding:24px;border-radius:20px;text-align:center;}
+.crystal{font-size:50px;animation:spin 2s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.parent{text-align:center;font-size:11px;opacity:0.5;margin-top:auto;}
 </style>
 </head>
 <body>
 <div class="app">
 <h1>TOOTH RANGER</h1>
-
-<div class="timer" id="timer">2:00</div>
-<div class="zone" id="zone"></div>
-
+<div id="timer">2:00</div>
+<div id="zone"></div>
 <canvas id="game" width="400" height="260"></canvas>
-
 <div class="controls">
 <button class="primary" onclick="Game.start()">Start</button>
 <button onclick="Game.pause()">Pause</button>
 <button onclick="Game.reset()">Reset</button>
 </div>
-
-<div class="stats" id="stats"></div>
-
+<div id="stats"></div>
 <div class="parent">
 <button onclick="Game.parentAdjust()">Parent Controls</button>
 </div>
@@ -161,12 +65,24 @@ particles:[],
 canvas:null,
 ctx:null,
 lastFrame:0,
+heroSprite:null,
+bossSprite:null,
 
 init(){
 this.canvas=document.getElementById("game");
 this.ctx=this.canvas.getContext("2d");
+this.loadSprites();
 requestAnimationFrame(this.loop.bind(this));
 this.updateStats();
+},
+
+loadSprites(){
+// Hero sprite: embedded Base64 PNG 32x32px (simplified)
+this.heroSprite=new Image();
+this.heroSprite.src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABPklEQVRYR+2XwQ2DMBBFz0sC3WA7YOwKdwcGhUQ6qIOwYVsT6iwRCjVxZJvKpAKxZlz+/pJnR4LtwAi+vB2A+wB1i12fBlp87iBzBkegmZV+GbgzZpB0id5a8vPshqF8A4Ixw3xtqVne6O3NANuQxwBv4Aykf3LxphmU40EyOkq5Vx2YvQ4F6lCvl7cHQrMEt40FVpIsIUQkQpWQ9vgiR9d0EQuEokxRyK+HBkSmm/BChF3F/1z5slAFU1RojGKwWGl1H+gPwR7Ch0zxGfwO+gEjEr0q7QLnqgM8NqUBwBD2fZQtrHJxM6yqAhTkP2zmgWqJE1QnKxjTgnrkvbBq2gb0cH8Y6ErX8t1KwMnK3wKlmGrVxoOqQwAAAABJRU5ErkJggg==";
+// Boss sprite: embedded Base64 PNG 64x64px
+this.bossSprite=new Image();
+this.bossSprite.src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAQCAYAAABH9v8kAAAAQ0lEQVR42mNgGAWjYBSMglEwCqIgglEE6QAcYHnYgDqEPCsDhA7g1QvAeCkgd4XgAAxrjGzQAAByYXHxFXjK50AAAAASUVORK5CYII=";
 },
 
 start(){
@@ -176,9 +92,8 @@ let count=5;
 document.getElementById("timer").textContent="Deploy in 5";
 let pre=setInterval(()=>{
 count--;
-if(count>0){
-document.getElementById("timer").textContent="Deploy in "+count;
-}else{
+if(count>0){document.getElementById("timer").textContent="Deploy in "+count;}
+else{
 clearInterval(pre);
 this.state="running";
 this.time=this.TOTAL;
@@ -187,10 +102,7 @@ this.bossHealth=100;
 },1000);
 },
 
-pause(){
-if(this.state==="running")this.state="paused";
-else if(this.state==="paused")this.state="running";
-},
+pause(){if(this.state==="running")this.state="paused";else if(this.state==="paused")this.state="running";},
 
 reset(){
 this.state="idle";
@@ -200,17 +112,16 @@ document.getElementById("timer").classList.remove("danger");
 document.getElementById("timer").textContent="2:00";
 },
 
-loop(timestamp){
-let delta=(timestamp-this.lastFrame)/1000;
-this.lastFrame=timestamp;
+loop(ts){
+let delta=(ts-this.lastFrame)/1000;
+this.lastFrame=ts;
 if(this.state==="running"){
 this.time-=delta;
-if(this.time<=0){
-this.complete();
-}
+if(this.time<=0){this.complete();}
 this.bossHealth=(this.time/this.TOTAL)*100;
 this.updateTimer();
 this.updateZone();
+this.updateParticles();
 }
 this.render();
 requestAnimationFrame(this.loop.bind(this));
@@ -225,94 +136,54 @@ el.textContent=`${m}:${s.toString().padStart(2,"0")}`;
 if(t<=10){
 el.classList.add("danger");
 this.alarm();
-}
+}else el.classList.remove("danger");
 },
 
 updateZone(){
 let z=Math.floor((this.TOTAL-this.time)/30);
-const zones=[
-"Upper Left Sector",
-"Upper Right Sector",
-"Lower Left Sector",
-"Core Chamber"
-];
+const zones=["Upper Left Sector","Upper Right Sector","Lower Left Sector","Core Chamber"];
 document.getElementById("zone").textContent=zones[z]||"";
 },
 
 render(){
 const ctx=this.ctx;
 ctx.clearRect(0,0,400,260);
-
-/* Parallax */
-ctx.fillStyle="#0a0f22";
-ctx.fillRect(0,0,400,260);
-ctx.fillStyle="#141c3f";
-for(let i=0;i<30;i++){
-ctx.fillRect((i*50+Date.now()/20)%400,200,20,60);
-}
-
-/* Hero */
-ctx.fillStyle="#00f0ff";
-ctx.fillRect(60,160,24,40);
-ctx.fillStyle="white";
-ctx.fillRect(70,170,8,8);
-
-/* Boss */
-let damage=100-this.bossHealth;
-ctx.fillStyle=damage<30?"#666":damage<60?"#ff9900":"#ff2e4d";
-ctx.fillRect(280,100,80,100);
-if(damage>60){
-ctx.fillStyle="yellow";
-ctx.fillRect(315,130,20,20);
-}
-
-/* Sparks */
-this.particles.forEach(p=>{
-ctx.fillStyle="cyan";
-ctx.fillRect(p.x,p.y,2,2);
-p.y-=2;
-});
+// Parallax background
+ctx.fillStyle="#0a0f22";ctx.fillRect(0,0,400,260);
+ctx.fillStyle="#141c3f";for(let i=0;i<30;i++){ctx.fillRect((i*50+Date.now()/20)%400,200,20,60);}
+// Hero
+ctx.drawImage(this.heroSprite,60,160,32,32);
+// Boss
+ctx.fillStyle=this.bossHealth>60?"#f22":this.bossHealth>30?"#f90":"#666";
+ctx.drawImage(this.bossSprite,280,100,64,64);
+// Particles
+this.particles.forEach(p=>{ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,2,2);});
 },
+
+updateParticles(){this.particles.forEach(p=>{p.life-=1/60;p.y-=1;});this.particles=this.particles.filter(p=>p.life>0);},
 
 complete(){
 this.state="complete";
 let today=new Date().toDateString();
-if(today!==this.lastDate){
-this.daily++;
-if(new Date(today)-new Date(this.lastDate)===86400000)this.streak++;
-else this.streak=1;
-this.lastDate=today;
-}
+if(today!==this.lastDate){this.daily++;this.streak++;this.lastDate=today;}
 let reward=Math.floor(Math.random()*20)+15;
 this.crystals+=reward;
 this.save();
 this.updateStats();
-this.showLoot(reward);
-},
-
-showLoot(amount){
-document.getElementById("lootText").textContent=
-"You earned "+amount+" Energy Crystals";
+document.getElementById("lootText").textContent="You earned "+reward+" Crystals";
 document.getElementById("lootOverlay").style.display="flex";
 },
 
-closeLoot(){
-document.getElementById("lootOverlay").style.display="none";
-this.reset();
-},
+closeLoot(){document.getElementById("lootOverlay").style.display="none";this.reset();},
 
 parentAdjust(){
-let d=prompt("Daily count:");
-let s=prompt("Streak:");
-if(d!==null)this.daily=Number(d);
-if(s!==null)this.streak=Number(s);
-this.save();
-this.updateStats();
+let d=prompt("Daily count:");let s=prompt("Streak:");
+if(d!==null)this.daily=Number(d);if(s!==null)this.streak=Number(s);
+this.save();this.updateStats();
 },
 
 updateStats(){
-document.getElementById("stats").textContent=
-"Crystals: "+this.crystals+" | Streak: "+this.streak+" | Today: "+this.daily;
+document.getElementById("stats").textContent="Crystals: "+this.crystals+" | Streak: "+this.streak+" | Today: "+this.daily;
 },
 
 save(){
@@ -322,14 +193,7 @@ localStorage.setItem("daily",this.daily);
 localStorage.setItem("lastDate",this.lastDate);
 },
 
-alarm(){
-let ctxAudio=new(window.AudioContext||window.webkitAudioContext)();
-let osc=ctxAudio.createOscillator();
-osc.frequency.value=600;
-osc.connect(ctxAudio.destination);
-osc.start();
-osc.stop(ctxAudio.currentTime+0.05);
-}
+alarm(){let ctxAudio=new(window.AudioContext||window.webkitAudioContext)();let osc=ctxAudio.createOscillator();osc.frequency.value=600;osc.connect(ctxAudio.destination);osc.start();osc.stop(ctxAudio.currentTime+0.05);}
 };
 
 Game.init();
