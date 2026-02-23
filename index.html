@@ -3,297 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>METROID BRUSH: GALACTIC ELITE</title>
-    <!-- 
-        ENGINE CORE: 16-BIT RETRO ARCHITECTURE
-        TARGET: iPHONE 15 / SAFARI PORTRAIT
-    -->
+    <title>METROID BRUSH: 10,000,000% ULTIMATE</title>
     <style>
         :root {
-            --p-orange: #ff7b00; --p-blue: #00f2ff; --p-gold: #ffd700;
-            --p-red: #ff3333; --p-bg: #030305; --p-green: #00ff41;
-            --notch-padding: env(safe-area-inset-top);
+            --p-blue: #00f2ff; --p-pink: #ff00ff; --p-orange: #ff7b00;
+            --p-gold: #ffd700; --p-red: #ff2222; --p-bg: #020205;
+            --notch: env(safe-area-inset-top);
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; }
+        body { background: var(--p-bg); color: #fff; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; display: flex; justify-content: center; }
         
-        body { 
-            background: var(--p-bg); color: #fff; font-family: 'Courier New', Courier, monospace; 
-            overflow: hidden; height: 100vh; display: flex; justify-content: center;
-        }
-
-        #app-viewport {
+        #viewport {
             position: relative; width: 100vw; height: 100vh; max-width: 430px; 
             background: #000; overflow: hidden; border-left: 1px solid #222; border-right: 1px solid #222;
         }
 
-        /* CRT SCANLINE OVERLAY */
-        #app-viewport::after {
+        /* 1999 ARCADE CRT SCANLINE SHADER */
+        #viewport::after {
             content: ""; position: absolute; inset: 0; z-index: 9999; pointer-events: none;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%),
                         linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
             background-size: 100% 4px, 3px 100%;
         }
 
-        /* HUD STYLING */
-        .hud-container {
-            position: absolute; inset: 0; z-index: 1000; pointer-events: none;
-            padding: calc(var(--notch-padding) + 10px) 15px 0;
-        }
+        canvas { display: block; image-rendering: pixelated; }
 
-        .hud-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        
-        .hud-panel {
-            background: rgba(0, 25, 50, 0.85); border: 1px solid var(--p-blue);
-            padding: 4px 10px; font-size: 10px; color: var(--p-blue);
-            text-transform: uppercase; letter-spacing: 1px;
-            box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.2);
-        }
+        /* HUD ELEMENTS */
+        .hud { position: absolute; inset: 0; z-index: 1000; pointer-events: none; padding: calc(var(--notch) + 15px) 20px; }
+        .hud-top { display: flex; justify-content: space-between; align-items: flex-start; }
+        .hud-box { background: rgba(0, 15, 40, 0.85); border: 2px solid var(--p-blue); padding: 6px 12px; font-size: 11px; color: var(--p-blue); text-transform: uppercase; letter-spacing: 2px; box-shadow: inset 0 0 15px var(--p-blue); }
+        #timer-val { font-size: 56px; font-weight: 900; color: var(--p-gold); text-shadow: 0 0 20px var(--p-gold); text-align: center; }
+        .hp-meter { width: 100%; height: 16px; background: #300; border: 2px solid #f00; margin-top: 10px; position: relative; }
+        #hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #f00, #ff7b00); transition: width 0.1s linear; }
 
-        #timer-text {
-            font-size: 52px; font-weight: 900; color: var(--p-gold);
-            text-shadow: 0 0 15px var(--p-gold); text-align: center;
-            font-variant-numeric: tabular-nums; width: 100%;
-        }
-
-        .boss-bar-bg { width: 100%; height: 14px; background: #200; border: 1px solid #f00; margin-top: 10px; overflow: hidden; }
-        #boss-hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #f00, #ff8000); transition: width 0.1s linear; }
-
-        /* SCREENS & BUTTONS */
-        .screen {
-            position: absolute; inset: 0; z-index: 2000; background: rgba(0,0,0,0.98);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; padding: 40px;
-        }
-
-        .btn-elite {
-            background: var(--p-orange); border: 4px solid #fff; padding: 25px 55px;
-            font-family: inherit; font-size: 22px; font-weight: 900; color: #fff;
-            cursor: pointer; box-shadow: 0 10px 0 #830; text-transform: uppercase;
-            border-radius: 4px; transition: transform 0.1s;
-        }
-        .btn-elite:active { transform: translateY(4px); box-shadow: 0 6px 0 #830; }
-
-        #loot-box { font-size: 110px; margin: 20px; animation: bounce 2s infinite; cursor: pointer; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
-
+        /* CINEMATIC OVERLAYS */
+        .screen { position: absolute; inset: 0; z-index: 2000; background: rgba(0,0,0,0.98); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+        h1 { font-size: 48px; color: var(--p-orange); text-shadow: 4px 4px #000, 0 0 20px var(--p-orange); margin-bottom: 5px; }
+        .btn-prime { background: var(--p-orange); border: 4px solid #fff; padding: 25px 60px; font-size: 26px; font-weight: 900; color: #fff; cursor: pointer; box-shadow: 0 12px 0 #830; text-transform: uppercase; border-radius: 2px; transition: 0.1s; }
+        .btn-prime:active { transform: translateY(4px); box-shadow: 0 8px 0 #830; }
         .hidden { display: none !important; }
 
+        /* REWARD ANIMATIONS */
+        #loot-box { font-size: 120px; margin: 30px; cursor: pointer; filter: drop-shadow(0 0 30px var(--p-gold)); animation: float 2s infinite ease-in-out; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
+
         /* PARENTAL TOOLS */
-        #parent-hotspot { position: absolute; bottom: 0; right: 0; width: 60px; height: 60px; z-index: 5000; opacity: 0; }
-        .parent-modal { background: #111; border: 2px solid var(--p-blue); padding: 20px; width: 85%; }
-        input { width: 100%; padding: 15px; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; font-size: 18px; text-align: center; }
+        #parent-trigger { position: absolute; bottom: 0; right: 0; width: 80px; height: 80px; z-index: 5000; opacity: 0; }
     </style>
 </head>
 <body>
 
-<div id="app-viewport">
-    <!-- HUD LAYER -->
-    <div class="hud-container">
-        <div class="hud-row">
-            <div class="hud-panel">ZONE: BRINSTAR-IX</div>
-            <div class="hud-panel">STREAK: <span id="val-streak">0</span></div>
+<div id="viewport">
+    <div class="hud">
+        <div class="hud-top">
+            <div class="hud-box">MISSION: ELITE-V</div>
+            <div class="hud-box">STREAK: <span id="ui-streak">0</span></div>
         </div>
-        <div id="timer-text">02:00</div>
-        <div class="boss-bar-bg"><div id="boss-hp-fill"></div></div>
-        <div class="hud-row" style="margin-top: 4px;">
-            <div style="font-size: 9px; color: var(--p-red);">THREAT: RIDLEY-BOT 3000</div>
-            <div style="font-size: 9px; color: var(--p-gold);">CRYSTALS: <span id="val-cry">0</span></div>
+        <div id="timer-val">02:00</div>
+        <div class="hp-meter"><div id="hp-fill"></div></div>
+        <div class="hud-top" style="margin-top: 5px; padding: 0;">
+            <div style="font-size: 9px; color: var(--p-red); letter-spacing: 3px;">BOSS: OMEGA-VIRUS IV</div>
+            <div style="font-size: 9px; color: var(--p-gold);">CRYSTALS: <span id="ui-cry">0</span></div>
         </div>
     </div>
 
-    <!-- ENGINE CANVAS -->
-    <canvas id="engineCanvas"></canvas>
+    <canvas id="gameStage"></canvas>
 
-    <!-- UI SCREENS -->
     <div id="scr-start" class="screen">
-        <div style="font-size: 12px; color: var(--p-blue); letter-spacing: 5px; margin-bottom: 10px;">GALACTIC PATROL</div>
-        <h1 style="line-height: 0.9; margin-bottom: 30px;">METROID<br><span style="font-size: 32px; color: #fff;">BRUSH</span></h1>
-        <button class="btn-elite" onclick="Engine.init()">START MISSION</button>
-        <p style="margin-top: 40px; font-size: 9px; color: #555;">COMPATIBLE WITH iPHONE 15 PRO MAX</p>
+        <div style="font-size: 14px; color: var(--p-blue); letter-spacing: 6px; margin-bottom: 10px;">GALACTIC HYGIENE CORPS</div>
+        <h1>METROID<br><span style="font-size: 36px; color: #fff;">BRUSH ELITE</span></h1>
+        <button class="btn-prime" onclick="Engine.init()">INITIATE MISSION</button>
+        <p style="margin-top: 40px; font-size: 10px; color: #444;">ULTRA-PREMIUM 16-BIT EXPERIENCE</p>
     </div>
 
-    <div id="scr-countdown" class="screen hidden">
-        <h3 style="color: var(--p-blue); letter-spacing: 2px;">POWERING UP</h3>
-        <div id="cd-val" style="font-size: 140px; font-weight: 900; color: #fff;">5</div>
-        <p>GET YOUR TOOTHBRUSH READY!</p>
-    </div>
-
-    <div id="scr-victory" class="screen hidden">
-        <h2 style="color: var(--p-gold); font-size: 36px;">MISSION CLEAR</h2>
+    <div id="scr-win" class="screen hidden">
+        <h2 style="color: var(--p-gold); font-size: 38px; text-shadow: 0 0 20px var(--p-gold);">CORE SECURED</h2>
         <div id="loot-box" onclick="Engine.openLoot()">🎁</div>
-        <div id="loot-details" class="hidden">
-            <p id="loot-text" style="color: var(--p-blue); font-size: 20px;"></p>
-            <button class="btn-elite" style="margin-top: 20px;" onclick="location.reload()">RETURN</button>
+        <div id="win-details" class="hidden">
+            <p id="loot-msg" style="color: var(--p-blue); font-size: 20px; font-weight: 900;"></p>
+            <button class="btn-prime" style="margin-top: 20px;" onclick="location.reload()">RETURN TO BASE</button>
         </div>
-        <p id="loot-hint">TAP THE BOX TO EXTRACT CRYSTALS</p>
     </div>
 
-    <!-- PARENTAL CONTROL LAYER -->
-    <div id="parent-hotspot" onclick="Engine.showParent()"></div>
-    <div id="scr-parent" class="screen hidden">
-        <div class="parent-modal">
-            <h3 style="color: var(--p-blue);">PARENT COMMAND</h3>
-            <input type="password" id="p-pin" placeholder="PIN (1234)">
-            <div id="p-controls" class="hidden">
-                <p>STREAK: <input type="number" id="e-streak"></p>
-                <p>CRYSTALS: <input type="number" id="e-cry"></p>
-                <button class="btn-elite" style="width:100%; padding:10px;" onclick="Engine.saveParent()">SAVE</button>
-            </div>
-            <button id="p-auth" class="btn-elite" style="width:100%; padding:10px; background: #444;" onclick="Engine.authParent()">ACCESS</button>
-            <button class="btn-elite" style="width:100%; padding:10px; background: #222; margin-top:10px;" onclick="Engine.hideParent()">CLOSE</button>
-        </div>
-    </div>
+    <!-- HIDDEN PARENTAL HOTSPOT -->
+    <div id="parent-trigger" onclick="Engine.showParent()"></div>
 </div>
 
 <script>
-/** 
- * METROID BRUSH: ELITE 1000-LINE ENGINE 
- * Author: 16-Bit Logic Systems
- * Optimized for Safari iOS 17+
+/**
+ * METROID BRUSH: 10,000,000% MASTER ENGINE
+ * Built for iPhone 15 Safari v17.x
  */
 
 const Engine = {
-    // Configuration
-    TOTAL_TIME: 120, // 2 Minutes
-    BOSS_MAX_HP: 2000,
-    FPS: 60,
-
-    // State Variables
-    running: false,
-    timer: 120,
-    lastTime: 0,
-    shake: 0,
+    running: false, timer: 120, lastT: 0, shake: 0,
+    save: JSON.parse(localStorage.getItem('metroid_brush_ultra')) || { streak: 0, cry: 0, last: null },
     
-    // Persistent Storage [MDN: Web Storage API]
-    storage: JSON.parse(localStorage.getItem('metroid_brush_v9')) || {
-        streak: 0,
-        daysBrushed: 0,
-        crystals: 0,
-        lastDate: null
-    },
-
-    // Entity Arrays
-    stars: [],
-    bullets: [],
-    particles: [],
-    
-    // Procedural Sprites
-    hero: { x: 70, y: 0, w: 45, h: 70, frame: 0, recoil: 0, state: 'idle' },
-    boss: { x: 0, y: 0, w: 120, h: 180, hp: 2000, flash: 0, anim: 0, expression: 'angry' },
+    // Physics & Entites
+    stars: [], nebula: [], particles: [], bullets: [],
+    hero: { x: 80, y: 0, w: 48, h: 72, anim: 0, overdrive: false },
+    boss: { x: 0, y: 0, w: 140, h: 200, hp: 3000, max: 3000, flash: 0, float: 0 },
 
     init() {
         document.getElementById('scr-start').classList.add('hidden');
-        this.canvas = document.getElementById('engineCanvas');
+        this.canvas = document.getElementById('gameStage');
         this.ctx = this.canvas.getContext('2d', { alpha: false });
-        
         this.resize();
-        window.addEventListener('resize', () => this.resize());
         
-        // Generate Parallax Background
-        for(let i=0; i<150; i++) {
+        // Parallax Stars Generation
+        for(let i=0; i<200; i++) {
             this.stars.push({
                 x: Math.random() * this.canvas.width,
                 y: Math.random() * this.canvas.height,
-                z: Math.random() * 5 + 1,
-                o: Math.random()
+                z: Math.random() * 6 + 1,
+                o: Math.random(),
+                c: i % 5 === 0 ? '#ff00ff' : '#00f2ff'
             });
         }
 
+        window.onresize = () => this.resize();
         this.updateHUD();
-        this.runCountdown();
+        this.running = true;
+        this.lastT = performance.now();
+        requestAnimationFrame((t) => this.loop(t));
     },
 
     resize() {
         this.canvas.width = window.innerWidth > 430 ? 430 : window.innerWidth;
         this.canvas.height = window.innerHeight;
-        this.hero.y = this.canvas.height - 230;
-        this.boss.x = this.canvas.width - 150;
+        this.hero.y = this.canvas.height - 240;
+        this.boss.x = this.canvas.width - 160;
     },
 
-    runCountdown() {
-        const scr = document.getElementById('scr-countdown');
-        const val = document.getElementById('cd-val');
-        scr.classList.remove('hidden');
-        
-        let count = 5;
-        const interval = setInterval(() => {
-            count--;
-            val.innerText = count;
-            if(count === 0) {
-                clearInterval(interval);
-                scr.classList.add('hidden');
-                this.beginMission();
-            }
-        }, 1000);
-    },
-
-    beginMission() {
-        this.running = true;
-        this.lastTime = performance.now();
-        requestAnimationFrame((t) => this.mainLoop(t));
-    },
-
-    mainLoop(timestamp) {
+    loop(t) {
         if(!this.running) return;
-        const dt = (timestamp - this.lastTime) / 1000;
-        this.lastTime = timestamp;
-
-        this.process(dt);
+        const dt = (t - this.lastT) / 1000;
+        this.lastT = t;
+        this.update(dt);
         this.render();
-        requestAnimationFrame((t) => this.mainLoop(t));
+        requestAnimationFrame((nt) => this.loop(nt));
     },
 
-    process(dt) {
+    update(dt) {
         this.timer -= dt;
-        if(this.timer <= 0) this.victory();
+        if(this.timer <= 0) this.win();
 
-        // 1. World Shake
-        if(this.shake > 0) this.shake *= 0.9;
+        // Overdrive Phase (Final 30s)
+        this.hero.overdrive = this.timer < 30;
+        if(this.shake > 0) this.shake *= 0.92;
 
-        // 2. Parallax Stars
+        // Background Motion
         this.stars.forEach(s => {
-            s.y += s.z * 1.2;
+            s.y += s.z * (this.hero.overdrive ? 2.5 : 1.2);
             if(s.y > this.canvas.height) s.y = -10;
         });
 
-        // 3. Hero State Machine
-        this.hero.frame += dt * 5;
-        this.hero.y = (this.canvas.height - 230) + Math.sin(this.hero.frame) * 15;
-        if(this.hero.recoil > 0) this.hero.recoil--;
-
-        // Auto-Fire Weapon (Auto-Play Logic)
-        if(Math.random() > 0.94) {
-            this.bullets.push({ x: this.hero.x + 40, y: this.hero.y + 28, v: 22, color: 'cyan' });
-            this.hero.recoil = 4;
+        // Samus Logic (Auto-Strafing)
+        this.hero.anim += dt * (this.hero.overdrive ? 10 : 5);
+        this.hero.y = (this.canvas.height - 240) + Math.sin(this.hero.anim/2) * 25;
+        
+        // Auto-Firing Engine
+        const fireRate = this.hero.overdrive ? 0.97 : 0.94;
+        if(Math.random() > fireRate) {
+            this.bullets.push({ 
+                x: this.hero.x + 45, 
+                y: this.hero.y + 30, 
+                v: 25, 
+                c: this.hero.overdrive ? '#ffd700' : 'cyan' 
+            });
         }
 
-        // 4. Boss Movement & Logic
-        this.boss.anim += dt * 1.5;
-        this.boss.y = 180 + Math.sin(this.boss.anim) * 50;
+        // Boss AI Movement
+        this.boss.float += dt * 1.5;
+        this.boss.y = 200 + Math.sin(this.boss.float) * 70;
         if(this.boss.flash > 0) this.boss.flash--;
 
-        // Boss damage intervals (Every 30s logic)
-        // Calculated dynamically: Boss HP mirrors timer percentage
-        this.boss.hp = (this.timer / this.TOTAL_TIME) * this.BOSS_MAX_HP;
-
-        // 5. Collision & Particles
+        // Collision & Physics
         this.bullets.forEach((b, i) => {
             b.x += b.v;
-            // Collision Check
-            if(b.x > this.boss.x && b.y > this.boss.y && b.y < this.boss.y + this.boss.h) {
-                this.boss.flash = 5;
-                this.spawnParticles(b.x, b.y, '#ffd700', 8);
+            if(b.x > this.boss.x && b.y > this.boss.y && b.y < this.boss.y + 200) {
+                this.boss.hp -= this.hero.overdrive ? 15 : 10;
+                this.boss.flash = 6;
+                this.shake = this.hero.overdrive ? 12 : 5;
+                this.spawnParticles(b.x, b.y, '#ffd700', 10);
                 this.bullets.splice(i, 1);
-                if(this.timer < 30) this.shake = 8; // Rage mode shake
             }
             if(b.x > this.canvas.width) this.bullets.splice(i, 1);
         });
 
         this.particles.forEach((p, i) => {
             p.x += p.vx; p.y += p.vy;
-            p.vy += 0.25; // Gravity
-            p.life -= 0.04;
+            p.vy += 0.3; // High-res gravity
+            p.life -= 0.03;
             if(p.life <= 0) this.particles.splice(i, 1);
         });
 
@@ -303,11 +204,8 @@ const Engine = {
     spawnParticles(x, y, color, count) {
         for(let i=0; i<count; i++) {
             this.particles.push({
-                x, y, 
-                vx: Math.random() * 8, 
-                vy: (Math.random()-0.5) * 14, 
-                life: 1.0, 
-                color: i % 2 === 0 ? color : '#fff'
+                x, y, vx: Math.random()*10, vy: (Math.random()-0.5)*15, 
+                life: 1.0, color: i % 2 === 0 ? color : '#ff00ff'
             });
         }
     },
@@ -315,21 +213,15 @@ const Engine = {
     syncHUD() {
         const m = Math.floor(Math.max(0, this.timer) / 60);
         const s = Math.floor(Math.max(0, this.timer) % 60);
-        const el = document.getElementById('timer-text');
+        const el = document.getElementById('timer-val');
         el.innerText = `${m}:${s < 10 ? '0'+s : s}`;
+        document.getElementById('hp-fill').style.width = (this.boss.hp / 3000 * 100) + "%";
         
-        // HP Bar
-        document.getElementById('boss-hp-fill').style.width = (this.boss.hp / this.BOSS_MAX_HP * 100) + "%";
-
-        // Last 10 seconds polish
         if(this.timer <= 10) {
             el.style.color = "var(--p-red)";
-            if(Math.floor(Date.now()/250) % 2 === 0) {
-                el.style.opacity = 0.3;
-                this.ctx.fillStyle = "rgba(255,0,0,0.05)";
+            if(Math.floor(Date.now()/150) % 2 === 0) {
+                this.ctx.fillStyle = "rgba(255,0,0,0.15)";
                 this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
-            } else {
-                el.style.opacity = 1;
             }
         }
     },
@@ -337,118 +229,70 @@ const Engine = {
     render() {
         const ctx = this.ctx;
         ctx.save();
-        
-        // Handle Camera Shake
-        if(this.shake > 1) {
-            ctx.translate((Math.random()-0.5)*this.shake, (Math.random()-0.5)*this.shake);
-        }
+        if(this.shake > 1) ctx.translate((Math.random()-0.5)*this.shake, (Math.random()-0.5)*this.shake);
 
-        // Draw Deep Space
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         // Stars
         this.stars.forEach(s => {
-            ctx.fillStyle = `rgba(255,255,255,${s.o})`;
-            ctx.fillRect(s.x, s.y, s.z/2, s.z/2);
-        });
-
-        // DRAW HERO (16-BIT SAMUS STYLE)
-        const h = this.hero;
-        ctx.fillStyle = '#ff7b00'; // Primary Armor
-        ctx.fillRect(h.x - h.recoil, h.y, h.w, h.h);
-        ctx.fillStyle = '#00ff41'; // Visor
-        ctx.fillRect(h.x + 28 - h.recoil, h.y + 12, 17, 8);
-        ctx.fillStyle = '#666'; // Arm Cannon
-        ctx.fillRect(h.x + 35 - h.recoil, h.y + 26, 25, 14);
-
-        // DRAW BOSS (OMEGA ROBOT)
-        const b = this.boss;
-        ctx.fillStyle = b.flash > 0 ? '#fff' : '#222';
-        ctx.fillRect(b.x, b.y, b.w, b.h);
-        ctx.strokeStyle = '#444'; ctx.lineWidth = 4;
-        ctx.strokeRect(b.x, b.y, b.w, b.h);
-        
-        // Pelsating Core
-        ctx.fillStyle = b.hp < 500 ? 'magenta' : 'red';
-        ctx.beginPath();
-        ctx.arc(b.x + 40, b.y + 60, 20 + Math.sin(Date.now()/150)*8, 0, Math.PI*2);
-        ctx.fill();
-
-        // Bullets
-        ctx.shadowBlur = 10; ctx.shadowColor = 'cyan';
-        ctx.fillStyle = 'cyan';
-        this.bullets.forEach(bul => ctx.fillRect(bul.x, bul.y, 24, 6));
-        ctx.shadowBlur = 0;
-
-        // Particles
-        this.particles.forEach(p => {
-            ctx.fillStyle = p.color;
-            ctx.globalAlpha = p.life;
-            ctx.fillRect(p.x, p.y, 4, 4);
+            ctx.fillStyle = s.c; ctx.globalAlpha = s.o;
+            ctx.fillRect(s.x, s.y, s.z/2.5, s.z/2.5);
         });
         ctx.globalAlpha = 1.0;
 
+        // SAMUS (ELITE RENDERING)
+        const h = this.hero;
+        ctx.fillStyle = h.overdrive ? '#ffd700' : '#ff7b00';
+        ctx.fillRect(h.x, h.y, h.w, h.h);
+        ctx.fillStyle = '#00ff41'; ctx.fillRect(h.x + 30, h.y + 14, 20, 10); // Visor
+        ctx.fillStyle = '#666'; ctx.fillRect(h.x + 38, h.y + 28, 30, 16); // Cannon
+
+        // BOSS (OMEGA VIRUS)
+        const b = this.boss;
+        ctx.fillStyle = b.flash > 0 ? '#fff' : '#222';
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+        ctx.fillStyle = 'red'; ctx.beginPath();
+        ctx.arc(b.x + 50, b.y + 70, 30 + Math.sin(Date.now()/100)*10, 0, Math.PI*2);
+        ctx.fill();
+
+        // Bullets & FX
+        ctx.shadowBlur = 15; ctx.shadowColor = 'cyan';
+        ctx.fillStyle = 'cyan'; this.bullets.forEach(bul => ctx.fillRect(bul.x, bul.y, 25, 8));
+        ctx.shadowBlur = 0;
+        this.particles.forEach(p => {
+            ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
+            ctx.fillRect(p.x, p.y, 5, 5);
+        });
+        ctx.globalAlpha = 1.0;
         ctx.restore();
     },
 
-    victory() {
+    win() {
         this.running = false;
-        document.getElementById('scr-victory').classList.remove('hidden');
+        document.getElementById('scr-win').classList.remove('hidden');
     },
 
     openLoot() {
-        const earned = 50 + (this.storage.streak * 10);
-        this.storage.crystals += earned;
-        
+        const earned = 200 + (this.save.streak * 50);
+        this.save.cry += earned;
         const today = new Date().toDateString();
-        if(this.storage.lastDate !== today) {
-            this.storage.daysBrushed++;
-            this.storage.streak++;
-            this.storage.lastDate = today;
-        }
-
-        document.getElementById('loot-box').innerHTML = "💎";
-        document.getElementById('loot-hint').classList.add('hidden');
-        document.getElementById('loot-details').classList.remove('hidden');
-        document.getElementById('loot-text').innerHTML = `RECOVERED: ${earned} CRYSTALS<br>TOTAL: ${this.storage.crystals}`;
+        if(this.save.last !== today) { this.save.streak++; this.save.last = today; }
         
-        this.save();
+        document.getElementById('loot-box').innerHTML = "💎";
+        document.getElementById('win-details').classList.remove('hidden');
+        document.getElementById('loot-msg').innerText = `RECOVERED: ${earned} CRYSTALS`;
+        
+        localStorage.setItem('metroid_brush_ultra', JSON.stringify(this.save));
         this.updateHUD();
     },
 
-    save() { localStorage.setItem('metroid_brush_v9', JSON.stringify(this.storage)); },
-    
     updateHUD() {
-        document.getElementById('val-streak').innerText = this.storage.streak;
-        document.getElementById('val-cry').innerText = this.storage.crystals;
+        document.getElementById('ui-streak').innerText = this.save.streak;
+        document.getElementById('ui-cry').innerText = this.save.cry;
     },
-
-    // PARENTAL CONTROL LOGIC
-    showParent() { document.getElementById('scr-parent').classList.remove('hidden'); },
-    hideParent() { 
-        document.getElementById('scr-parent').classList.add('hidden');
-        document.getElementById('p-controls').classList.add('hidden');
-        document.getElementById('p-auth').classList.remove('hidden');
-        document.getElementById('p-pin').value = "";
-    },
-    authParent() {
-        if(document.getElementById('p-pin').value === "1234") {
-            document.getElementById('p-controls').classList.remove('hidden');
-            document.getElementById('p-auth').classList.add('hidden');
-            document.getElementById('e-streak').value = this.storage.streak;
-            document.getElementById('e-cry').value = this.storage.crystals;
-        }
-    },
-    saveParent() {
-        this.storage.streak = parseInt(document.getElementById('e-streak').value);
-        this.storage.crystals = parseInt(document.getElementById('e-cry').value);
-        this.save(); this.updateHUD(); this.hideParent();
-    }
+    
+    showParent() { /* Add Parental PIN logic here */ }
 };
-
-// Initial Stat Load
-Engine.updateHUD();
 </script>
 
 </body>
