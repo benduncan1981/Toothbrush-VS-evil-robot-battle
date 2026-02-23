@@ -5,30 +5,36 @@
 <title>Tooth Ranger: Plaque Planet</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body{margin:0;background:#060913;color:white;font-family:sans-serif;display:flex;justify-content:center;}
-.app{width:100%;max-width:430px;padding:12px;display:flex;flex-direction:column;min-height:100vh;}
-h1{text-align:center;color:#0ff;font-family:Orbitron,sans-serif;font-size:20px;margin-bottom:8px;}
-#timer{font-family:Orbitron,sans-serif;font-size:48px;text-align:center;margin:6px 0;}
-#timer.danger{color:#f22;animation:flash 0.5s infinite;}
+/* --- Reset & Base --- */
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#02030a;color:#fff;font-family:'Press Start 2P',sans-serif;display:flex;justify-content:center;align-items:flex-start;height:100vh;overflow:hidden}
+.app{width:100%;max-width:430px;padding:12px;display:flex;flex-direction:column;align-items:center}
+h1{text-align:center;color:#0ff;font-family:Orbitron,sans-serif;font-size:20px;margin-bottom:8px;text-shadow:0 0 6px #0ff}
+#timer{font-family:Orbitron,sans-serif;font-size:48px;text-align:center;margin:6px 0}
+#timer.danger{color:#f22;animation:flash 0.5s infinite}
 @keyframes flash{50%{opacity:0.3}}
-#zone{text-align:center;font-size:12px;margin-bottom:4px;color:#0ff;}
-canvas{width:100%;height:260px;background:black;border-radius:18px;box-shadow:0 0 30px rgba(0,255,255,0.2);}
-.controls{display:flex;justify-content:space-between;margin-top:6px;}
-button{flex:1;margin:2px;padding:12px;border:none;border-radius:12px;background:#111;color:white;font-weight:600;}
-button.primary{background:#0ff;color:black;}
-#stats{text-align:center;font-size:12px;margin-top:6px;opacity:0.8;}
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;flex-direction:column;}
-.lootbox{background:#111;padding:24px;border-radius:20px;text-align:center;}
-.crystal{font-size:50px;animation:spin 2s linear infinite;}
+#zone{text-align:center;font-size:12px;margin-bottom:4px;color:#0ff;text-shadow:0 0 3px #0ff}
+canvas{width:100%;height:260px;background:#000;border-radius:18px;box-shadow:0 0 30px rgba(0,255,255,0.2)}
+.controls{display:flex;justify-content:space-between;margin-top:6px;width:100%}
+button{flex:1;margin:2px;padding:12px;border:none;border-radius:12px;background:#111;color:white;font-weight:600;cursor:pointer;transition:0.2s}
+button.primary{background:#0ff;color:black}
+button:active{transform:translateY(2px)}
+#stats{text-align:center;font-size:12px;margin-top:6px;opacity:0.8}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:100}
+.lootbox{background:#111;padding:24px;border-radius:20px;text-align:center;box-shadow:0 0 20px #0ff}
+.crystal{font-size:50px;animation:spin 2s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.parent{text-align:center;font-size:11px;opacity:0.5;margin-top:auto;}
+.parent{text-align:center;font-size:11px;opacity:0.5;margin-top:auto}
+#parentPanel{position:fixed;right:6px;bottom:6px;width:280px;background:rgba(0,0,0,0.95);border:2px solid #444;padding:10px;font-size:9px;display:none;z-index:200;border-radius:10px}
+#parentPanel input{width:100%;padding:4px;margin-bottom:4px;background:#111;color:#fff;border:1px solid #444;border-radius:4px}
+#parentPanel button{width:48%;margin:2%;padding:6px;background:#0ff;color:#000;border:none;border-radius:6px;font-weight:600}
 </style>
 </head>
 <body>
 <div class="app">
 <h1>TOOTH RANGER</h1>
 <div id="timer">2:00</div>
-<div id="zone"></div>
+<div id="zone">ENAMEL DISTRICT</div>
 <canvas id="game" width="400" height="260"></canvas>
 <div class="controls">
 <button class="primary" onclick="Game.start()">Start</button>
@@ -36,69 +42,75 @@ button.primary{background:#0ff;color:black;}
 <button onclick="Game.reset()">Reset</button>
 </div>
 <div id="stats"></div>
-<div class="parent">
-<button onclick="Game.parentAdjust()">Parent Controls</button>
-</div>
+<div class="parent"><button onclick="Game.showParent()">Parent Controls</button></div>
 </div>
 
 <div class="overlay" id="lootOverlay">
 <div class="lootbox">
-<h2>Mission Complete</h2>
+<h2>Mission Complete!</h2>
 <div class="crystal">💎</div>
 <p id="lootText"></p>
 <button onclick="Game.closeLoot()">Continue</button>
 </div>
 </div>
 
+<div id="parentPanel">
+<h3>Parent Panel</h3>
+<label>Daily Count:</label><input id="ppDaily" type="number">
+<label>Streak:</label><input id="ppStreak" type="number">
+<label>Crystals:</label><input id="ppCrystals" type="number">
+<button onclick="Game.applyParent()">Apply</button>
+<button onclick="Game.resetParent()">Reset All</button>
+</div>
+
 <script>
 const Game={
 TOTAL:120,
+PRECOUNT:5,
 time:120,
 state:"idle",
 zoneIndex:0,
-crystals:Number(localStorage.getItem("crystals")||0),
 streak:Number(localStorage.getItem("streak")||0),
 daily:Number(localStorage.getItem("daily")||0),
+crystals:Number(localStorage.getItem("crystals")||0),
 lastDate:localStorage.getItem("lastDate")||"",
 bossHealth:100,
 particles:[],
 canvas:null,
 ctx:null,
 lastFrame:0,
-heroSprite:null,
-bossSprite:null,
+heroFrames:[],
+bossFrames:[],
+heroAnim:0,
+heroX:60, heroY:160, heroVY:0, groundY:200,
+parentPass:"1234",
 
 init(){
 this.canvas=document.getElementById("game");
 this.ctx=this.canvas.getContext("2d");
 this.loadSprites();
-requestAnimationFrame(this.loop.bind(this));
 this.updateStats();
+requestAnimationFrame(this.loop.bind(this));
 },
 
 loadSprites(){
-// Hero sprite: embedded Base64 PNG 32x32px (simplified)
-this.heroSprite=new Image();
-this.heroSprite.src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABPklEQVRYR+2XwQ2DMBBFz0sC3WA7YOwKdwcGhUQ6qIOwYVsT6iwRCjVxZJvKpAKxZlz+/pJnR4LtwAi+vB2A+wB1i12fBlp87iBzBkegmZV+GbgzZpB0id5a8vPshqF8A4Ixw3xtqVne6O3NANuQxwBv4Aykf3LxphmU40EyOkq5Vx2YvQ4F6lCvl7cHQrMEt40FVpIsIUQkQpWQ9vgiR9d0EQuEokxRyK+HBkSmm/BChF3F/1z5slAFU1RojGKwWGl1H+gPwR7Ch0zxGfwO+gEjEr0q7QLnqgM8NqUBwBD2fZQtrHJxM6yqAhTkP2zmgWqJE1QnKxjTgnrkvbBq2gb0cH8Y6ErX8t1KwMnK3wKlmGrVxoOqQwAAAABJRU5ErkJggg==";
-// Boss sprite: embedded Base64 PNG 64x64px
-this.bossSprite=new Image();
-this.bossSprite.src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAQCAYAAABH9v8kAAAAQ0lEQVR42mNgGAWjYBSMglEwCqIgglEE6QAcYHnYgDqEPCsDhA7g1QvAeCkgd4XgAAxrjGzQAAByYXHxFXjK50AAAAASUVORK5CYII=";
+// Hero 32x32 sprite sheet base64 embedded
+let h=new Image();h.src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAHklEQVR42mNgGAU0A4yMhjAEYzAjAGbQ1EYAAAOq5FjvWf1DAAAAAElFTkSuQmCC";
+this.heroFrames.push(h);
+// Boss 64x64
+let b=new Image();b.src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAQCAYAAABH9v8kAAAAQ0lEQVR42mNgGAWjYBSMglEwCqIgglEE6QAcYHnYgDqEPCsDhA7g1QvAeCkgd4XgAAxrjGzQAAByYXHxFXjK50AAAAASUVORK5CYII=";
+this.bossFrames.push(b);
 },
 
 start(){
 if(this.state==="running")return;
-this.state="countdown";
-let count=5;
-document.getElementById("timer").textContent="Deploy in 5";
+this.state="precount";
+let c=this.PRECOUNT;
+document.getElementById("timer").textContent="Deploy in "+c;
 let pre=setInterval(()=>{
-count--;
-if(count>0){document.getElementById("timer").textContent="Deploy in "+count;}
-else{
-clearInterval(pre);
-this.state="running";
-this.time=this.TOTAL;
-this.bossHealth=100;
-}
+c--;
+if(c>0)document.getElementById("timer").textContent="Deploy in "+c;
+else{clearInterval(pre);this.state="running";this.time=this.TOTAL;this.bossHealth=100;}
 },1000);
 },
 
@@ -133,15 +145,13 @@ let m=Math.floor(t/60);
 let s=t%60;
 let el=document.getElementById("timer");
 el.textContent=`${m}:${s.toString().padStart(2,"0")}`;
-if(t<=10){
-el.classList.add("danger");
-this.alarm();
-}else el.classList.remove("danger");
+if(t<=10){el.classList.add("danger");this.alarm();}
+else el.classList.remove("danger");
 },
 
 updateZone(){
 let z=Math.floor((this.TOTAL-this.time)/30);
-const zones=["Upper Left Sector","Upper Right Sector","Lower Left Sector","Core Chamber"];
+const zones=["ENAMEL DISTRICT","FLOSS HIGHWAY","GUMLINE FORGE","CAVITY CORE"];
 document.getElementById("zone").textContent=zones[z]||"";
 },
 
@@ -149,13 +159,13 @@ render(){
 const ctx=this.ctx;
 ctx.clearRect(0,0,400,260);
 // Parallax background
-ctx.fillStyle="#0a0f22";ctx.fillRect(0,0,400,260);
-ctx.fillStyle="#141c3f";for(let i=0;i<30;i++){ctx.fillRect((i*50+Date.now()/20)%400,200,20,60);}
+ctx.fillStyle="#02030a";ctx.fillRect(0,0,400,260);
+ctx.fillStyle="#04122a";for(let i=0;i<20;i++){ctx.fillRect((i*50+Date.now()/30)%400,180,20,40);}
 // Hero
-ctx.drawImage(this.heroSprite,60,160,32,32);
+ctx.drawImage(this.heroFrames[0],this.heroX,this.heroY,32,32);
 // Boss
 ctx.fillStyle=this.bossHealth>60?"#f22":this.bossHealth>30?"#f90":"#666";
-ctx.drawImage(this.bossSprite,280,100,64,64);
+ctx.drawImage(this.bossFrames[0],280,100,64,64);
 // Particles
 this.particles.forEach(p=>{ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,2,2);});
 },
@@ -170,16 +180,33 @@ let reward=Math.floor(Math.random()*20)+15;
 this.crystals+=reward;
 this.save();
 this.updateStats();
-document.getElementById("lootText").textContent="You earned "+reward+" Crystals";
+document.getElementById("lootText").textContent="You earned "+reward+" Crystals!";
 document.getElementById("lootOverlay").style.display="flex";
 },
 
 closeLoot(){document.getElementById("lootOverlay").style.display="none";this.reset();},
 
-parentAdjust(){
-let d=prompt("Daily count:");let s=prompt("Streak:");
-if(d!==null)this.daily=Number(d);if(s!==null)this.streak=Number(s);
-this.save();this.updateStats();
+showParent(){
+document.getElementById("parentPanel").style.display="block";
+document.getElementById("ppDaily").value=this.daily;
+document.getElementById("ppStreak").value=this.streak;
+document.getElementById("ppCrystals").value=this.crystals;
+},
+
+applyParent(){
+this.daily=Number(document.getElementById("ppDaily").value);
+this.streak=Number(document.getElementById("ppStreak").value);
+this.crystals=Number(document.getElementById("ppCrystals").value);
+this.save();
+this.updateStats();
+document.getElementById("parentPanel").style.display="none";
+},
+
+resetParent(){
+if(confirm("Reset all progress?")){
+this.daily=0;this.streak=0;this.crystals=0;this.save();this.updateStats();
+document.getElementById("parentPanel").style.display="none";
+}
 },
 
 updateStats(){
@@ -187,13 +214,13 @@ document.getElementById("stats").textContent="Crystals: "+this.crystals+" | Stre
 },
 
 save(){
-localStorage.setItem("crystals",this.crystals);
 localStorage.setItem("streak",this.streak);
 localStorage.setItem("daily",this.daily);
+localStorage.setItem("crystals",this.crystals);
 localStorage.setItem("lastDate",this.lastDate);
 },
 
-alarm(){let ctxAudio=new(window.AudioContext||window.webkitAudioContext)();let osc=ctxAudio.createOscillator();osc.frequency.value=600;osc.connect(ctxAudio.destination);osc.start();osc.stop(ctxAudio.currentTime+0.05);}
+alarm(){try{let ctxA=new(window.AudioContext||window.webkitAudioContext)();let osc=ctxA.createOscillator();osc.frequency.value=600;osc.connect(ctxA.destination);osc.start();osc.stop(ctxA.currentTime+0.05);}catch(e){}}
 };
 
 Game.init();
