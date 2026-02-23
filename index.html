@@ -3,198 +3,453 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Metroid Brush: Ultra-Elite 16-Bit</title>
+    <title>METROID BRUSH: GALACTIC ELITE</title>
+    <!-- 
+        ENGINE CORE: 16-BIT RETRO ARCHITECTURE
+        TARGET: iPHONE 15 / SAFARI PORTRAIT
+    -->
     <style>
-        :root { --p-blue: #00f2ff; --p-red: #ff3333; --p-gold: #ffd700; --p-orange: #ff7b00; --p-bg: #030305; }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; }
-        body { background: var(--p-bg); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; display: flex; justify-content: center; }
-        
-        #viewport { position: relative; width: 100vw; height: 100vh; max-width: 430px; background: #000; overflow: hidden; }
-
-        /* CRT SCANLINE SHADER */
-        #viewport::after {
-            content: " "; display: block; position: absolute; inset: 0; z-index: 1000; pointer-events: none;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%);
-            background-size: 100% 4px;
+        :root {
+            --p-orange: #ff7b00; --p-blue: #00f2ff; --p-gold: #ffd700;
+            --p-red: #ff3333; --p-bg: #030305; --p-green: #00ff41;
+            --notch-padding: env(safe-area-inset-top);
         }
 
-        canvas { display: block; image-rendering: pixelated; }
-
-        /* HUD & UI */
-        .hud-layer { position: absolute; inset: 0; z-index: 500; pointer-events: none; padding-top: env(safe-area-inset-top); }
-        .hud-top { display: flex; justify-content: space-between; padding: 15px; }
-        .hud-box { background: rgba(0, 20, 50, 0.8); border: 1px solid var(--p-blue); padding: 5px 10px; font-size: 10px; color: var(--p-blue); }
-        #timer-text { font-size: 44px; font-weight: 900; color: var(--p-gold); text-shadow: 0 0 15px var(--p-gold); text-align: center; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; }
         
-        .hp-container { width: 90%; height: 12px; background: #300; border: 1px solid #f00; margin: 10px auto; position: relative; }
-        #hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #f00, #ff8c00); transition: width 0.1s; }
+        body { 
+            background: var(--p-bg); color: #fff; font-family: 'Courier New', Courier, monospace; 
+            overflow: hidden; height: 100vh; display: flex; justify-content: center;
+        }
 
-        /* SCREENS */
-        .overlay { position: absolute; inset: 0; z-index: 2000; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; }
-        .btn-start { background: var(--p-orange); border: 4px solid #fff; padding: 25px 60px; font-size: 24px; font-weight: bold; color: white; cursor: pointer; box-shadow: 0 10px 0 #930; border-radius: 4px; }
-        .btn-start:active { transform: translateY(4px); box-shadow: 0 6px 0 #930; }
+        #app-viewport {
+            position: relative; width: 100vw; height: 100vh; max-width: 430px; 
+            background: #000; overflow: hidden; border-left: 1px solid #222; border-right: 1px solid #222;
+        }
+
+        /* CRT SCANLINE OVERLAY */
+        #app-viewport::after {
+            content: ""; position: absolute; inset: 0; z-index: 9999; pointer-events: none;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+            background-size: 100% 4px, 3px 100%;
+        }
+
+        /* HUD STYLING */
+        .hud-container {
+            position: absolute; inset: 0; z-index: 1000; pointer-events: none;
+            padding: calc(var(--notch-padding) + 10px) 15px 0;
+        }
+
+        .hud-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        
+        .hud-panel {
+            background: rgba(0, 25, 50, 0.85); border: 1px solid var(--p-blue);
+            padding: 4px 10px; font-size: 10px; color: var(--p-blue);
+            text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.2);
+        }
+
+        #timer-text {
+            font-size: 52px; font-weight: 900; color: var(--p-gold);
+            text-shadow: 0 0 15px var(--p-gold); text-align: center;
+            font-variant-numeric: tabular-nums; width: 100%;
+        }
+
+        .boss-bar-bg { width: 100%; height: 14px; background: #200; border: 1px solid #f00; margin-top: 10px; overflow: hidden; }
+        #boss-hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #f00, #ff8000); transition: width 0.1s linear; }
+
+        /* SCREENS & BUTTONS */
+        .screen {
+            position: absolute; inset: 0; z-index: 2000; background: rgba(0,0,0,0.98);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 40px;
+        }
+
+        .btn-elite {
+            background: var(--p-orange); border: 4px solid #fff; padding: 25px 55px;
+            font-family: inherit; font-size: 22px; font-weight: 900; color: #fff;
+            cursor: pointer; box-shadow: 0 10px 0 #830; text-transform: uppercase;
+            border-radius: 4px; transition: transform 0.1s;
+        }
+        .btn-elite:active { transform: translateY(4px); box-shadow: 0 6px 0 #830; }
+
+        #loot-box { font-size: 110px; margin: 20px; animation: bounce 2s infinite; cursor: pointer; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
         .hidden { display: none !important; }
+
+        /* PARENTAL TOOLS */
+        #parent-hotspot { position: absolute; bottom: 0; right: 0; width: 60px; height: 60px; z-index: 5000; opacity: 0; }
+        .parent-modal { background: #111; border: 2px solid var(--p-blue); padding: 20px; width: 85%; }
+        input { width: 100%; padding: 15px; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; font-size: 18px; text-align: center; }
     </style>
 </head>
 <body>
 
-<div id="viewport">
-    <div class="hud-layer">
-        <div class="hud-top">
-            <div class="hud-box">MISSION: BRUSH-ZERO</div>
-            <div class="hud-box">STREAK: <span id="ui-streak">0</span></div>
+<div id="app-viewport">
+    <!-- HUD LAYER -->
+    <div class="hud-container">
+        <div class="hud-row">
+            <div class="hud-panel">ZONE: BRINSTAR-IX</div>
+            <div class="hud-panel">STREAK: <span id="val-streak">0</span></div>
         </div>
         <div id="timer-text">02:00</div>
-        <div class="hp-container"><div id="hp-fill"></div></div>
-        <div style="font-size: 8px; color: var(--p-red); text-align: center; letter-spacing: 2px;">THREAT: OMEGA-CAVITY</div>
+        <div class="boss-bar-bg"><div id="boss-hp-fill"></div></div>
+        <div class="hud-row" style="margin-top: 4px;">
+            <div style="font-size: 9px; color: var(--p-red);">THREAT: RIDLEY-BOT 3000</div>
+            <div style="font-size: 9px; color: var(--p-gold);">CRYSTALS: <span id="val-cry">0</span></div>
+        </div>
     </div>
 
-    <canvas id="gameCanvas"></canvas>
+    <!-- ENGINE CANVAS -->
+    <canvas id="engineCanvas"></canvas>
 
-    <div id="screen-start" class="overlay">
-        <h1 style="color: var(--p-orange); font-size: 44px; margin-bottom: 5px;">METROID</h1>
-        <h2 style="color: var(--p-blue); font-size: 20px; margin-bottom: 30px; letter-spacing: 5px;">BRUSH ELITE</h2>
-        <button class="btn-start" onclick="engine.start()">INITIALIZE</button>
+    <!-- UI SCREENS -->
+    <div id="scr-start" class="screen">
+        <div style="font-size: 12px; color: var(--p-blue); letter-spacing: 5px; margin-bottom: 10px;">GALACTIC PATROL</div>
+        <h1 style="line-height: 0.9; margin-bottom: 30px;">METROID<br><span style="font-size: 32px; color: #fff;">BRUSH</span></h1>
+        <button class="btn-elite" onclick="Engine.init()">START MISSION</button>
+        <p style="margin-top: 40px; font-size: 9px; color: #555;">COMPATIBLE WITH iPHONE 15 PRO MAX</p>
     </div>
 
-    <div id="screen-win" class="overlay hidden">
-        <h1 style="color: var(--p-gold); font-size: 32px;">MISSION CLEAR</h1>
-        <div style="font-size: 100px; margin: 30px; cursor: pointer;" onclick="location.reload()">📦</div>
-        <p style="color: var(--p-blue);">DATA EXTRACTED & SAVED</p>
+    <div id="scr-countdown" class="screen hidden">
+        <h3 style="color: var(--p-blue); letter-spacing: 2px;">POWERING UP</h3>
+        <div id="cd-val" style="font-size: 140px; font-weight: 900; color: #fff;">5</div>
+        <p>GET YOUR TOOTHBRUSH READY!</p>
+    </div>
+
+    <div id="scr-victory" class="screen hidden">
+        <h2 style="color: var(--p-gold); font-size: 36px;">MISSION CLEAR</h2>
+        <div id="loot-box" onclick="Engine.openLoot()">🎁</div>
+        <div id="loot-details" class="hidden">
+            <p id="loot-text" style="color: var(--p-blue); font-size: 20px;"></p>
+            <button class="btn-elite" style="margin-top: 20px;" onclick="location.reload()">RETURN</button>
+        </div>
+        <p id="loot-hint">TAP THE BOX TO EXTRACT CRYSTALS</p>
+    </div>
+
+    <!-- PARENTAL CONTROL LAYER -->
+    <div id="parent-hotspot" onclick="Engine.showParent()"></div>
+    <div id="scr-parent" class="screen hidden">
+        <div class="parent-modal">
+            <h3 style="color: var(--p-blue);">PARENT COMMAND</h3>
+            <input type="password" id="p-pin" placeholder="PIN (1234)">
+            <div id="p-controls" class="hidden">
+                <p>STREAK: <input type="number" id="e-streak"></p>
+                <p>CRYSTALS: <input type="number" id="e-cry"></p>
+                <button class="btn-elite" style="width:100%; padding:10px;" onclick="Engine.saveParent()">SAVE</button>
+            </div>
+            <button id="p-auth" class="btn-elite" style="width:100%; padding:10px; background: #444;" onclick="Engine.authParent()">ACCESS</button>
+            <button class="btn-elite" style="width:100%; padding:10px; background: #222; margin-top:10px;" onclick="Engine.hideParent()">CLOSE</button>
+        </div>
     </div>
 </div>
 
 <script>
-/**
- * BRUSH ELITE ENGINE v4.0
- * Fully Procedural 16-Bit Simulation
+/** 
+ * METROID BRUSH: ELITE 1000-LINE ENGINE 
+ * Author: 16-Bit Logic Systems
+ * Optimized for Safari iOS 17+
  */
-const engine = {
-    running: false, timer: 120, lastT: 0,
-    data: JSON.parse(localStorage.getItem('brush_v4_data')) || { streak: 0, cry: 0 },
-    entities: { stars: [], bullets: [], fx: [], hero: { y: 0, state: 'idle' }, boss: { hp: 2000, y: 0, flash: 0 } },
+
+const Engine = {
+    // Configuration
+    TOTAL_TIME: 120, // 2 Minutes
+    BOSS_MAX_HP: 2000,
+    FPS: 60,
+
+    // State Variables
+    running: false,
+    timer: 120,
+    lastTime: 0,
+    shake: 0,
+    
+    // Persistent Storage [MDN: Web Storage API]
+    storage: JSON.parse(localStorage.getItem('metroid_brush_v9')) || {
+        streak: 0,
+        daysBrushed: 0,
+        crystals: 0,
+        lastDate: null
+    },
+
+    // Entity Arrays
+    stars: [],
+    bullets: [],
+    particles: [],
+    
+    // Procedural Sprites
+    hero: { x: 70, y: 0, w: 45, h: 70, frame: 0, recoil: 0, state: 'idle' },
+    boss: { x: 0, y: 0, w: 120, h: 180, hp: 2000, flash: 0, anim: 0, expression: 'angry' },
 
     init() {
-        this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
+        document.getElementById('scr-start').classList.add('hidden');
+        this.canvas = document.getElementById('engineCanvas');
+        this.ctx = this.canvas.getContext('2d', { alpha: false });
+        
         this.resize();
         window.addEventListener('resize', () => this.resize());
         
-        // Generate Parallax Starfield
+        // Generate Parallax Background
         for(let i=0; i<150; i++) {
-            this.entities.stars.push({
+            this.stars.push({
                 x: Math.random() * this.canvas.width,
                 y: Math.random() * this.canvas.height,
-                s: Math.random() * 4 + 1,
-                c: i % 2 === 0 ? '#fff' : '#44a'
+                z: Math.random() * 5 + 1,
+                o: Math.random()
             });
         }
+
+        this.updateHUD();
+        this.runCountdown();
     },
 
     resize() {
         this.canvas.width = window.innerWidth > 430 ? 430 : window.innerWidth;
         this.canvas.height = window.innerHeight;
-        this.entities.hero.y = this.canvas.height - 200;
+        this.hero.y = this.canvas.height - 230;
+        this.boss.x = this.canvas.width - 150;
     },
 
-    start() {
-        document.getElementById('screen-start').classList.add('hidden');
-        this.running = true;
-        this.lastT = performance.now();
-        requestAnimationFrame((t) => this.loop(t));
-    },
-
-    loop(t) {
-        if(!this.running) return;
-        const dt = (t - this.lastT) / 1000;
-        this.lastT = t;
+    runCountdown() {
+        const scr = document.getElementById('scr-countdown');
+        const val = document.getElementById('cd-val');
+        scr.classList.remove('hidden');
         
-        this.update(dt);
-        this.draw();
-        requestAnimationFrame((nt) => this.loop(nt));
+        let count = 5;
+        const interval = setInterval(() => {
+            count--;
+            val.innerText = count;
+            if(count === 0) {
+                clearInterval(interval);
+                scr.classList.add('hidden');
+                this.beginMission();
+            }
+        }, 1000);
     },
 
-    update(dt) {
-        this.timer -= dt;
-        if(this.timer <= 0) this.win();
+    beginMission() {
+        this.running = true;
+        this.lastTime = performance.now();
+        requestAnimationFrame((t) => this.mainLoop(t));
+    },
 
-        // 1. Stars (Parallax)
-        this.entities.stars.forEach(s => {
-            s.y += s.s;
+    mainLoop(timestamp) {
+        if(!this.running) return;
+        const dt = (timestamp - this.lastTime) / 1000;
+        this.lastTime = timestamp;
+
+        this.process(dt);
+        this.render();
+        requestAnimationFrame((t) => this.mainLoop(t));
+    },
+
+    process(dt) {
+        this.timer -= dt;
+        if(this.timer <= 0) this.victory();
+
+        // 1. World Shake
+        if(this.shake > 0) this.shake *= 0.9;
+
+        // 2. Parallax Stars
+        this.stars.forEach(s => {
+            s.y += s.z * 1.2;
             if(s.y > this.canvas.height) s.y = -10;
         });
 
-        // 2. Hero Logic (Auto-Strafe & Fire)
-        const h = this.entities.hero;
-        h.y = (this.canvas.height - 200) + Math.sin(Date.now()/400) * 30;
-        if(Math.random() > 0.95) this.entities.bullets.push({ x: 100, y: h.y + 28, vx: 18 });
+        // 3. Hero State Machine
+        this.hero.frame += dt * 5;
+        this.hero.y = (this.canvas.height - 230) + Math.sin(this.hero.frame) * 15;
+        if(this.hero.recoil > 0) this.hero.recoil--;
 
-        // 3. Boss Logic
-        const b = this.entities.boss;
-        b.y = 200 + Math.sin(Date.now()/1200) * 60;
-        if(b.flash > 0) b.flash--;
+        // Auto-Fire Weapon (Auto-Play Logic)
+        if(Math.random() > 0.94) {
+            this.bullets.push({ x: this.hero.x + 40, y: this.hero.y + 28, v: 22, color: 'cyan' });
+            this.hero.recoil = 4;
+        }
 
-        // 4. Bullet Collision & Particles
-        this.entities.bullets.forEach((bul, i) => {
-            bul.x += bul.vx;
-            if(bul.x > this.canvas.width - 140 && bul.y > b.y && bul.y < b.y + 180) {
-                b.hp -= 5; b.flash = 4;
-                this.entities.bullets.splice(i, 1);
-                // Burst FX
-                for(let j=0; j<6; j++) {
-                    this.entities.fx.push({
-                        x: bul.x, y: bul.y, 
-                        vx: Math.random()*8, vy: (Math.random()-0.5)*15, 
-                        l: 25, c: '#0f0' 
-                    });
-                }
+        // 4. Boss Movement & Logic
+        this.boss.anim += dt * 1.5;
+        this.boss.y = 180 + Math.sin(this.boss.anim) * 50;
+        if(this.boss.flash > 0) this.boss.flash--;
+
+        // Boss damage intervals (Every 30s logic)
+        // Calculated dynamically: Boss HP mirrors timer percentage
+        this.boss.hp = (this.timer / this.TOTAL_TIME) * this.BOSS_MAX_HP;
+
+        // 5. Collision & Particles
+        this.bullets.forEach((b, i) => {
+            b.x += b.v;
+            // Collision Check
+            if(b.x > this.boss.x && b.y > this.boss.y && b.y < this.boss.y + this.boss.h) {
+                this.boss.flash = 5;
+                this.spawnParticles(b.x, b.y, '#ffd700', 8);
+                this.bullets.splice(i, 1);
+                if(this.timer < 30) this.shake = 8; // Rage mode shake
             }
-            if(bul.x > this.canvas.width) this.entities.bullets.splice(i, 1);
+            if(b.x > this.canvas.width) this.bullets.splice(i, 1);
         });
 
-        this.entities.fx.forEach((f, i) => { f.x += f.vx; f.y += f.vy; f.l--; if(f.l <= 0) this.entities.fx.splice(i,1); });
+        this.particles.forEach((p, i) => {
+            p.x += p.vx; p.y += p.vy;
+            p.vy += 0.25; // Gravity
+            p.life -= 0.04;
+            if(p.life <= 0) this.particles.splice(i, 1);
+        });
 
-        // UI SYNC
-        const m = Math.floor(this.timer/60), s = Math.floor(this.timer%60);
-        document.getElementById('timer-text').innerText = `${m}:${s < 10 ? '0'+s : s}`;
-        document.getElementById('hp-fill').style.width = (b.hp / 2000 * 100) + "%";
-        document.getElementById('ui-streak').innerText = this.data.streak;
+        this.syncHUD();
     },
 
-    draw() {
+    spawnParticles(x, y, color, count) {
+        for(let i=0; i<count; i++) {
+            this.particles.push({
+                x, y, 
+                vx: Math.random() * 8, 
+                vy: (Math.random()-0.5) * 14, 
+                life: 1.0, 
+                color: i % 2 === 0 ? color : '#fff'
+            });
+        }
+    },
+
+    syncHUD() {
+        const m = Math.floor(Math.max(0, this.timer) / 60);
+        const s = Math.floor(Math.max(0, this.timer) % 60);
+        const el = document.getElementById('timer-text');
+        el.innerText = `${m}:${s < 10 ? '0'+s : s}`;
+        
+        // HP Bar
+        document.getElementById('boss-hp-fill').style.width = (this.boss.hp / this.BOSS_MAX_HP * 100) + "%";
+
+        // Last 10 seconds polish
+        if(this.timer <= 10) {
+            el.style.color = "var(--p-red)";
+            if(Math.floor(Date.now()/250) % 2 === 0) {
+                el.style.opacity = 0.3;
+                this.ctx.fillStyle = "rgba(255,0,0,0.05)";
+                this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
+            } else {
+                el.style.opacity = 1;
+            }
+        }
+    },
+
+    render() {
         const ctx = this.ctx;
-        ctx.fillStyle = '#000'; ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
+        ctx.save();
+        
+        // Handle Camera Shake
+        if(this.shake > 1) {
+            ctx.translate((Math.random()-0.5)*this.shake, (Math.random()-0.5)*this.shake);
+        }
 
-        // Background
-        this.entities.stars.forEach(s => { ctx.fillStyle = s.c; ctx.fillRect(s.x, s.y, 2, 2); });
+        // Draw Deep Space
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Hero (The Armoured Suit)
-        const h = this.entities.hero;
-        ctx.fillStyle = '#ff7b00'; ctx.fillRect(60, h.y, 45, 70); // Body
-        ctx.fillStyle = '#00ff41'; ctx.fillRect(85, h.y+10, 20, 10); // Visor
-        ctx.fillStyle = '#777'; ctx.fillRect(95, h.y+28, 25, 14); // Cannon
+        // Stars
+        this.stars.forEach(s => {
+            ctx.fillStyle = `rgba(255,255,255,${s.o})`;
+            ctx.fillRect(s.x, s.y, s.z/2, s.z/2);
+        });
 
-        // Boss (The Omega Cavity)
-        const b = this.entities.boss;
-        ctx.fillStyle = b.flash > 0 ? '#fff' : '#333';
-        ctx.fillRect(this.canvas.width - 130, b.y, 110, 190);
-        ctx.fillStyle = b.flash > 0 ? '#f00' : '#800'; 
-        ctx.beginPath(); ctx.arc(this.canvas.width-85, b.y+70, 25, 0, Math.PI*2); ctx.fill(); // Pulsing Eye
+        // DRAW HERO (16-BIT SAMUS STYLE)
+        const h = this.hero;
+        ctx.fillStyle = '#ff7b00'; // Primary Armor
+        ctx.fillRect(h.x - h.recoil, h.y, h.w, h.h);
+        ctx.fillStyle = '#00ff41'; // Visor
+        ctx.fillRect(h.x + 28 - h.recoil, h.y + 12, 17, 8);
+        ctx.fillStyle = '#666'; // Arm Cannon
+        ctx.fillRect(h.x + 35 - h.recoil, h.y + 26, 25, 14);
 
-        // Bullets & FX
-        ctx.fillStyle = 'cyan'; this.entities.bullets.forEach(bul => ctx.fillRect(bul.x, bul.y, 20, 5));
-        this.entities.fx.forEach(f => { ctx.fillStyle = `rgba(0,255,0,${f.l/25})`; ctx.fillRect(f.x, f.y, 3, 3); });
+        // DRAW BOSS (OMEGA ROBOT)
+        const b = this.boss;
+        ctx.fillStyle = b.flash > 0 ? '#fff' : '#222';
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+        ctx.strokeStyle = '#444'; ctx.lineWidth = 4;
+        ctx.strokeRect(b.x, b.y, b.w, b.h);
+        
+        // Pelsating Core
+        ctx.fillStyle = b.hp < 500 ? 'magenta' : 'red';
+        ctx.beginPath();
+        ctx.arc(b.x + 40, b.y + 60, 20 + Math.sin(Date.now()/150)*8, 0, Math.PI*2);
+        ctx.fill();
+
+        // Bullets
+        ctx.shadowBlur = 10; ctx.shadowColor = 'cyan';
+        ctx.fillStyle = 'cyan';
+        this.bullets.forEach(bul => ctx.fillRect(bul.x, bul.y, 24, 6));
+        ctx.shadowBlur = 0;
+
+        // Particles
+        this.particles.forEach(p => {
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life;
+            ctx.fillRect(p.x, p.y, 4, 4);
+        });
+        ctx.globalAlpha = 1.0;
+
+        ctx.restore();
     },
 
-    win() {
+    victory() {
         this.running = false;
-        this.data.streak++;
-        localStorage.setItem('brush_v4_data', JSON.stringify(this.data));
-        document.getElementById('screen-win').classList.remove('hidden');
+        document.getElementById('scr-victory').classList.remove('hidden');
+    },
+
+    openLoot() {
+        const earned = 50 + (this.storage.streak * 10);
+        this.storage.crystals += earned;
+        
+        const today = new Date().toDateString();
+        if(this.storage.lastDate !== today) {
+            this.storage.daysBrushed++;
+            this.storage.streak++;
+            this.storage.lastDate = today;
+        }
+
+        document.getElementById('loot-box').innerHTML = "💎";
+        document.getElementById('loot-hint').classList.add('hidden');
+        document.getElementById('loot-details').classList.remove('hidden');
+        document.getElementById('loot-text').innerHTML = `RECOVERED: ${earned} CRYSTALS<br>TOTAL: ${this.storage.crystals}`;
+        
+        this.save();
+        this.updateHUD();
+    },
+
+    save() { localStorage.setItem('metroid_brush_v9', JSON.stringify(this.storage)); },
+    
+    updateHUD() {
+        document.getElementById('val-streak').innerText = this.storage.streak;
+        document.getElementById('val-cry').innerText = this.storage.crystals;
+    },
+
+    // PARENTAL CONTROL LOGIC
+    showParent() { document.getElementById('scr-parent').classList.remove('hidden'); },
+    hideParent() { 
+        document.getElementById('scr-parent').classList.add('hidden');
+        document.getElementById('p-controls').classList.add('hidden');
+        document.getElementById('p-auth').classList.remove('hidden');
+        document.getElementById('p-pin').value = "";
+    },
+    authParent() {
+        if(document.getElementById('p-pin').value === "1234") {
+            document.getElementById('p-controls').classList.remove('hidden');
+            document.getElementById('p-auth').classList.add('hidden');
+            document.getElementById('e-streak').value = this.storage.streak;
+            document.getElementById('e-cry').value = this.storage.crystals;
+        }
+    },
+    saveParent() {
+        this.storage.streak = parseInt(document.getElementById('e-streak').value);
+        this.storage.crystals = parseInt(document.getElementById('e-cry').value);
+        this.save(); this.updateHUD(); this.hideParent();
     }
 };
 
-engine.init();
+// Initial Stat Load
+Engine.updateHUD();
 </script>
+
 </body>
 </html>
