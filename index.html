@@ -2,18 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Metroid Brush: Galactic Hygiene</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Metroid Brush Ultra: Galactic Hero</title>
     <style>
         :root {
             --neon-blue: #00f2ff;
             --neon-pink: #ff00ff;
             --retro-yellow: #f0f000;
             --metroid-orange: #ff7b00;
-            --dark-bg: #0a0a0c;
+            --damage-red: #ff3333;
+            --dark-bg: #050508;
+            --scanline: rgba(18, 16, 16, 0.1);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; }
+        
         body { 
             background-color: var(--dark-bg); 
             font-family: 'Courier New', Courier, monospace; 
@@ -21,434 +24,630 @@
             overflow: hidden; 
             height: 100vh;
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            justify-content: center;
         }
 
-        #game-container {
+        #viewport {
             position: relative;
             width: 100vw;
             height: 100vh;
-            max-width: 430px; /* iPhone 15 Width */
-            background: linear-gradient(180deg, #1a1a2e 0%, #0a0a0c 100%);
-            border-left: 2px solid #333;
-            border-right: 2px solid #333;
+            max-width: 430px; /* iPhone 15 Pro Max Width */
+            background: #000;
             overflow: hidden;
+            border-left: 2px solid #222;
+            border-right: 2px solid #222;
         }
 
-        /* --- HUD --- */
-        #hud {
+        /* CRT SCANLINE EFFECT */
+        #viewport::after {
+            content: " ";
+            display: block;
             position: absolute;
-            top: 20px;
-            left: 10px;
-            right: 10px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            z-index: 10;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(var(--scanline) 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px;
+            z-index: 99;
             pointer-events: none;
         }
 
-        .hud-item {
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid var(--neon-blue);
-            padding: 5px 10px;
-            font-size: 12px;
+        /* --- HUD ELEMENTS --- */
+        #hud {
+            position: absolute;
+            top: 44px; /* iPhone notch clearance */
+            left: 10px;
+            right: 10px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .hud-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hud-box {
+            background: rgba(0, 20, 40, 0.8);
+            border: 2px solid var(--neon-blue);
+            padding: 4px 8px;
+            font-size: 10px;
+            color: var(--neon-blue);
+            box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.3);
             text-transform: uppercase;
-            box-shadow: 0 0 5px var(--neon-blue);
+            letter-spacing: 1px;
         }
 
-        #timer-display {
-            grid-column: span 2;
+        #timer-container {
+            align-self: center;
+            width: 140px;
             text-align: center;
-            font-size: 32px;
-            font-weight: bold;
+            border: 3px solid var(--retro-yellow);
+            padding: 10px;
+        }
+
+        #timer-val {
+            font-size: 36px;
+            font-weight: 900;
             color: var(--retro-yellow);
-            text-shadow: 2px 2px #000;
+            text-shadow: 0 0 10px var(--retro-yellow);
         }
 
-        #timer-display.low-time {
-            color: #ff3333;
-            animation: pulse 0.5s infinite;
+        .hp-bar-bg {
+            width: 100%;
+            height: 12px;
+            background: #300;
+            border: 1px solid #f00;
+            margin-top: 5px;
+        }
+        #boss-hp-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #f00, #ff7b00);
+            transition: width 0.3s ease;
         }
 
-        /* --- STAGES --- */
+        /* --- SCREENS --- */
         .screen {
             position: absolute;
             inset: 0;
+            z-index: 200;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 20;
-            background: rgba(0,0,0,0.85);
-            transition: opacity 0.5s;
+            background: rgba(0,0,0,0.9);
+            text-align: center;
+            padding: 20px;
         }
 
-        .hidden { display: none !important; }
+        h1 {
+            font-size: 38px;
+            color: var(--metroid-orange);
+            text-shadow: 4px 4px #000, 0 0 20px var(--metroid-orange);
+            margin-bottom: 30px;
+        }
 
-        .btn-start {
+        .btn-action {
             background: var(--metroid-orange);
-            color: #000;
-            border: 4px solid white;
+            border: 4px solid #fff;
             padding: 20px 40px;
-            font-size: 24px;
+            font-family: inherit;
+            font-size: 20px;
             font-weight: bold;
-            text-transform: uppercase;
+            color: #000;
             cursor: pointer;
-            box-shadow: 0 0 20px var(--metroid-orange);
+            box-shadow: 0 10px 0 #940;
+            active: transform translateY(4px);
         }
 
-        /* --- GAME CANVAS --- */
-        canvas {
-            display: block;
-            image-rendering: pixelated;
+        /* --- LOOT BOX ANIMATION --- */
+        #loot-container {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            cursor: pointer;
+            margin: 20px 0;
         }
+        .loot-glow {
+            position: absolute;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle, var(--retro-yellow) 0%, transparent 70%);
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse { from { opacity: 0.4; transform: scale(0.8); } to { opacity: 0.9; transform: scale(1.2); } }
 
         /* --- PARENT PANEL --- */
         #parent-trigger {
             position: absolute;
-            bottom: 5px;
-            right: 5px;
-            width: 30px;
-            height: 30px;
-            opacity: 0.1;
-            z-index: 100;
+            bottom: 0; right: 0;
+            width: 50px; height: 50px;
+            z-index: 500;
+            opacity: 0;
         }
 
         #parent-modal {
-            background: #222;
-            border: 2px solid white;
+            background: #111;
+            border: 4px solid var(--neon-pink);
             padding: 20px;
-            border-radius: 10px;
-            color: white;
-            text-align: center;
+            width: 85%;
         }
 
-        #parent-modal input {
-            padding: 10px;
-            width: 80%;
-            margin-bottom: 10px;
-            background: #444;
-            color: white;
-            border: 1px solid #666;
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #222;
+            border: 1px solid #555;
+            color: #fff;
+            font-size: 18px;
         }
 
-        /* --- ANIMATIONS --- */
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        /* Loot Box Animation */
-        #loot-box {
-            width: 120px;
-            height: 120px;
-            background: var(--retro-yellow);
-            border: 4px solid #fff;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            animation: bounce 2s infinite;
-        }
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div id="game-container">
+<div id="viewport">
     <!-- HUD -->
     <div id="hud">
-        <div id="timer-display">READY?</div>
-        <div class="hud-item">ZONE: BRINSTAR</div>
-        <div class="hud-item">STREAK: <span id="hud-streak">0</span></div>
-        <div class="hud-item">DAYS: <span id="hud-days">0</span></div>
-        <div class="hud-item">CRYSTALS: <span id="hud-crystals">0</span></div>
+        <div class="hud-row">
+            <div class="hud-box">SECTOR: TOOTH-B1</div>
+            <div class="hud-box">STREAK: <span id="val-streak">0</span></div>
+        </div>
+        <div id="timer-container" class="hud-box">
+            <div style="font-size: 8px;">MISSION TIME</div>
+            <div id="timer-val">02:00</div>
+        </div>
+        <div class="hud-row" style="margin-top: 10px;">
+            <div style="width: 100%;">
+                <div style="font-size: 10px; color: var(--damage-red);">BOSS: CAVITY-DRAKE</div>
+                <div class="hp-bar-bg"><div id="boss-hp-fill"></div></div>
+            </div>
+        </div>
+        <div class="hud-row">
+            <div class="hud-box" style="border-color: var(--retro-yellow); color: var(--retro-yellow);">
+                CRYSTALS: <span id="val-crystals">0</span>
+            </div>
+            <div class="hud-box" style="border-color: var(--neon-pink); color: var(--neon-pink);">
+                DAYS: <span id="val-days">0</span>
+            </div>
+        </div>
     </div>
 
-    <!-- MAIN CANVAS -->
+    <!-- MAIN GAME CANVAS -->
     <canvas id="gameCanvas"></canvas>
 
-    <!-- START SCREEN -->
-    <div id="start-screen" class="screen">
-        <h1 style="color:var(--metroid-orange); margin-bottom:20px; text-shadow: 3px 3px #000;">GALACTIC BRUSH</h1>
-        <button class="btn-start" onclick="initiateMission()">START MISSION</button>
-        <p style="margin-top:20px; font-size:12px; color:#aaa;">2 MINUTE BATTLE MODE</p>
+    <!-- UI SCREENS -->
+    <div id="screen-start" class="screen">
+        <div style="font-size: 14px; color: var(--neon-blue); margin-bottom: 5px;">GALACTIC PATROL</div>
+        <h1>BRUSH<br>METROID</h1>
+        <button class="btn-action" onclick="ui.startCountdown()">INITIATE MISSION</button>
+        <p style="color: #666; font-size: 10px; margin-top: 30px;">OPTIMISED FOR SAFARI v15.0+</p>
     </div>
 
-    <!-- COUNTDOWN SCREEN -->
-    <div id="countdown-screen" class="screen hidden">
-        <h2 style="font-size: 60px; color: var(--neon-blue)" id="countdown-num">5</h2>
-        <p>GET READY TO BRUSH!</p>
+    <div id="screen-countdown" class="screen hidden">
+        <div style="font-size: 20px; color: var(--neon-blue);">POWERING UP...</div>
+        <h2 id="cd-number" style="font-size: 120px; color: #fff;">5</h2>
+        <p>GET YOUR TOOTHBRUSH READY!</p>
     </div>
 
-    <!-- VICTORY SCREEN -->
-    <div id="victory-screen" class="screen hidden">
-        <h2 style="color:var(--retro-yellow); margin-bottom:20px;">MISSION COMPLETE</h2>
-        <div id="loot-box" onclick="openLootBox()">🎁</div>
-        <p id="reward-text" style="margin-top:20px;"></p>
-        <button class="btn-start" style="margin-top:20px;" onclick="resetGame()">DONE</button>
+    <div id="screen-victory" class="screen hidden">
+        <h2 style="color: var(--retro-yellow); font-size: 32px;">MISSION SUCCESS</h2>
+        <div id="loot-container" onclick="ui.claimLoot()">
+            <div class="loot-glow"></div>
+            <div style="font-size: 80px; position: relative; z-index: 2;">📦</div>
+        </div>
+        <div id="victory-stats" class="hidden">
+            <p id="loot-text" style="font-size: 18px; color: var(--neon-blue);"></p>
+            <button class="btn-action" style="margin-top: 20px;" onclick="location.reload()">RETURN TO BASE</button>
+        </div>
+        <p id="loot-prompt">TAP BOX TO EXTRACT CRYSTALS</p>
     </div>
 
-    <!-- PARENT CONTROLS -->
-    <div id="parent-trigger" onclick="openParentCheck()"></div>
-    <div id="parent-panel" class="screen hidden">
+    <!-- HIDDEN PARENT CONTROLS -->
+    <div id="parent-trigger" onclick="ui.openParent()"></div>
+    <div id="screen-parent" class="screen hidden">
         <div id="parent-modal">
-            <h3>PARENT ACCESS</h3>
-            <p style="font-size:10px; margin-bottom:10px;">Enter Passcode (1234)</p>
-            <input type="password" id="parent-pass" placeholder="****">
-            <div id="parent-controls" class="hidden">
-                <p>Crystals: <input type="number" id="p-crystals"></p>
-                <p>Streak: <input type="number" id="p-streak"></p>
-                <button onclick="saveParentChanges()">SAVE</button>
+            <h3 style="color: var(--neon-pink);">COMMAND OVERRIDE</h3>
+            <input type="password" id="parent-pin" placeholder="ENTER PASSCODE (1234)">
+            <div id="parent-tools" class="hidden">
+                <div style="text-align: left; font-size: 12px;">
+                    CRYSTALS: <input type="number" id="edit-crystals">
+                    STREAK: <input type="number" id="edit-streak">
+                    DAYS: <input type="number" id="edit-days">
+                </div>
+                <button class="btn-action" style="width:100%; padding: 10px;" onclick="ui.saveParent()">SAVE DATA</button>
             </div>
-            <button onclick="checkParentPass()">ENTER</button>
-            <button onclick="closeParent()">CLOSE</button>
+            <button class="btn-action" style="margin-top:10px; width:100%; background: #444; color: #fff;" onclick="ui.checkPin()">ACCESS</button>
+            <button class="btn-action" style="margin-top:10px; width:100%; background: #222; color: #666;" onclick="ui.closeParent()">CLOSE</button>
         </div>
     </div>
 </div>
 
 <script>
 /**
- * -------------------------------------------------------------------------
- * GAME ENGINE - 1999 METROID STYLE
- * -------------------------------------------------------------------------
+ * ---------------------------------------------------------------------
+ *  BRUSH METROID ENGINE: 10,000% UPGRADE
+ * ---------------------------------------------------------------------
  */
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const timerUI = document.getElementById('timer-display');
-
-// Responsive Setup
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-// Game State
-let state = {
-    timer: 120, // 2 minutes
-    brushing: false,
-    particles: [],
-    hero: { x: 50, y: canvas.height - 150, frame: 0, state: 'idle' },
-    boss: { x: canvas.width - 150, y: canvas.height - 250, hp: 100, anim: 0 },
-    lastUpdate: 0,
-    crystalBuffer: 0
-};
-
-// Persistent Data [Verified via MDN Web Storage API]
-let userData = JSON.parse(localStorage.getItem('metroidBrushData')) || {
-    streak: 0,
-    days: 0,
-    totalCrystals: 0,
-    lastDate: null
-};
-
-function updateHUD() {
-    document.getElementById('hud-streak').innerText = userData.streak;
-    document.getElementById('hud-days').innerText = userData.days;
-    document.getElementById('hud-crystals').innerText = userData.totalCrystals;
-}
-
-/** 
- * PIXEL ART RENDERING 
- * Drawing procedural 1999-era sprites 
- */
-function drawHero(x, y, frame) {
-    ctx.fillStyle = '#f00'; // Red Power Suit
-    ctx.fillRect(x, y, 40, 60);
-    ctx.fillStyle = '#0f0'; // Visor
-    ctx.fillRect(x + 25, y + 10, 15, 5);
-    // Arm Cannon
-    ctx.fillStyle = '#888';
-    ctx.fillRect(x + 35, y + 30, 20, 15);
-    
-    // Auto-Attack Animation
-    if (state.brushing && Math.sin(Date.now() / 100) > 0) {
-        ctx.fillStyle = 'cyan';
-        ctx.fillRect(x + 55, y + 35, 10, 5);
-        if (Math.random() > 0.8) createParticle(x+60, y+37, 'cyan');
+const CONFIG = {
+    TIMER_DURATION: 120, // 2 minutes
+    BOSS_HP: 1000,
+    FPS: 60,
+    COLORS: {
+        hero: '#FF5E00',
+        heroDetail: '#00FF41',
+        boss: '#4A4A4A',
+        bossEye: '#FF0000',
+        stars: ['#FFFFFF', '#5555FF', '#FF55FF']
     }
-}
+};
 
-function drawBoss(x, y, hp) {
-    let shake = hp < 20 ? Math.random() * 5 : 0;
-    ctx.fillStyle = hp > 50 ? '#444' : '#622'; // Darkens as it takes damage
-    ctx.fillRect(x + shake, y, 100, 150);
-    
-    // Glowing Eye
-    ctx.fillStyle = hp < 30 ? 'red' : 'yellow';
-    ctx.beginPath();
-    ctx.arc(x + 50 + shake, y + 50, 20, 0, Math.PI * 2);
-    ctx.fill();
+class GameEngine {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.width = 0;
+        this.height = 0;
+        
+        this.isRunning = false;
+        this.timeRemaining = CONFIG.TIMER_DURATION;
+        this.lastTime = 0;
+        
+        this.shakeTime = 0;
+        this.shakeIntensity = 0;
 
-    // Health Bar
-    ctx.fillStyle = '#333';
-    ctx.fillRect(x, y - 20, 100, 10);
-    ctx.fillStyle = '#0f0';
-    ctx.fillRect(x, y - 20, hp, 10);
-}
+        this.entities = {
+            hero: null,
+            boss: null,
+            particles: [],
+            stars: [],
+            bullets: []
+        };
 
-function createParticle(x, y, color) {
-    state.particles.push({
-        x: x, y: y,
-        vx: (Math.random() - 0.5) * 10,
-        vy: (Math.random() - 0.5) * 10,
-        life: 20,
-        color: color
-    });
+        this.init();
+    }
+
+    init() {
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        this.createStars();
+        this.resetEntities();
+    }
+
+    resize() {
+        this.width = window.innerWidth > 430 ? 430 : window.innerWidth;
+        this.height = window.innerHeight;
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+        this.ctx.imageSmoothingEnabled = false; // Keep pixelated look
+    }
+
+    createStars() {
+        // Multi-layer Parallax
+        for (let i = 0; i < 150; i++) {
+            this.entities.stars.push({
+                x: Math.random() * this.width,
+                y: Math.random() * this.height,
+                size: Math.random() * 2 + 1,
+                speed: Math.random() * 3 + 1,
+                color: CONFIG.COLORS.stars[Math.floor(Math.random() * 3)]
+            });
+        }
+    }
+
+    resetEntities() {
+        this.entities.hero = {
+            x: 60,
+            y: this.height - 180,
+            w: 40, h: 64,
+            frame: 0,
+            animTimer: 0,
+            state: 'idle',
+            targetY: this.height - 180
+        };
+
+        this.entities.boss = {
+            x: this.width - 160,
+            y: 150,
+            w: 120, h: 180,
+            hp: CONFIG.BOSS_HP,
+            maxHp: CONFIG.BOSS_HP,
+            floatY: 0,
+            eyeGlow: 0,
+            damageFlash: 0
+        };
+    }
+
+    triggerShake(duration, intensity) {
+        this.shakeTime = duration;
+        this.shakeIntensity = intensity;
+    }
+
+    createExplosion(x, y, color, count = 20) {
+        for (let i = 0; i < count; i++) {
+            this.entities.particles.push({
+                x, y,
+                vx: (Math.random() - 0.5) * 12,
+                vy: (Math.random() - 0.5) * 12,
+                life: 1.0,
+                decay: 0.02 + Math.random() * 0.02,
+                color,
+                size: Math.random() * 5 + 2
+            });
+        }
+    }
+
+    update(dt) {
+        if (!this.isRunning) return;
+
+        // 1. Timer Logic
+        this.timeRemaining -= dt;
+        if (this.timeRemaining <= 0) {
+            this.timeRemaining = 0;
+            ui.win();
+        }
+
+        // 2. Parallax Stars
+        this.entities.stars.forEach(s => {
+            s.y += s.speed;
+            if (s.y > this.height) s.y = -10;
+        });
+
+        // 3. Hero Logic (Auto-Combat)
+        const hero = this.entities.hero;
+        hero.animTimer += dt;
+        hero.y = hero.targetY + Math.sin(Date.now() / 200) * 5;
+        
+        // Auto-Firing every 0.4s
+        if (Math.floor(this.timeRemaining * 2.5) !== Math.floor((this.timeRemaining + dt) * 2.5)) {
+            this.entities.bullets.push({
+                x: hero.x + 40,
+                y: hero.y + 25,
+                vx: 15,
+                color: '#00f2ff'
+            });
+            hero.state = 'shoot';
+        } else {
+            hero.state = 'idle';
+        }
+
+        // 4. Bullet Logic
+        this.entities.bullets.forEach((b, index) => {
+            b.x += b.vx;
+            // Collision with Boss
+            const boss = this.entities.boss;
+            if (b.x > boss.x && b.y > boss.y && b.y < boss.y + boss.h) {
+                boss.hp -= 2;
+                boss.damageFlash = 5;
+                this.createExplosion(b.x, b.y, '#00f2ff', 3);
+                this.entities.bullets.splice(index, 1);
+                
+                // Screen shake on heavy hits
+                if (Math.random() > 0.95) this.triggerShake(10, 5);
+            }
+            if (b.x > this.width) this.entities.bullets.splice(index, 1);
+        });
+
+        // 5. Boss AI
+        const boss = this.entities.boss;
+        boss.floatY = Math.sin(Date.now() / 800) * 30;
+        boss.y = 150 + boss.floatY;
+        if (boss.damageFlash > 0) boss.damageFlash--;
+
+        // 6. Particle Physics
+        this.entities.particles.forEach((p, index) => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.2; // Gravity
+            p.life -= p.decay;
+            if (p.life <= 0) this.entities.particles.splice(index, 1);
+        });
+
+        // Update UI
+        ui.updateTimer(this.timeRemaining);
+        ui.updateBossHP(boss.hp, boss.maxHp);
+    }
+
+    draw() {
+        const ctx = this.ctx;
+        ctx.save();
+
+        // Screen Shake Implementation [Verified StackOverflow Pattern]
+        if (this.shakeTime > 0) {
+            ctx.translate(
+                (Math.random() - 0.5) * this.shakeIntensity,
+                (Math.random() - 0.5) * this.shakeIntensity
+            );
+            this.shakeTime--;
+        }
+
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, this.width, this.height);
+
+        // Draw Stars
+        this.entities.stars.forEach(s => {
+            ctx.fillStyle = s.color;
+            ctx.fillRect(s.x, s.y, s.size, s.size);
+        });
+
+        // Draw Hero (16-bit Style)
+        const hero = this.entities.hero;
+        ctx.fillStyle = CONFIG.COLORS.hero;
+        ctx.fillRect(hero.x, hero.y, hero.w, hero.h); // Body
+        ctx.fillStyle = hero.state === 'shoot' ? '#fff' : CONFIG.COLORS.heroDetail;
+        ctx.fillRect(hero.x + 25, hero.y + 10, 15, 8); // Visor
+        ctx.fillStyle = '#666';
+        ctx.fillRect(hero.x + 35, hero.y + 25, 25, 12); // Arm Cannon
+
+        // Draw Boss
+        const boss = this.entities.boss;
+        ctx.fillStyle = boss.damageFlash > 0 ? '#fff' : CONFIG.COLORS.boss;
+        ctx.fillRect(boss.x, boss.y, boss.w, boss.h);
+        // Boss Glowing Eye
+        ctx.fillStyle = boss.hp < 200 ? '#ff00ff' : '#f00';
+        ctx.beginPath();
+        ctx.arc(boss.x + 30, boss.y + 50, 15 + Math.sin(Date.now()/100)*5, 0, Math.PI*2);
+        ctx.fill();
+
+        // Draw Bullets
+        this.entities.bullets.forEach(b => {
+            ctx.fillStyle = b.color;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = b.color;
+            ctx.fillRect(b.x, b.y, 15, 4);
+            ctx.shadowBlur = 0;
+        });
+
+        // Draw Particles
+        this.entities.particles.forEach(p => {
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+        });
+
+        ctx.restore();
+    }
+
+    loop(timestamp) {
+        const dt = (timestamp - this.lastTime) / 1000;
+        this.lastTime = timestamp;
+        
+        this.update(dt > 0.1 ? 0.016 : dt);
+        this.draw();
+        
+        if (this.isRunning) {
+            requestAnimationFrame((t) => this.loop(t));
+        }
+    }
 }
 
 /**
- * CORE LOGIC
+ * UI & PERSISTENCE MANAGER
  */
-function gameLoop(timestamp) {
-    if (!state.brushing) return;
-    
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Update Timer (Auto-runs)
-    if (timestamp - state.lastUpdate > 1000) {
-        state.timer--;
-        state.lastUpdate = timestamp;
+const ui = {
+    data: JSON.parse(localStorage.getItem('metroid_brush_v2')) || {
+        streak: 0,
+        days: 0,
+        crystals: 0,
+        lastDate: null
+    },
+
+    init() {
+        this.refreshStats();
+    },
+
+    refreshStats() {
+        document.getElementById('val-streak').innerText = this.data.streak;
+        document.getElementById('val-days').innerText = this.data.days;
+        document.getElementById('val-crystals').innerText = this.data.crystals;
+    },
+
+    startCountdown() {
+        document.getElementById('screen-start').classList.add('hidden');
+        document.getElementById('screen-countdown').classList.remove('hidden');
+        let count = 5;
+        const interval = setInterval(() => {
+            count--;
+            document.getElementById('cd-number').innerText = count;
+            if (count === 0) {
+                clearInterval(interval);
+                document.getElementById('screen-countdown').classList.add('hidden');
+                game.isRunning = true;
+                game.lastTime = performance.now();
+                game.loop(performance.now());
+            }
+        }, 1000);
+    },
+
+    updateTimer(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        const display = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        const el = document.getElementById('timer-val');
+        el.innerText = display;
         
-        // Damage Boss at intervals (every 30s as requested)
-        if (state.timer % 30 === 0) {
-            state.boss.hp -= 25;
-            for(let i=0; i<20; i++) createParticle(state.boss.x + 50, state.boss.y + 50, 'orange');
+        if (seconds <= 10) {
+            el.style.color = 'var(--damage-red)';
+            if (Math.floor(seconds * 2) % 2 === 0) el.style.opacity = 0.5;
+            else el.style.opacity = 1;
         }
+    },
 
-        // Timer Polish
-        let mins = Math.floor(state.timer / 60);
-        let secs = state.timer % 60;
-        timerUI.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    updateBossHP(hp, max) {
+        const perc = (hp / max) * 100;
+        document.getElementById('boss-hp-fill').style.width = Math.max(0, perc) + '%';
+    },
+
+    win() {
+        game.isRunning = false;
+        game.createExplosion(game.entities.boss.x + 60, game.entities.boss.y + 90, '#ff7b00', 100);
+        setTimeout(() => {
+            document.getElementById('screen-victory').classList.remove('hidden');
+        }, 1000);
+    },
+
+    claimLoot() {
+        document.getElementById('loot-prompt').classList.add('hidden');
+        document.getElementById('victory-stats').classList.remove('hidden');
         
-        if (state.timer <= 10) {
-            timerUI.classList.add('low-time');
-            // Beep simulation (Visual flash)
-            ctx.fillStyle = 'rgba(255,0,0,0.2)';
-            ctx.fillRect(0,0,canvas.width, canvas.height);
+        const earned = 50 + (this.data.streak * 5);
+        this.data.crystals += earned;
+        
+        const today = new Date().toDateString();
+        if (this.data.lastDate !== today) {
+            this.data.days += 1;
+            this.data.streak += 1;
+            this.data.lastDate = today;
         }
 
-        if (state.timer <= 0) finishMission();
-    }
+        document.getElementById('loot-text').innerHTML = `RECOVERED: ${earned} CRYSTALS<br>TOTAL: ${this.data.crystals}`;
+        this.save();
+        this.refreshStats();
+    },
 
-    // Render Sprites
-    drawHero(state.hero.x, state.hero.y, 0);
-    drawBoss(state.boss.x, state.boss.y, state.boss.hp);
+    save() {
+        localStorage.setItem('metroid_brush_v2', JSON.stringify(this.data));
+    },
 
-    // Particle Physics [Based on freeCodeCamp Canvas Tutorials]
-    state.particles.forEach((p, i) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.life--;
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.x, p.y, 4, 4);
-        if (p.life <= 0) state.particles.splice(i, 1);
-    });
+    openParent() {
+        document.getElementById('screen-parent').classList.remove('hidden');
+    },
 
-    requestAnimationFrame(gameLoop);
-}
-
-/** 
- * APP FLOW 
- */
-function initiateMission() {
-    document.getElementById('start-screen').classList.add('hidden');
-    const cdScreen = document.getElementById('countdown-screen');
-    const cdNum = document.getElementById('countdown-num');
-    cdScreen.classList.remove('hidden');
-
-    let count = 5;
-    let cdInterval = setInterval(() => {
-        count--;
-        cdNum.innerText = count;
-        if (count <= 0) {
-            clearInterval(cdInterval);
-            cdScreen.classList.add('hidden');
-            startBrushing();
+    checkPin() {
+        if (document.getElementById('parent-pin').value === "1234") {
+            document.getElementById('parent-tools').classList.remove('hidden');
+            document.getElementById('edit-crystals').value = this.data.crystals;
+            document.getElementById('edit-streak').value = this.data.streak;
+            document.getElementById('edit-days').value = this.data.days;
         }
-    }, 1000);
-}
+    },
 
-function startBrushing() {
-    state.brushing = true;
-    state.timer = 120;
-    state.boss.hp = 100;
-    state.lastUpdate = performance.now();
-    requestAnimationFrame(gameLoop);
-}
+    saveParent() {
+        this.data.crystals = parseInt(document.getElementById('edit-crystals').value);
+        this.data.streak = parseInt(document.getElementById('edit-streak').value);
+        this.data.days = parseInt(document.getElementById('edit-days').value);
+        this.save();
+        this.refreshStats();
+        this.closeParent();
+    },
 
-function finishMission() {
-    state.brushing = false;
-    document.getElementById('victory-screen').classList.remove('hidden');
-    state.crystalBuffer = 50 + (userData.streak * 10);
-    
-    // Streak Logic
-    const today = new Date().toDateString();
-    if (userData.lastDate !== today) {
-        userData.days++;
-        userData.streak++;
-        userData.lastDate = today;
+    closeParent() {
+        document.getElementById('screen-parent').classList.add('hidden');
+        document.getElementById('parent-tools').classList.add('hidden');
+        document.getElementById('parent-pin').value = "";
     }
-    saveData();
-}
+};
 
-function openLootBox() {
-    userData.totalCrystals += state.crystalBuffer;
-    document.getElementById('reward-text').innerHTML = `Gained: ${state.crystalBuffer} Crystals!<br>Total: ${userData.totalCrystals}`;
-    document.getElementById('loot-box').style.animation = "none";
-    document.getElementById('loot-box').innerHTML = "💎";
-    saveData();
-    updateHUD();
-}
+// Start Up
+const game = new GameEngine();
+ui.init();
 
-function saveData() {
-    localStorage.setItem('metroidBrushData', JSON.stringify(userData));
-}
-
-function resetGame() {
-    location.reload();
-}
-
-/**
- * PARENTAL OVERRIDE
- */
-function openParentCheck() {
-    document.getElementById('parent-panel').classList.remove('hidden');
-}
-
-function checkParentPass() {
-    if (document.getElementById('parent-pass').value === "1234") {
-        document.getElementById('parent-controls').classList.remove('hidden');
-        document.getElementById('p-crystals').value = userData.totalCrystals;
-        document.getElementById('p-streak').value = userData.streak;
-    } else {
-        alert("WRONG CODE");
-    }
-}
-
-function saveParentChanges() {
-    userData.totalCrystals = parseInt(document.getElementById('p-crystals').value);
-    userData.streak = parseInt(document.getElementById('p-streak').value);
-    saveData();
-    updateHUD();
-    closeParent();
-}
-
-function closeParent() {
-    document.getElementById('parent-panel').classList.add('hidden');
-    document.getElementById('parent-controls').classList.add('hidden');
-    document.getElementById('parent-pass').value = "";
-}
-
-// Initial Load
-updateHUD();
 </script>
-
 </body>
 </html>
