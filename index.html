@@ -3,222 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>OSCAR vs PLAXON: MEGA-DRIVE 1200 EDITION</title>
-    <!-- High-Legibility Font for 8-year-old accessibility -->
+    <title>OSCAR vs PLAXON: 1200+ MEGA ENGINE</title>
     <link href="https://fonts.googleapis.com" rel="stylesheet">
     <style>
         :root {
-            --sega-blue: #0000ff; --sega-red: #ff0000; --sega-gold: #ffcc00;
-            --suit-green: #39ff14; --suit-orange: #ff6600; --bg: #02020a;
+            --sega-blue: #0000ff; --sega-dark: #000044; --sega-red: #ff0000;
+            --sega-gold: #ffcc00; --suit-green: #39ff14; --bg: #010105;
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background: var(--bg); color: #fff; overflow: hidden;
             font-family: 'Inter', sans-serif; touch-action: none;
         }
-        #app { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
 
-        /* --- CRT SHADER (Oscar's Retro Effect) --- */
-        #crt {
-            position: absolute; inset: 0; z-index: 500; pointer-events: none;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05));
-            background-size: 100% 3px, 2px 100%;
-        }
+        /* --- THE HUD: OSCAR'S DASHBOARD --- */
+        #ui-layer { position: absolute; inset: 0; z-index: 100; pointer-events: none; display: flex; flex-direction: column; padding: env(safe-area-inset-top, 20px) 20px 40px 20px; }
+        .hud-row { display: flex; justify-content: space-between; align-items: flex-start; }
+        .hud-card { background: rgba(0, 0, 70, 0.9); border: 4px solid var(--sega-blue); padding: 12px 18px; border-radius: 12px; box-shadow: 6px 6px 0 #000; backdrop-filter: blur(12px); pointer-events: auto; }
+        .label { font-size: 10px; color: var(--sega-gold); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .val { font-size: 24px; font-weight: 900; }
+        #main-timer { position: absolute; top: 140px; width: 100%; text-align: center; font-size: 90px; font-weight: 900; text-shadow: 6px 6px 0 var(--sega-blue); }
+        #oscar-msg { position: absolute; bottom: 180px; width: 100%; text-align: center; font-size: 32px; font-weight: 900; color: var(--suit-green); text-shadow: 4px 4px 0 #000; opacity: 0; transition: 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+        .msg-pop { opacity: 1 !important; transform: scale(1.1); }
 
-        /* --- HIGH-CONTRAST HUD --- */
-        #hud {
-            position: absolute; inset: 0; z-index: 100; pointer-events: none;
-            display: flex; flex-direction: column;
-            padding: env(safe-area-inset-top, 20px) 20px 40px 20px;
-        }
-        .hud-top-row { display: flex; justify-content: space-between; }
-        .hud-card {
-            background: rgba(0, 0, 60, 0.9); border: 4px solid var(--sega-blue);
-            padding: 12px 20px; border-radius: 15px; box-shadow: 6px 6px 0 #000;
-            backdrop-filter: blur(10px); pointer-events: auto;
-        }
-        .label { font-size: 12px; color: var(--sega-gold); text-transform: uppercase; margin-bottom: 4px; display: block; font-weight: 900; }
-        .val { font-size: 28px; font-weight: 900; }
-
-        #timer {
-            position: absolute; top: 150px; width: 100%; text-align: center;
-            font-size: 96px; font-weight: 900; text-shadow: 8px 8px 0 var(--sega-blue);
-        }
-        #oscar-msg {
-            position: absolute; bottom: 180px; width: 100%; text-align: center;
-            font-size: 36px; font-weight: 900; color: var(--suit-green);
-            text-shadow: 4px 4px 0 #000; opacity: 0; transition: 0.3s;
-        }
+        /* --- POST-PROCESSING --- */
+        #crt { position: absolute; inset: 0; z-index: 500; pointer-events: none; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.12) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05)); background-size: 100% 3px, 2px 100%; }
+        #rage { position: absolute; inset: 0; background: rgba(255,0,0,0.25); pointer-events: none; opacity: 0; transition: opacity 2s; z-index: 450; }
 
         /* --- SCREENS --- */
-        .overlay {
-            position: absolute; inset: 0; z-index: 1000;
-            background: radial-gradient(circle, #000044 0%, #000 100%);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            transition: transform 0.8s cubic-bezier(0.7, 0, 0.3, 1);
-        }
+        .overlay { position: absolute; inset: 0; z-index: 1000; background: radial-gradient(circle, #000055 0%, #000 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; transition: transform 0.8s cubic-bezier(0.7, 0, 0.3, 1); }
         .hide { transform: translateY(-100%); }
-        .btn-large {
-            padding: 35px 80px; font-size: 40px; font-weight: 900; border-radius: 20px;
-            background: var(--sega-red); color: #fff; border: 6px solid #fff;
-            box-shadow: 0 12px 0 #880000; cursor: pointer;
-        }
-        .btn-large:active { transform: translateY(8px); box-shadow: 0 4px 0 #880000; }
+        .btn-engage { padding: 35px 85px; font-size: 38px; font-weight: 900; border-radius: 20px; background: var(--sega-red); color: #fff; border: 6px solid #fff; box-shadow: 0 12px 0 #880000; cursor: pointer; }
+        .btn-engage:active { transform: translateY(8px); box-shadow: 0 4px 0 #880000; }
 
         canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
-        #parent-trigger { position: absolute; bottom: 20px; right: 20px; width: 80px; height: 80px; opacity: 0; z-index: 2000; pointer-events: auto; }
+        #parent-door { position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px; opacity: 0; z-index: 2000; pointer-events: auto; }
     </style>
 </head>
 <body>
 
 <div id="app">
-    <div id="crt"></div>
-    <div id="hud">
-        <div class="hud-top-row">
-            <div class="hud-card" id="streak-box"><span class="label">STREAK</span><span id="stat-streak" class="val">0</span></div>
-            <div class="hud-card"><span class="label">CRYSTALS</span><span id="stat-gems" class="val">0</span></div>
+    <div id="crt"></div><div id="rage"></div>
+    <div id="ui-layer">
+        <div class="hud-row">
+            <div class="hud-card" id="card-streak"><span class="label">STREAK</span><span id="v-streak" class="val">0</span></div>
+            <div class="hud-card"><span class="label">CRYSTALS</span><span id="v-gems" class="val">0</span></div>
         </div>
-        <div id="timer">02:00</div>
+        <div id="main-timer">02:00</div>
         <div id="oscar-msg">KEEP BRUSHING OSCAR!</div>
     </div>
-
-    <canvas id="gameCanvas"></canvas>
-
+    <canvas id="canvas"></canvas>
     <div id="screen-start" class="overlay">
-        <h1 style="font-size: 60px; color: var(--sega-gold); line-height: 0.8; margin-bottom: 50px;">OSCAR<br>ATTACK!</h1>
-        <button class="btn-large" onclick="Engine.engage()">ENGAGE</button>
+        <h1 style="font-size: 55px; color: var(--sega-gold); line-height: 0.8; margin-bottom: 50px;">OSCAR vs<br>PLAXON</h1>
+        <button class="btn-engage" id="engage-btn">ENGAGE</button>
     </div>
-
-    <div id="screen-victory" class="overlay hide">
-        <h2 style="font-size: 50px; color: var(--sega-gold);">VICTORY!</h2>
-        <div id="loot-box" style="font-size: 180px; cursor: pointer;" onclick="Engine.collect()">🎁</div>
+    <div id="screen-loot" class="overlay hide">
+        <h2 style="font-size: 48px; color: var(--sega-gold);">VICTORY!</h2>
+        <div id="box" style="font-size: 160px; cursor: pointer;" onclick="Core.openLoot()">🎁</div>
         <p style="font-size: 24px; font-weight: 900; margin-top: 30px;">OPEN YOUR VAULT</p>
     </div>
-
-    <div id="parent-trigger" onclick="Engine.parent()"></div>
+    <div id="parent-door" onclick="Core.parent()"></div>
 </div>
 
 <script>
 /**
- * OSCAR'S BRUSH DEFENDER ENGINE (VER. 1200+)
- * Advanced Module-Based architecture for 100% Reliability on iPhone 15.
+ * CORE ENGINE v1200+ (Failsafe Oscar Edition)
+ * Optimized for Safari iPhone 15 Touch Interactions.
  */
 
-const Engine = (() => {
-    // --- MODULE 1: INTERNAL STATE & CONSTANTS ---
+const Core = (() => {
+    // --- MODULE: ENGINE CORE ---
     let canvas, ctx, w, h;
-    let clock = 0, state = 'MENU', timeLeft = 120, isPaused = false;
+    let clock = 0, state = 'MENU', timeLeft = 120, lastTime = 0;
     let oscar, plaxon, stars = [], bullets = [], particles = [], gems = [];
-    
-    let db = JSON.parse(localStorage.getItem('oscar_ultimate_v1')) || {
-        streak: 0, crystals: 0, lastDate: null, totalBrushed: 0
-    };
+    let db = JSON.parse(localStorage.getItem('oscar_final_v1')) || { streak: 0, crystals: 0, lastDate: null };
 
-    // --- MODULE 2: AUDIO SYNTHESIZER (SEGA FM EMULATION) ---
-    let ac;
-    const Audio = {
-        init() { if(!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); },
-        play(f, t, d, v=0.1) {
-            if(!ac || isPaused) return;
-            const o = ac.createOscillator(), g = ac.createGain();
-            o.type = t; o.frequency.setValueAtTime(f, ac.currentTime);
-            g.gain.setValueAtTime(v, ac.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+d);
-            o.connect(g); g.connect(ac.destination);
-            o.start(); o.stop(ac.currentTime+d);
-        },
-        shoot() { this.play(440, 'square', 0.15, 0.05); },
-        hit() { this.play(110, 'sawtooth', 0.2, 0.1); },
-        victory() {
-            const melody =;
-            melody.forEach((n, i) => setTimeout(() => this.play(n, 'sine', 0.8, 0.2), i*150));
-        }
-    };
-
-    // --- MODULE 3: PHYSICS & ENTITY POOLING ---
-    class Particle {
-        constructor() { this.active = false; }
-        init(x, y, c, s) {
-            this.x = x; this.y = y; this.c = c; this.life = 1.0;
-            this.vx = (Math.random()-0.5)*s; this.vy = (Math.random()-0.5)*s;
-            this.active = true;
-        }
-        update() { this.x += this.vx; this.y += this.vy; this.life -= 0.02; if(this.life <= 0) this.active = false; }
-        draw() { ctx.globalAlpha = this.life; ctx.fillStyle = this.c; ctx.fillRect(this.x, this.y, 4, 4); }
-    }
-    const particlePool = Array.from({length: 300}, () => new Particle());
-
-    // --- MODULE 4: OSCAR & PLAXON LOGIC ---
-    class OscarHero {
-        constructor() { this.x = 100; this.y = 0; this.w = 75; this.h = 100; }
-        update() {
-            this.y = (h/2) + Math.sin(clock * 0.04) * (h * 0.22);
-            if(clock % 18 === 0 && state === 'BATTLE') {
-                bullets.push({x: this.x+70, y: this.y+45, v: 16});
-                Audio.shoot();
+    // --- MODULE: AUDIO FAILSAFE ---
+    let audio;
+    const Sound = {
+        init() {
+            if (!audio) {
+                audio = new (window.AudioContext || window.webkitAudioContext)();
+                // Safari Audio Primer
+                const buffer = audio.createBuffer(1, 1, 22050);
+                const source = audio.createBufferSource();
+                source.buffer = buffer;
+                source.connect(audio.destination);
+                source.start(0);
             }
+            if (audio.state === 'suspended') audio.resume();
+        },
+        tone(f, t, d, v=0.1) {
+            if(!audio || audio.state !== 'running') return;
+            const o = audio.createOscillator(), g = audio.createGain();
+            o.type = t; o.frequency.setValueAtTime(f, audio.currentTime);
+            g.gain.setValueAtTime(v, audio.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime+d);
+            o.connect(g); g.connect(audio.destination);
+            o.start(); o.stop(audio.currentTime+d);
         }
+    };
+
+    // --- MODULE: RENDER CLASSES ---
+    class Sprite {
+        constructor(x, y, w, h) { this.x = x; this.y = y; this.w = w; this.h = h; }
+    }
+
+    class Oscar extends Sprite {
+        update() { this.y = (h/2) + Math.sin(clock * 0.04) * (h * 0.22); }
         draw() {
             ctx.save(); ctx.translate(this.x, this.y);
-            // 16-BIT Suit
             ctx.fillStyle = '#0044ee'; ctx.fillRect(0, 15, this.w, this.h-15);
             ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.strokeRect(0, 15, this.w, this.h-15);
-            // Oscar Face
-            ctx.fillStyle = '#ffdbac'; ctx.fillRect(18, 0, 38, 38);
-            ctx.fillStyle = '#442200'; ctx.fillRect(18, 0, 38, 12);
+            ctx.fillStyle = '#ffdbac'; ctx.fillRect(18, 0, 38, 38); // Face
             ctx.fillStyle = '#000'; ctx.fillRect(26, 18, 6, 6); ctx.fillRect(44, 18, 6, 6);
-            // Helm Glass
             ctx.fillStyle = 'rgba(0, 255, 255, 0.2)'; ctx.fillRect(12, -8, 50, 50);
-            ctx.strokeStyle = '#00ffff'; ctx.strokeRect(12, -8, 50, 50);
             ctx.restore();
         }
     }
 
-    class PlaxonPrime {
-        constructor() { this.x = 0; this.y = 0; this.w = 230; this.h = 320; this.shake = 0; this.stage = 0; }
+    class Plaxon extends Sprite {
+        constructor() { super(0, 0, 220, 300); this.shake = 0; this.stage = 0; }
         update() {
-            this.x = w - 280; this.y = (h/2 - this.h/2) + Math.cos(clock * 0.02) * 110;
-            if(this.shake > 0) this.shake *= 0.88;
+            this.x = w - 260; this.y = (h/2 - this.h/2) + Math.cos(clock * 0.02) * 110;
+            if(this.shake > 0) this.shake *= 0.85;
             this.stage = Math.floor((120 - timeLeft) / 30);
         }
         draw() {
             ctx.save(); ctx.translate(this.x + (Math.random()-0.5)*this.shake, this.y);
-            // SEGMENTED CHASSIS
             ctx.fillStyle = '#2a2a3a'; ctx.fillRect(0, 90, this.w, 200);
-            ctx.strokeStyle = '#555'; ctx.lineWidth = 6; ctx.strokeRect(0, 90, this.w, 200);
-            // DYNAMIC HEAD
-            ctx.save(); ctx.translate(Math.sin(clock*0.06)*12, Math.cos(clock*0.04)*8);
-            ctx.fillStyle = '#3a3a4a'; ctx.fillRect(30, 0, 170, 110);
-            ctx.fillStyle = timeLeft < 35 ? 'red' : 'yellow'; ctx.fillRect(50, 30, 130, 25);
-            ctx.restore();
-            // ESCALATING DAMAGE
-            if(this.stage >= 1 && clock % 10 < 3) spawnParticles(this.x+50, this.y+150, '#ffaa00', 8);
-            if(this.stage >= 2 && clock % 5 === 0) spawnParticles(this.x+180, this.y+60, '#666', 3);
+            ctx.strokeStyle = '#555'; ctx.lineWidth = 5; ctx.strokeRect(0, 90, this.w, 200);
+            ctx.fillStyle = timeLeft < 30 ? 'red' : 'yellow'; ctx.fillRect(45, 30, 130, 25);
+            if(this.stage >= 1 && clock % 10 < 3) spawnFX(this.x+50, this.y+150, '#ffaa00', 8);
             ctx.restore();
         }
     }
 
-    // --- MODULE 5: RENDER & GAME FLOW ---
+    // --- MODULE: CORE ENGINE ---
     function init() {
-        canvas = document.getElementById('gameCanvas'); ctx = canvas.getContext('2d');
+        canvas = document.getElementById('canvas'); ctx = canvas.getContext('2d');
         resize(); window.onresize = resize;
-        loadDB();
-        oscar = new OscarHero(); plaxon = new PlaxonPrime();
+        oscar = new Oscar(100, 0, 75, 100); plaxon = new Plaxon();
         for(let i=0; i<150; i++) stars.push({x: Math.random()*2500, y: Math.random()*2000, z: Math.random()*5+1, o: Math.random()});
+        
+        // FAILSAFE: Explicit Event Listeners for Safari
+        const btn = document.getElementById('engage-btn');
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); startBattle(); }, { passive: false });
+        btn.addEventListener('click', (e) => { e.preventDefault(); startBattle(); });
+
         requestAnimationFrame(loop);
     }
 
     function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
 
-    function loop() {
-        clock++; ctx.fillStyle = '#000015'; ctx.fillRect(0,0,w,h);
+    function loop(t) {
+        clock++; ctx.fillStyle = '#000010'; ctx.fillRect(0,0,w,h);
         
-        // Parallax Starfield
+        // Stars
         ctx.fillStyle = '#fff';
         stars.forEach(s => {
-            let px = (s.x - (clock * s.z * 0.45)) % w; if(px < 0) px += w;
+            let px = (s.x - (clock * s.z * 0.4)) % w; if(px < 0) px += w;
             ctx.globalAlpha = s.o; ctx.fillRect(px, s.y % h, s.z, s.z);
         });
         ctx.globalAlpha = 1;
@@ -226,78 +171,73 @@ const Engine = (() => {
         if(state === 'BATTLE') {
             oscar.update(); oscar.draw();
             plaxon.update(); plaxon.draw();
-            updateBattle();
-            updatePrompts();
+            updateCombat(); updateMessages();
         } else if (state === 'REWARD') {
             updateGems();
         }
 
-        particlePool.forEach(p => { if(p.active) { p.update(); p.draw(); } });
+        particles.forEach((p, i) => { 
+            p.x += p.vx; p.y += p.vy; p.l -= 0.02;
+            ctx.globalAlpha = p.l; ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 4, 4);
+            if(p.l <= 0) particles.splice(i, 1);
+        });
+        ctx.globalAlpha = 1;
+
         requestAnimationFrame(loop);
     }
 
-    function updateBattle() {
+    function startBattle() {
+        if(state !== 'MENU') return;
+        Sound.init();
+        state = 'BATTLE';
+        document.getElementById('screen-start').classList.add('hide');
+        const timer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('main-timer').innerText = `${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2,'0')}`;
+            if(timeLeft <= 30) document.getElementById('rage').style.opacity = '1';
+            if(timeLeft <= 0) { clearInterval(timer); victory(); }
+        }, 1000);
+    }
+
+    function updateCombat() {
+        if(clock % 16 === 0) { bullets.push({x: oscar.x+70, y: oscar.y+45, v: 16}); Sound.tone(440, 'square', 0.1); }
         for(let i=bullets.length-1; i>=0; i--) {
             const b = bullets[i]; b.x += b.v;
             ctx.fillStyle = '#00ffff'; ctx.fillRect(b.x, b.y, 35, 10);
             if(b.x > plaxon.x && b.x < plaxon.x+plaxon.w && b.y > plaxon.y && b.y < plaxon.y+plaxon.h) {
-                plaxon.shake = 18; Audio.hit(); spawnParticles(b.x, b.y, '#ff6600', 12); bullets.splice(i,1);
+                plaxon.shake = 20; Sound.tone(110, 'sawtooth', 0.15); spawnFX(b.x, b.y, '#ff6600', 10); bullets.splice(i,1);
             }
             if(b.x > w) bullets.splice(i,1);
         }
     }
 
-    function spawnParticles(x, y, c, n) {
-        let spawned = 0;
-        for(let i=0; i<particlePool.length; i++) {
-            if(!particlePool[i].active) {
-                particlePool[i].init(x, y, c, 12);
-                spawned++; if(spawned >= n) break;
-            }
-        }
+    function spawnFX(x,y,c,n) { for(let i=0; i<n; i++) particles.push({x,y,vx:(Math.random()-0.5)*15, vy:(Math.random()-0.5)*15, l:1, c}); }
+
+    function updateMessages() {
+        const msg = document.getElementById('oscar-msg');
+        const lines = ["KEEP GOING OSCAR!", "SQUASH THE GERMS!", "OSCAR IS A HERO!", "ALMOST DONE!"];
+        if(clock % 240 === 0) { msg.innerText = lines[Math.floor(Math.random()*lines.length)]; msg.classList.add('msg-pop'); setTimeout(() => msg.classList.remove('msg-pop'), 2500); }
     }
 
-    function startTimer() {
-        const t = setInterval(() => {
-            timeLeft--;
-            const mins = Math.floor(timeLeft/60), secs = timeLeft%60;
-            document.getElementById('timer').innerText = `${mins}:${secs<10?'0'+secs:secs}`;
-            if(timeLeft <= 10) document.getElementById('timer').style.color = '#ff0000';
-            if(timeLeft <= 0) { clearInterval(t); endBattle(); }
-        }, 1000);
-    }
-
-    function endBattle() {
+    function victory() {
         state = 'FINALE';
-        let boomCount = 0;
+        let booms = 0;
         const seq = setInterval(() => {
-            spawnParticles(plaxon.x + Math.random()*plaxon.w, plaxon.y + Math.random()*plaxon.h, '#ff3300', 40);
-            Audio.play(100 + Math.random()*300, 'sawtooth', 0.5, 0.2);
-            boomCount++;
-            if(boomCount > 25) {
-                clearInterval(seq); Audio.victory();
-                document.getElementById('screen-victory').classList.remove('hide');
-            }
+            spawnFX(plaxon.x + Math.random()*plaxon.w, plaxon.y + Math.random()*plaxon.h, '#ff3300', 40);
+            Sound.tone(100+Math.random()*200, 'sawtooth', 0.5);
+            booms++;
+            if(booms > 20) { clearInterval(seq); Sound.victory(); document.getElementById('screen-loot').classList.remove('hide'); }
         }, 140);
     }
 
-    function updatePrompts() {
-        const msg = document.getElementById('oscar-msg');
-        const lines = ["KEEP GOING OSCAR!", "SQUASH THE GERMS!", "OSCAR IS A HERO!", "TURBO POWER!", "ALMOST DONE!"];
-        if(clock % 240 === 0) {
-            msg.innerText = lines[Math.floor(Math.random()*lines.length)];
-            msg.style.opacity = 1; setTimeout(() => msg.style.opacity = 0, 2500);
-        }
-    }
-
-    function collect() {
-        document.getElementById('loot-box').innerText = '💎';
-        state = 'REWARD';
+    function openLoot() {
+        document.getElementById('box').innerText = '💎'; state = 'REWARD';
         for(let i=0; i<30; i++) gems.push({x: w/2, y: h/2, vx:(Math.random()-0.5)*20, vy:(Math.random()-0.5)*20});
         db.crystals += 500;
         const today = new Date().toDateString();
         if(db.lastDate !== today) { db.streak++; db.lastDate = today; }
-        saveDB();
+        localStorage.setItem('oscar_final_v1', JSON.stringify(db));
+        updateHUD();
         setTimeout(() => location.reload(), 4500);
     }
 
@@ -308,18 +248,14 @@ const Engine = (() => {
         });
     }
 
-    function saveDB() { localStorage.setItem('oscar_ultimate_v1', JSON.stringify(db)); updateHUD(); }
-    function loadDB() { const d = localStorage.getItem('oscar_ultimate_v1'); if(d) db = JSON.parse(d); updateHUD(); }
     function updateHUD() {
-        document.getElementById('stat-streak').innerText = db.streak;
-        document.getElementById('stat-gems').innerText = db.crystals;
+        document.getElementById('v-streak').innerText = db.streak;
+        document.getElementById('v-gems').innerText = db.crystals;
     }
 
-    return { 
-        engage: () => { Audio.init(); state = 'BATTLE'; document.getElementById('screen-start').classList.add('hide'); startTimer(); },
-        collect,
-        parent: () => { const n = prompt("New Streak?"); if(n) { db.streak = parseInt(n); saveDB(); } }
-    };
+    function loadDB() { updateHUD(); }
+
+    return { init, openLoot, parent: () => { const n = prompt("Streak?"); if(n) { db.streak = parseInt(n); localStorage.setItem('oscar_final_v1', JSON.stringify(db)); updateHUD(); } } };
 })();
 
 window.onload = Engine.init;
