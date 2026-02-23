@@ -3,651 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Metroid Brush Ultra: Galactic Hero</title>
+    <title>Metroid Brush: Ultra-Elite 16-Bit</title>
     <style>
-        :root {
-            --neon-blue: #00f2ff;
-            --neon-pink: #ff00ff;
-            --retro-yellow: #f0f000;
-            --metroid-orange: #ff7b00;
-            --damage-red: #ff3333;
-            --dark-bg: #050508;
-            --scanline: rgba(18, 16, 16, 0.1);
-        }
-
+        :root { --p-blue: #00f2ff; --p-red: #ff3333; --p-gold: #ffd700; --p-orange: #ff7b00; --p-bg: #030305; }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; }
+        body { background: var(--p-bg); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; display: flex; justify-content: center; }
         
-        body { 
-            background-color: var(--dark-bg); 
-            font-family: 'Courier New', Courier, monospace; 
-            color: white; 
-            overflow: hidden; 
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-        }
+        #viewport { position: relative; width: 100vw; height: 100vh; max-width: 430px; background: #000; overflow: hidden; }
 
-        #viewport {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            max-width: 430px; /* iPhone 15 Pro Max Width */
-            background: #000;
-            overflow: hidden;
-            border-left: 2px solid #222;
-            border-right: 2px solid #222;
-        }
-
-        /* CRT SCANLINE EFFECT */
+        /* CRT SCANLINE SHADER */
         #viewport::after {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(var(--scanline) 50%, rgba(0, 0, 0, 0.1) 50%);
+            content: " "; display: block; position: absolute; inset: 0; z-index: 1000; pointer-events: none;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%);
             background-size: 100% 4px;
-            z-index: 99;
-            pointer-events: none;
         }
 
-        /* --- HUD ELEMENTS --- */
-        #hud {
-            position: absolute;
-            top: 44px; /* iPhone notch clearance */
-            left: 10px;
-            right: 10px;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            pointer-events: none;
-        }
+        canvas { display: block; image-rendering: pixelated; }
 
-        .hud-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        /* HUD & UI */
+        .hud-layer { position: absolute; inset: 0; z-index: 500; pointer-events: none; padding-top: env(safe-area-inset-top); }
+        .hud-top { display: flex; justify-content: space-between; padding: 15px; }
+        .hud-box { background: rgba(0, 20, 50, 0.8); border: 1px solid var(--p-blue); padding: 5px 10px; font-size: 10px; color: var(--p-blue); }
+        #timer-text { font-size: 44px; font-weight: 900; color: var(--p-gold); text-shadow: 0 0 15px var(--p-gold); text-align: center; }
+        
+        .hp-container { width: 90%; height: 12px; background: #300; border: 1px solid #f00; margin: 10px auto; position: relative; }
+        #hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #f00, #ff8c00); transition: width 0.1s; }
 
-        .hud-box {
-            background: rgba(0, 20, 40, 0.8);
-            border: 2px solid var(--neon-blue);
-            padding: 4px 8px;
-            font-size: 10px;
-            color: var(--neon-blue);
-            box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        #timer-container {
-            align-self: center;
-            width: 140px;
-            text-align: center;
-            border: 3px solid var(--retro-yellow);
-            padding: 10px;
-        }
-
-        #timer-val {
-            font-size: 36px;
-            font-weight: 900;
-            color: var(--retro-yellow);
-            text-shadow: 0 0 10px var(--retro-yellow);
-        }
-
-        .hp-bar-bg {
-            width: 100%;
-            height: 12px;
-            background: #300;
-            border: 1px solid #f00;
-            margin-top: 5px;
-        }
-        #boss-hp-fill {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, #f00, #ff7b00);
-            transition: width 0.3s ease;
-        }
-
-        /* --- SCREENS --- */
-        .screen {
-            position: absolute;
-            inset: 0;
-            z-index: 200;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0,0,0,0.9);
-            text-align: center;
-            padding: 20px;
-        }
-
-        h1 {
-            font-size: 38px;
-            color: var(--metroid-orange);
-            text-shadow: 4px 4px #000, 0 0 20px var(--metroid-orange);
-            margin-bottom: 30px;
-        }
-
-        .btn-action {
-            background: var(--metroid-orange);
-            border: 4px solid #fff;
-            padding: 20px 40px;
-            font-family: inherit;
-            font-size: 20px;
-            font-weight: bold;
-            color: #000;
-            cursor: pointer;
-            box-shadow: 0 10px 0 #940;
-            active: transform translateY(4px);
-        }
-
-        /* --- LOOT BOX ANIMATION --- */
-        #loot-container {
-            width: 150px;
-            height: 150px;
-            position: relative;
-            cursor: pointer;
-            margin: 20px 0;
-        }
-        .loot-glow {
-            position: absolute;
-            width: 100%; height: 100%;
-            background: radial-gradient(circle, var(--retro-yellow) 0%, transparent 70%);
-            animation: pulse 1s infinite alternate;
-        }
-
-        @keyframes pulse { from { opacity: 0.4; transform: scale(0.8); } to { opacity: 0.9; transform: scale(1.2); } }
-
-        /* --- PARENT PANEL --- */
-        #parent-trigger {
-            position: absolute;
-            bottom: 0; right: 0;
-            width: 50px; height: 50px;
-            z-index: 500;
-            opacity: 0;
-        }
-
-        #parent-modal {
-            background: #111;
-            border: 4px solid var(--neon-pink);
-            padding: 20px;
-            width: 85%;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            background: #222;
-            border: 1px solid #555;
-            color: #fff;
-            font-size: 18px;
-        }
-
+        /* SCREENS */
+        .overlay { position: absolute; inset: 0; z-index: 2000; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; }
+        .btn-start { background: var(--p-orange); border: 4px solid #fff; padding: 25px 60px; font-size: 24px; font-weight: bold; color: white; cursor: pointer; box-shadow: 0 10px 0 #930; border-radius: 4px; }
+        .btn-start:active { transform: translateY(4px); box-shadow: 0 6px 0 #930; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
 <div id="viewport">
-    <!-- HUD -->
-    <div id="hud">
-        <div class="hud-row">
-            <div class="hud-box">SECTOR: TOOTH-B1</div>
-            <div class="hud-box">STREAK: <span id="val-streak">0</span></div>
+    <div class="hud-layer">
+        <div class="hud-top">
+            <div class="hud-box">MISSION: BRUSH-ZERO</div>
+            <div class="hud-box">STREAK: <span id="ui-streak">0</span></div>
         </div>
-        <div id="timer-container" class="hud-box">
-            <div style="font-size: 8px;">MISSION TIME</div>
-            <div id="timer-val">02:00</div>
-        </div>
-        <div class="hud-row" style="margin-top: 10px;">
-            <div style="width: 100%;">
-                <div style="font-size: 10px; color: var(--damage-red);">BOSS: CAVITY-DRAKE</div>
-                <div class="hp-bar-bg"><div id="boss-hp-fill"></div></div>
-            </div>
-        </div>
-        <div class="hud-row">
-            <div class="hud-box" style="border-color: var(--retro-yellow); color: var(--retro-yellow);">
-                CRYSTALS: <span id="val-crystals">0</span>
-            </div>
-            <div class="hud-box" style="border-color: var(--neon-pink); color: var(--neon-pink);">
-                DAYS: <span id="val-days">0</span>
-            </div>
-        </div>
+        <div id="timer-text">02:00</div>
+        <div class="hp-container"><div id="hp-fill"></div></div>
+        <div style="font-size: 8px; color: var(--p-red); text-align: center; letter-spacing: 2px;">THREAT: OMEGA-CAVITY</div>
     </div>
 
-    <!-- MAIN GAME CANVAS -->
     <canvas id="gameCanvas"></canvas>
 
-    <!-- UI SCREENS -->
-    <div id="screen-start" class="screen">
-        <div style="font-size: 14px; color: var(--neon-blue); margin-bottom: 5px;">GALACTIC PATROL</div>
-        <h1>BRUSH<br>METROID</h1>
-        <button class="btn-action" onclick="ui.startCountdown()">INITIATE MISSION</button>
-        <p style="color: #666; font-size: 10px; margin-top: 30px;">OPTIMISED FOR SAFARI v15.0+</p>
+    <div id="screen-start" class="overlay">
+        <h1 style="color: var(--p-orange); font-size: 44px; margin-bottom: 5px;">METROID</h1>
+        <h2 style="color: var(--p-blue); font-size: 20px; margin-bottom: 30px; letter-spacing: 5px;">BRUSH ELITE</h2>
+        <button class="btn-start" onclick="engine.start()">INITIALIZE</button>
     </div>
 
-    <div id="screen-countdown" class="screen hidden">
-        <div style="font-size: 20px; color: var(--neon-blue);">POWERING UP...</div>
-        <h2 id="cd-number" style="font-size: 120px; color: #fff;">5</h2>
-        <p>GET YOUR TOOTHBRUSH READY!</p>
-    </div>
-
-    <div id="screen-victory" class="screen hidden">
-        <h2 style="color: var(--retro-yellow); font-size: 32px;">MISSION SUCCESS</h2>
-        <div id="loot-container" onclick="ui.claimLoot()">
-            <div class="loot-glow"></div>
-            <div style="font-size: 80px; position: relative; z-index: 2;">📦</div>
-        </div>
-        <div id="victory-stats" class="hidden">
-            <p id="loot-text" style="font-size: 18px; color: var(--neon-blue);"></p>
-            <button class="btn-action" style="margin-top: 20px;" onclick="location.reload()">RETURN TO BASE</button>
-        </div>
-        <p id="loot-prompt">TAP BOX TO EXTRACT CRYSTALS</p>
-    </div>
-
-    <!-- HIDDEN PARENT CONTROLS -->
-    <div id="parent-trigger" onclick="ui.openParent()"></div>
-    <div id="screen-parent" class="screen hidden">
-        <div id="parent-modal">
-            <h3 style="color: var(--neon-pink);">COMMAND OVERRIDE</h3>
-            <input type="password" id="parent-pin" placeholder="ENTER PASSCODE (1234)">
-            <div id="parent-tools" class="hidden">
-                <div style="text-align: left; font-size: 12px;">
-                    CRYSTALS: <input type="number" id="edit-crystals">
-                    STREAK: <input type="number" id="edit-streak">
-                    DAYS: <input type="number" id="edit-days">
-                </div>
-                <button class="btn-action" style="width:100%; padding: 10px;" onclick="ui.saveParent()">SAVE DATA</button>
-            </div>
-            <button class="btn-action" style="margin-top:10px; width:100%; background: #444; color: #fff;" onclick="ui.checkPin()">ACCESS</button>
-            <button class="btn-action" style="margin-top:10px; width:100%; background: #222; color: #666;" onclick="ui.closeParent()">CLOSE</button>
-        </div>
+    <div id="screen-win" class="overlay hidden">
+        <h1 style="color: var(--p-gold); font-size: 32px;">MISSION CLEAR</h1>
+        <div style="font-size: 100px; margin: 30px; cursor: pointer;" onclick="location.reload()">📦</div>
+        <p style="color: var(--p-blue);">DATA EXTRACTED & SAVED</p>
     </div>
 </div>
 
 <script>
 /**
- * ---------------------------------------------------------------------
- *  BRUSH METROID ENGINE: 10,000% UPGRADE
- * ---------------------------------------------------------------------
+ * BRUSH ELITE ENGINE v4.0
+ * Fully Procedural 16-Bit Simulation
  */
-
-const CONFIG = {
-    TIMER_DURATION: 120, // 2 minutes
-    BOSS_HP: 1000,
-    FPS: 60,
-    COLORS: {
-        hero: '#FF5E00',
-        heroDetail: '#00FF41',
-        boss: '#4A4A4A',
-        bossEye: '#FF0000',
-        stars: ['#FFFFFF', '#5555FF', '#FF55FF']
-    }
-};
-
-class GameEngine {
-    constructor() {
-        this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.width = 0;
-        this.height = 0;
-        
-        this.isRunning = false;
-        this.timeRemaining = CONFIG.TIMER_DURATION;
-        this.lastTime = 0;
-        
-        this.shakeTime = 0;
-        this.shakeIntensity = 0;
-
-        this.entities = {
-            hero: null,
-            boss: null,
-            particles: [],
-            stars: [],
-            bullets: []
-        };
-
-        this.init();
-    }
+const engine = {
+    running: false, timer: 120, lastT: 0,
+    data: JSON.parse(localStorage.getItem('brush_v4_data')) || { streak: 0, cry: 0 },
+    entities: { stars: [], bullets: [], fx: [], hero: { y: 0, state: 'idle' }, boss: { hp: 2000, y: 0, flash: 0 } },
 
     init() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
         this.resize();
         window.addEventListener('resize', () => this.resize());
-        this.createStars();
-        this.resetEntities();
-    }
+        
+        // Generate Parallax Starfield
+        for(let i=0; i<150; i++) {
+            this.entities.stars.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                s: Math.random() * 4 + 1,
+                c: i % 2 === 0 ? '#fff' : '#44a'
+            });
+        }
+    },
 
     resize() {
-        this.width = window.innerWidth > 430 ? 430 : window.innerWidth;
-        this.height = window.innerHeight;
-        this.canvas.width = this.width;
-        this.canvas.height = this.height;
-        this.ctx.imageSmoothingEnabled = false; // Keep pixelated look
-    }
+        this.canvas.width = window.innerWidth > 430 ? 430 : window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.entities.hero.y = this.canvas.height - 200;
+    },
 
-    createStars() {
-        // Multi-layer Parallax
-        for (let i = 0; i < 150; i++) {
-            this.entities.stars.push({
-                x: Math.random() * this.width,
-                y: Math.random() * this.height,
-                size: Math.random() * 2 + 1,
-                speed: Math.random() * 3 + 1,
-                color: CONFIG.COLORS.stars[Math.floor(Math.random() * 3)]
-            });
-        }
-    }
+    start() {
+        document.getElementById('screen-start').classList.add('hidden');
+        this.running = true;
+        this.lastT = performance.now();
+        requestAnimationFrame((t) => this.loop(t));
+    },
 
-    resetEntities() {
-        this.entities.hero = {
-            x: 60,
-            y: this.height - 180,
-            w: 40, h: 64,
-            frame: 0,
-            animTimer: 0,
-            state: 'idle',
-            targetY: this.height - 180
-        };
-
-        this.entities.boss = {
-            x: this.width - 160,
-            y: 150,
-            w: 120, h: 180,
-            hp: CONFIG.BOSS_HP,
-            maxHp: CONFIG.BOSS_HP,
-            floatY: 0,
-            eyeGlow: 0,
-            damageFlash: 0
-        };
-    }
-
-    triggerShake(duration, intensity) {
-        this.shakeTime = duration;
-        this.shakeIntensity = intensity;
-    }
-
-    createExplosion(x, y, color, count = 20) {
-        for (let i = 0; i < count; i++) {
-            this.entities.particles.push({
-                x, y,
-                vx: (Math.random() - 0.5) * 12,
-                vy: (Math.random() - 0.5) * 12,
-                life: 1.0,
-                decay: 0.02 + Math.random() * 0.02,
-                color,
-                size: Math.random() * 5 + 2
-            });
-        }
-    }
+    loop(t) {
+        if(!this.running) return;
+        const dt = (t - this.lastT) / 1000;
+        this.lastT = t;
+        
+        this.update(dt);
+        this.draw();
+        requestAnimationFrame((nt) => this.loop(nt));
+    },
 
     update(dt) {
-        if (!this.isRunning) return;
+        this.timer -= dt;
+        if(this.timer <= 0) this.win();
 
-        // 1. Timer Logic
-        this.timeRemaining -= dt;
-        if (this.timeRemaining <= 0) {
-            this.timeRemaining = 0;
-            ui.win();
-        }
-
-        // 2. Parallax Stars
+        // 1. Stars (Parallax)
         this.entities.stars.forEach(s => {
-            s.y += s.speed;
-            if (s.y > this.height) s.y = -10;
+            s.y += s.s;
+            if(s.y > this.canvas.height) s.y = -10;
         });
 
-        // 3. Hero Logic (Auto-Combat)
-        const hero = this.entities.hero;
-        hero.animTimer += dt;
-        hero.y = hero.targetY + Math.sin(Date.now() / 200) * 5;
-        
-        // Auto-Firing every 0.4s
-        if (Math.floor(this.timeRemaining * 2.5) !== Math.floor((this.timeRemaining + dt) * 2.5)) {
-            this.entities.bullets.push({
-                x: hero.x + 40,
-                y: hero.y + 25,
-                vx: 15,
-                color: '#00f2ff'
-            });
-            hero.state = 'shoot';
-        } else {
-            hero.state = 'idle';
-        }
+        // 2. Hero Logic (Auto-Strafe & Fire)
+        const h = this.entities.hero;
+        h.y = (this.canvas.height - 200) + Math.sin(Date.now()/400) * 30;
+        if(Math.random() > 0.95) this.entities.bullets.push({ x: 100, y: h.y + 28, vx: 18 });
 
-        // 4. Bullet Logic
-        this.entities.bullets.forEach((b, index) => {
-            b.x += b.vx;
-            // Collision with Boss
-            const boss = this.entities.boss;
-            if (b.x > boss.x && b.y > boss.y && b.y < boss.y + boss.h) {
-                boss.hp -= 2;
-                boss.damageFlash = 5;
-                this.createExplosion(b.x, b.y, '#00f2ff', 3);
-                this.entities.bullets.splice(index, 1);
-                
-                // Screen shake on heavy hits
-                if (Math.random() > 0.95) this.triggerShake(10, 5);
+        // 3. Boss Logic
+        const b = this.entities.boss;
+        b.y = 200 + Math.sin(Date.now()/1200) * 60;
+        if(b.flash > 0) b.flash--;
+
+        // 4. Bullet Collision & Particles
+        this.entities.bullets.forEach((bul, i) => {
+            bul.x += bul.vx;
+            if(bul.x > this.canvas.width - 140 && bul.y > b.y && bul.y < b.y + 180) {
+                b.hp -= 5; b.flash = 4;
+                this.entities.bullets.splice(i, 1);
+                // Burst FX
+                for(let j=0; j<6; j++) {
+                    this.entities.fx.push({
+                        x: bul.x, y: bul.y, 
+                        vx: Math.random()*8, vy: (Math.random()-0.5)*15, 
+                        l: 25, c: '#0f0' 
+                    });
+                }
             }
-            if (b.x > this.width) this.entities.bullets.splice(index, 1);
+            if(bul.x > this.canvas.width) this.entities.bullets.splice(i, 1);
         });
 
-        // 5. Boss AI
-        const boss = this.entities.boss;
-        boss.floatY = Math.sin(Date.now() / 800) * 30;
-        boss.y = 150 + boss.floatY;
-        if (boss.damageFlash > 0) boss.damageFlash--;
+        this.entities.fx.forEach((f, i) => { f.x += f.vx; f.y += f.vy; f.l--; if(f.l <= 0) this.entities.fx.splice(i,1); });
 
-        // 6. Particle Physics
-        this.entities.particles.forEach((p, index) => {
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vy += 0.2; // Gravity
-            p.life -= p.decay;
-            if (p.life <= 0) this.entities.particles.splice(index, 1);
-        });
-
-        // Update UI
-        ui.updateTimer(this.timeRemaining);
-        ui.updateBossHP(boss.hp, boss.maxHp);
-    }
+        // UI SYNC
+        const m = Math.floor(this.timer/60), s = Math.floor(this.timer%60);
+        document.getElementById('timer-text').innerText = `${m}:${s < 10 ? '0'+s : s}`;
+        document.getElementById('hp-fill').style.width = (b.hp / 2000 * 100) + "%";
+        document.getElementById('ui-streak').innerText = this.data.streak;
+    },
 
     draw() {
         const ctx = this.ctx;
-        ctx.save();
+        ctx.fillStyle = '#000'; ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
 
-        // Screen Shake Implementation [Verified StackOverflow Pattern]
-        if (this.shakeTime > 0) {
-            ctx.translate(
-                (Math.random() - 0.5) * this.shakeIntensity,
-                (Math.random() - 0.5) * this.shakeIntensity
-            );
-            this.shakeTime--;
-        }
+        // Background
+        this.entities.stars.forEach(s => { ctx.fillStyle = s.c; ctx.fillRect(s.x, s.y, 2, 2); });
 
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, this.width, this.height);
+        // Hero (The Armoured Suit)
+        const h = this.entities.hero;
+        ctx.fillStyle = '#ff7b00'; ctx.fillRect(60, h.y, 45, 70); // Body
+        ctx.fillStyle = '#00ff41'; ctx.fillRect(85, h.y+10, 20, 10); // Visor
+        ctx.fillStyle = '#777'; ctx.fillRect(95, h.y+28, 25, 14); // Cannon
 
-        // Draw Stars
-        this.entities.stars.forEach(s => {
-            ctx.fillStyle = s.color;
-            ctx.fillRect(s.x, s.y, s.size, s.size);
-        });
+        // Boss (The Omega Cavity)
+        const b = this.entities.boss;
+        ctx.fillStyle = b.flash > 0 ? '#fff' : '#333';
+        ctx.fillRect(this.canvas.width - 130, b.y, 110, 190);
+        ctx.fillStyle = b.flash > 0 ? '#f00' : '#800'; 
+        ctx.beginPath(); ctx.arc(this.canvas.width-85, b.y+70, 25, 0, Math.PI*2); ctx.fill(); // Pulsing Eye
 
-        // Draw Hero (16-bit Style)
-        const hero = this.entities.hero;
-        ctx.fillStyle = CONFIG.COLORS.hero;
-        ctx.fillRect(hero.x, hero.y, hero.w, hero.h); // Body
-        ctx.fillStyle = hero.state === 'shoot' ? '#fff' : CONFIG.COLORS.heroDetail;
-        ctx.fillRect(hero.x + 25, hero.y + 10, 15, 8); // Visor
-        ctx.fillStyle = '#666';
-        ctx.fillRect(hero.x + 35, hero.y + 25, 25, 12); // Arm Cannon
-
-        // Draw Boss
-        const boss = this.entities.boss;
-        ctx.fillStyle = boss.damageFlash > 0 ? '#fff' : CONFIG.COLORS.boss;
-        ctx.fillRect(boss.x, boss.y, boss.w, boss.h);
-        // Boss Glowing Eye
-        ctx.fillStyle = boss.hp < 200 ? '#ff00ff' : '#f00';
-        ctx.beginPath();
-        ctx.arc(boss.x + 30, boss.y + 50, 15 + Math.sin(Date.now()/100)*5, 0, Math.PI*2);
-        ctx.fill();
-
-        // Draw Bullets
-        this.entities.bullets.forEach(b => {
-            ctx.fillStyle = b.color;
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = b.color;
-            ctx.fillRect(b.x, b.y, 15, 4);
-            ctx.shadowBlur = 0;
-        });
-
-        // Draw Particles
-        this.entities.particles.forEach(p => {
-            ctx.fillStyle = p.color;
-            ctx.globalAlpha = p.life;
-            ctx.fillRect(p.x, p.y, p.size, p.size);
-        });
-
-        ctx.restore();
-    }
-
-    loop(timestamp) {
-        const dt = (timestamp - this.lastTime) / 1000;
-        this.lastTime = timestamp;
-        
-        this.update(dt > 0.1 ? 0.016 : dt);
-        this.draw();
-        
-        if (this.isRunning) {
-            requestAnimationFrame((t) => this.loop(t));
-        }
-    }
-}
-
-/**
- * UI & PERSISTENCE MANAGER
- */
-const ui = {
-    data: JSON.parse(localStorage.getItem('metroid_brush_v2')) || {
-        streak: 0,
-        days: 0,
-        crystals: 0,
-        lastDate: null
-    },
-
-    init() {
-        this.refreshStats();
-    },
-
-    refreshStats() {
-        document.getElementById('val-streak').innerText = this.data.streak;
-        document.getElementById('val-days').innerText = this.data.days;
-        document.getElementById('val-crystals').innerText = this.data.crystals;
-    },
-
-    startCountdown() {
-        document.getElementById('screen-start').classList.add('hidden');
-        document.getElementById('screen-countdown').classList.remove('hidden');
-        let count = 5;
-        const interval = setInterval(() => {
-            count--;
-            document.getElementById('cd-number').innerText = count;
-            if (count === 0) {
-                clearInterval(interval);
-                document.getElementById('screen-countdown').classList.add('hidden');
-                game.isRunning = true;
-                game.lastTime = performance.now();
-                game.loop(performance.now());
-            }
-        }, 1000);
-    },
-
-    updateTimer(seconds) {
-        const m = Math.floor(seconds / 60);
-        const s = Math.floor(seconds % 60);
-        const display = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-        const el = document.getElementById('timer-val');
-        el.innerText = display;
-        
-        if (seconds <= 10) {
-            el.style.color = 'var(--damage-red)';
-            if (Math.floor(seconds * 2) % 2 === 0) el.style.opacity = 0.5;
-            else el.style.opacity = 1;
-        }
-    },
-
-    updateBossHP(hp, max) {
-        const perc = (hp / max) * 100;
-        document.getElementById('boss-hp-fill').style.width = Math.max(0, perc) + '%';
+        // Bullets & FX
+        ctx.fillStyle = 'cyan'; this.entities.bullets.forEach(bul => ctx.fillRect(bul.x, bul.y, 20, 5));
+        this.entities.fx.forEach(f => { ctx.fillStyle = `rgba(0,255,0,${f.l/25})`; ctx.fillRect(f.x, f.y, 3, 3); });
     },
 
     win() {
-        game.isRunning = false;
-        game.createExplosion(game.entities.boss.x + 60, game.entities.boss.y + 90, '#ff7b00', 100);
-        setTimeout(() => {
-            document.getElementById('screen-victory').classList.remove('hidden');
-        }, 1000);
-    },
-
-    claimLoot() {
-        document.getElementById('loot-prompt').classList.add('hidden');
-        document.getElementById('victory-stats').classList.remove('hidden');
-        
-        const earned = 50 + (this.data.streak * 5);
-        this.data.crystals += earned;
-        
-        const today = new Date().toDateString();
-        if (this.data.lastDate !== today) {
-            this.data.days += 1;
-            this.data.streak += 1;
-            this.data.lastDate = today;
-        }
-
-        document.getElementById('loot-text').innerHTML = `RECOVERED: ${earned} CRYSTALS<br>TOTAL: ${this.data.crystals}`;
-        this.save();
-        this.refreshStats();
-    },
-
-    save() {
-        localStorage.setItem('metroid_brush_v2', JSON.stringify(this.data));
-    },
-
-    openParent() {
-        document.getElementById('screen-parent').classList.remove('hidden');
-    },
-
-    checkPin() {
-        if (document.getElementById('parent-pin').value === "1234") {
-            document.getElementById('parent-tools').classList.remove('hidden');
-            document.getElementById('edit-crystals').value = this.data.crystals;
-            document.getElementById('edit-streak').value = this.data.streak;
-            document.getElementById('edit-days').value = this.data.days;
-        }
-    },
-
-    saveParent() {
-        this.data.crystals = parseInt(document.getElementById('edit-crystals').value);
-        this.data.streak = parseInt(document.getElementById('edit-streak').value);
-        this.data.days = parseInt(document.getElementById('edit-days').value);
-        this.save();
-        this.refreshStats();
-        this.closeParent();
-    },
-
-    closeParent() {
-        document.getElementById('screen-parent').classList.add('hidden');
-        document.getElementById('parent-tools').classList.add('hidden');
-        document.getElementById('parent-pin').value = "";
+        this.running = false;
+        this.data.streak++;
+        localStorage.setItem('brush_v4_data', JSON.stringify(this.data));
+        document.getElementById('screen-win').classList.remove('hidden');
     }
 };
 
-// Start Up
-const game = new GameEngine();
-ui.init();
-
+engine.init();
 </script>
 </body>
 </html>
