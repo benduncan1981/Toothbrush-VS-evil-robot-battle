@@ -1,179 +1,227 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TITAN OMEGA: NEURAL LINK</title>
+    <title>NEURAL LINK: TITAN OMEGA</title>
     <style>
-        :root { --p1: #081820; --p2: #346856; --p3: #88c070; --p4: #e0f8d0; --cyan: #00ffff; --gold: #ffd700; }
-        body { margin: 0; background: #000; color: #fff; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; display: flex; flex-direction: column; align-items: center; }
+        :root { --b: #050505; --g: #ffd700; --c: #00ffff; --p: #bc42f5; }
+        body { margin: 0; background: var(--b); color: #fff; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; -webkit-touch-callout: none; -webkit-user-select: none; }
         
-        /* Tactical Dashboard Layout */
-        #game-header { width: 100%; height: 80px; text-align: center; border-bottom: 2px solid var(--p2); background: #111; z-index: 50; }
-        #game-title { font-size: 22px; color: var(--gold); margin-top: 10px; text-shadow: 0 0 10px var(--gold); }
-        #big-timer { font-size: 38px; font-weight: 900; color: #fff; }
+        /* Dashboard Layout */
+        #ui-top { height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #111; border-bottom: 2px solid #333; }
+        #game-title { font-size: 18px; color: var(--g); letter-spacing: 2px; margin-bottom: 5px; }
+        #timer-text { font-size: 42px; font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; }
 
-        #viewport-container { position: relative; width: 100vw; height: calc(100vh - 200px); max-width: 430px; background: #000; border: 4px solid #333; overflow: hidden; }
+        #view { position: relative; width: 100vw; height: calc(100vh - 220px); max-width: 430px; margin: 0 auto; overflow: hidden; background: #000; border: 2px solid #222; }
         canvas { width: 100%; height: 100%; image-rendering: pixelated; }
 
-        #game-footer { width: 100%; height: 120px; background: #111; border-top: 2px solid var(--p2); display: flex; justify-content: space-around; align-items: center; padding: 10px 0; }
-        .stat-box { text-align: center; font-size: 14px; color: var(--p4); }
-        .stat-val { font-size: 20px; font-weight: bold; color: var(--gold); }
+        #ui-bot { height: 120px; background: #111; border-top: 2px solid #333; display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; text-align: center; }
+        .stat { font-size: 12px; color: #888; }
+        .val { font-size: 20px; color: var(--g); display: block; font-weight: bold; }
 
-        /* Star Wars Intro */
-        #intro { position: absolute; inset: 0; background: #000; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .crawl-wrap { width: 80%; height: 60%; perspective: 300px; overflow: hidden; }
-        .crawl-content { position: absolute; top: 100%; text-align: justify; color: var(--gold); font-size: 28px; line-height: 1.5; animation: crawlAnim 25s linear forwards; }
-        @keyframes crawlAnim { 0% { transform: rotateX(25deg) translateY(0); } 100% { transform: rotateX(25deg) translateY(-2500px); } }
+        /* Cinematic Intro */
+        #intro-overlay { position: absolute; inset: 0; background: #000; z-index: 1000; display: flex; flex-direction: column; align-items: center; padding-top: 40px; }
+        .crawl-vane { width: 90%; height: 40%; perspective: 150px; overflow: hidden; border-bottom: 1px solid #333; }
+        .crawl-move { position: absolute; width: 100%; text-align: center; color: var(--g); font-size: 22px; font-weight: bold; line-height: 1.6; animation: slowCrawl 35s linear forwards; }
+        @keyframes slowCrawl { 0% { transform: rotateX(20deg) translateY(400px); } 100% { transform: rotateX(20deg) translateY(-1200px); } }
 
-        /* Health Bar */
-        #boss-ui { position: absolute; top: 100px; width: 100%; text-align: center; z-index: 10; }
-        #health-outer { width: 80%; height: 20px; border: 2px solid #fff; margin: 5px auto; background: #300; }
-        #health-inner { height: 100%; background: linear-gradient(90deg, #f00, #f80); width: 100%; transition: width 0.3s; }
+        /* Health & Countdown */
+        #hp-bar { position: absolute; top: 10px; left: 10%; width: 80%; height: 12px; border: 1px solid #fff; background: #200; z-index: 10; }
+        #hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #f00, #ff8000); transition: width 0.2s; }
+        #pre-count { position: absolute; inset: 0; display: none; background: rgba(0,0,0,0.8); z-index: 1100; align-items: center; justify-content: center; font-size: 150px; font-weight: 900; }
 
-        .btn { background: var(--p2); border: 2px solid var(--p4); color: #fff; padding: 12px 24px; cursor: pointer; text-transform: uppercase; margin: 5px; }
-        #name-entry { position: absolute; inset: 0; background: #000; z-index: 1100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        input { background: #111; border: 2px solid var(--cyan); color: var(--cyan); padding: 15px; font-size: 24px; text-align: center; margin-bottom: 20px; }
+        /* Rewards & Admin */
+        #loot-screen { position: absolute; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .crystal-anim { width: 120px; height: 120px; background: var(--p); clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); animation: pulse 1.5s infinite; box-shadow: 0 0 30px var(--p); border: 4px solid #fff; }
+        @keyframes pulse { 0%, 100% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); } 50% { transform: scale(1.2) rotate(180deg); filter: hue-rotate(45deg); } }
+
+        #admin-panel { position: absolute; inset: 20px; background: #111; border: 3px solid var(--p); z-index: 3000; display: none; padding: 20px; }
+        .btn { padding: 12px 20px; background: #333; border: 1px solid #555; color: #fff; text-transform: uppercase; font-size: 12px; margin: 5px; }
+        
+        #hidden-lock { position: absolute; bottom: 0; right: 0; width: 60px; height: 60px; z-index: 5000; opacity: 0; }
     </style>
 </head>
 <body>
 
-<div id="name-entry">
-    <h1 style="color:var(--cyan)">SYNC NEURAL LINK</h1>
-    <input type="text" id="pName" placeholder="ENTER NAME" maxlength="8">
-    <button class="btn" onclick="savePilot()">Initialize</button>
-</div>
-
-<div id="intro" style="display:none">
-    <div class="crawl-wrap">
-        <div class="crawl-content">
-            IT IS A PERIOD OF ORAL CHAOS. THE EVIL CYBORG SENTINEL HAS INVADED THE MOUTH GALAXY. 
-            EQUIPPED WITH THE OMEGA-BRUSH, YOU ARE THE LAST HOPE. 
-            FLY INTO THE DEEP GAPS AND SCRUB AWAY THE DARKNESS. 
-            TWO MINUTES OF POWER-BRUSHING WILL DESTROY THE MACHINE CORE FOREVER...
+<div id="intro-overlay">
+    <div class="crawl-vane">
+        <div class="crawl-move">
+            GALAXY ALERT:<br><br>THE CYBORG TITAN HAS DEPLOYED BIO-FILM SHIELDING.<br><br>
+            PILOT, YOU MUST ENGAGE THE OMEGA-BRUSH FOR EXACTLY 120 SECONDS.<br><br>
+            CONSISTENT BRUSHING FREQUENCY IS REQUIRED TO OVERLOAD THE CORE.<br><br>
+            REWARDS: 100 PURPLE KINETIC CRYSTALS.
         </div>
     </div>
-    <button class="btn" style="position:fixed; bottom:50px;" onclick="startBattle()">SKIP TO BATTLE</button>
+    <div id="name-box" style="margin-top:20px;">
+        <input type="text" id="pName" placeholder="NAME" style="background:#000; border:2px solid var(--c); color:var(--c); padding:10px; width:150px; text-align:center;">
+        <button class="btn" style="border-color:var(--c)" onclick="initSequence()">ENGAGE</button>
+    </div>
 </div>
 
-<div id="game-header">
-    <div id="game-title">TITAN OMEGA: BATTLE MODE</div>
-    <div id="big-timer">02:00</div>
+<div id="pre-count">5</div>
+
+<div id="ui-top">
+    <div id="game-title">TITAN OMEGA: NEURAL LINK</div>
+    <div id="timer-text">02:00</div>
 </div>
 
-<div id="boss-ui">
-    <div style="font-size:12px; color:red; font-weight:bold;">CYBORG SENTINEL HP</div>
-    <div id="health-outer"><div id="health-inner"></div></div>
-</div>
-
-<div id="viewport-container">
+<div id="view">
+    <div id="hp-bar"><div id="hp-fill"></div></div>
     <canvas id="stage"></canvas>
 </div>
 
-<div id="game-footer">
-    <div class="stat-box">PILOT<br><span class="stat-val" id="ui-name">---</span></div>
-    <div class="stat-box">STREAK<br><span class="stat-val" id="ui-streak">0</span></div>
-    <div class="stat-box">CRYSTALS<br><span class="stat-val" id="ui-cry">0</span></div>
-    <div style="display:flex; flex-direction:column;">
-        <button class="btn" style="padding:5px 10px; font-size:10px;" onclick="togglePause()">Pause</button>
-        <button class="btn" style="padding:5px 10px; font-size:10px;" onclick="location.reload()">Reset</button>
-    </div>
+<div id="ui-bot">
+    <div class="stat">PILOT<span class="val" id="stat-name">---</span></div>
+    <div class="stat">STREAK<span class="val" id="stat-streak">0</span></div>
+    <div class="stat">CRYSTALS<span class="val" id="stat-cry">0</span></div>
 </div>
 
+<div id="loot-screen">
+    <h1 style="color:var(--p)">MISSION SUCCESS</h1>
+    <div class="crystal-anim"></div>
+    <h2 id="loot-msg" style="margin-top:20px;">+100 CRYSTALS</h2>
+    <button class="btn" onclick="location.reload()">CLAIM & SYNC</button>
+</div>
+
+<div id="admin-panel">
+    <h3>COMMAND OVERRIDE</h3>
+    <p>CRYSTALS: <input type="number" id="adm-cry"></p>
+    <p>STREAK: <input type="number" id="adm-str"></p>
+    <button class="btn" onclick="saveAdmin()">SAVE CHANGES</button>
+    <button class="btn" onclick="document.getElementById('admin-panel').style.display='none'">EXIT</button>
+</div>
+
+<div id="hidden-lock" ontouchstart="handleAdmin()"></div>
+
 <script>
-/** 
- * PREMIUM OMEGA ENGINE
+/**
+ * 16-BIT RENDERER & LOGIC
  */
 const cv = document.getElementById('stage');
 const ctx = cv.getContext('2d');
 let pilot = "PILOT";
 
 let s = {
-    active: false, paused: false, t: 120, start: 0, f: 0,
+    active: false, t: 120, start: 0, f: 0,
     cry: parseInt(localStorage.getItem('gba_crystals_v1')) || 0,
     str: parseInt(localStorage.getItem('gba_streak_v1')) || 0,
-    stars: [], lasers: [], p: []
+    stars: [], lasers: []
 };
 
-function savePilot() {
+function initSequence() {
     pilot = document.getElementById('pName').value || "PILOT";
-    document.getElementById('ui-name').innerText = pilot.toUpperCase();
-    document.getElementById('ui-cry').innerText = s.cry;
-    document.getElementById('ui-streak').innerText = s.str;
-    document.getElementById('name-entry').style.display = 'none';
-    document.getElementById('intro').style.display = 'flex';
+    document.getElementById('intro-overlay').style.display = 'none';
+    const pc = document.getElementById('pre-count');
+    pc.style.display = 'flex';
+    let count = 5;
+    const timer = setInterval(() => {
+        count--; pc.innerText = count;
+        if(count <= 0) {
+            clearInterval(timer);
+            pc.style.display = 'none';
+            startBattle();
+        }
+    }, 1000);
 }
 
 function startBattle() {
-    document.getElementById('intro').style.display = 'none';
     cv.width = 430; cv.height = 700;
-    for(let i=0; i<60; i++) s.stars.push({x: Math.random()*430, y: Math.random()*700, v: Math.random()*8+2});
+    for(let i=0; i<80; i++) s.stars.push({x: Math.random()*430, y: Math.random()*700, v: Math.random()*12+4, o: Math.random()});
+    document.getElementById('stat-name').innerText = pilot.toUpperCase();
+    document.getElementById('stat-cry').innerText = s.cry;
+    document.getElementById('stat-streak').innerText = s.str;
     s.active = true; s.start = performance.now();
     requestAnimationFrame(loop);
 }
 
-function togglePause() { s.paused = !s.paused; if(!s.paused) s.start = performance.now() - (120 - s.t)*1000; }
-
-function drawMegaMan(x, y) {
-    ctx.fillStyle = '#00f'; ctx.fillRect(x, y, 40, 50); // Body
-    ctx.fillStyle = '#0ff'; ctx.fillRect(x+5, y+5, 30, 15); // Visor
-    ctx.fillStyle = '#fff'; ctx.fillRect(x+40, y+25, 20, 10); // Cannon
-    if(s.f % 10 === 0) {
-        ctx.fillStyle = '#fff'; ctx.fillRect(x+60, y+20, 10, 20); // Muzzle
-        s.lasers.push({x: x+60, y: y+30});
+function drawHero(x, y) {
+    const b = Math.sin(s.f*0.1)*5; // Animation bob
+    // Detailed bitmask shading
+    ctx.fillStyle = '#05a'; ctx.fillRect(x, y+b, 40, 50); // Body
+    ctx.fillStyle = '#0cf'; ctx.fillRect(x+5, y+5+b, 30, 15); // Visor
+    ctx.fillStyle = '#fff'; ctx.globalAlpha = 0.3; ctx.fillRect(x+10, y+8+b, 10, 5); // Glint
+    ctx.globalAlpha = 1;
+    // Arm Cannon
+    ctx.fillStyle = '#333'; ctx.fillRect(x+35, y+25+b, 25, 12);
+    if(s.f % 8 === 0) {
+        s.lasers.push({x: x+60, y: y+31+b});
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x+60, y+31+b, 10, 0, 7); ctx.fill();
     }
 }
 
-function drawCyborg(x, y) {
-    const stage = Math.min(3, Math.floor((120-s.t)/30));
-    ctx.fillStyle = stage > 1 ? '#444' : '#888';
-    ctx.fillRect(x, y, 100, 100); // Main head
-    ctx.fillStyle = s.f % 20 < 10 ? 'red' : '#300';
-    ctx.fillRect(x+20, y+20, 20, 20); ctx.fillRect(x+60, y+20, 20, 20); // Eyes
-    if(stage > 2) { // Damage effects
-        ctx.fillStyle = 'orange'; ctx.fillRect(x+Math.random()*80, y+Math.random()*80, 10, 10);
-    }
+function drawTitan(x, y) {
+    const cycle = Math.sin(s.f*0.05);
+    ctx.fillStyle = '#222'; ctx.fillRect(x, y, 120, 120); // Chassis
+    ctx.strokeStyle = '#444'; ctx.lineWidth = 4; ctx.strokeRect(x,y,120,120);
+    // Glowing Core
+    ctx.fillStyle = `rgb(${150 + cycle*100}, 0, 0)`;
+    ctx.beginPath(); ctx.arc(x+60, y+60, 30 + cycle*5, 0, 7); ctx.fill();
+    // Eyes
+    ctx.fillStyle = s.f % 30 < 15 ? '#f00' : '#400';
+    ctx.fillRect(x+20, y+20, 20, 10); ctx.fillRect(x+80, y+20, 20, 10);
 }
 
 function loop(now) {
     if(!s.active) return;
-    if(!s.paused) {
-        s.t = 120 - (now - s.start)/1000;
-        if(s.t <= 0) return win();
-    }
+    s.t = 120 - (now - s.start)/1000;
+    if(s.t <= 0) return win();
     s.f++;
 
-    // Update Dashboard UI
-    const m = Math.floor(s.t/60); const sec = Math.floor(s.t%60);
-    document.getElementById('big-timer').innerText = `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-    document.getElementById('health-inner').style.width = (s.t/120)*100 + "%";
+    // UI Updates
+    const sec = Math.floor(s.t % 60);
+    document.getElementById('timer-text').innerText = `0${Math.floor(s.t/60)}:${sec < 10 ? '0'+sec : sec}`;
+    document.getElementById('hp-fill').style.width = (s.t/120)*100 + "%";
 
-    ctx.fillStyle = '#081820'; ctx.fillRect(0,0,430,700);
+    ctx.fillStyle = '#000'; ctx.fillRect(0,0,430,700);
 
-    // Zooming Space Stars
+    // Fast Parallax Stars
     s.stars.forEach(st => {
-        st.y += st.v; if(st.y > 700) st.y = -10;
-        ctx.fillStyle = '#fff'; ctx.fillRect(st.x, st.y, 2, 2);
+        st.y += st.v; if(st.y > 700) { st.y = -10; st.x = Math.random()*430; }
+        ctx.fillStyle = `rgba(255,255,255,${st.o})`;
+        ctx.fillRect(st.x, st.y, 2, 2);
     });
 
-    const bx = 165 + Math.sin(s.f*0.03)*50, by = 150 + Math.cos(s.f*0.02)*20;
-    drawCyborg(bx, by);
-    drawMegaMan(195 + Math.sin(s.f*0.04)*30, 550);
+    drawTitan(155 + Math.sin(s.f*0.03)*60, 120 + Math.cos(s.f*0.02)*30);
+    drawHero(190 + Math.sin(s.f*0.05)*40, 520);
 
     // Lasers
     s.lasers.forEach((l, i) => {
-        l.y -= 15; ctx.fillStyle = '#0ff'; ctx.fillRect(l.x, l.y, 4, 15);
+        l.y -= 25; ctx.fillStyle = varColor(); ctx.fillRect(l.x, l.y, 4, 25);
         if(l.y < 0) s.lasers.splice(i, 1);
     });
 
     requestAnimationFrame(loop);
 }
 
+function varColor() { return s.f % 4 === 0 ? '#fff' : var(--c); }
+
 function win() {
     s.active = false; s.cry += 100; s.str += 1;
     localStorage.setItem('gba_crystals_v1', s.cry);
     localStorage.setItem('gba_streak_v1', s.str);
-    alert("MISSION COMPLETE: 100 CRYSTALS SYNCED!");
+    document.getElementById('loot-screen').style.display = 'flex';
+}
+
+/* Parent Admin Logic */
+let clickCount = 0;
+function handleAdmin() {
+    clickCount++;
+    if(clickCount >= 5) {
+        const pin = prompt("ENTER ADMIN PIN:");
+        if(pin === "1234") {
+            document.getElementById('admin-panel').style.display = 'block';
+            document.getElementById('adm-cry').value = s.cry;
+            document.getElementById('adm-str').value = s.str;
+        }
+        clickCount = 0;
+    }
+}
+function saveAdmin() {
+    s.cry = parseInt(document.getElementById('adm-cry').value);
+    s.str = parseInt(document.getElementById('adm-str').value);
+    localStorage.setItem('gba_crystals_v1', s.cry);
+    localStorage.setItem('gba_streak_v1', s.str);
     location.reload();
 }
 </script>
