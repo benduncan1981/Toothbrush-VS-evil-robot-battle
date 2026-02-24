@@ -2,170 +2,265 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>EXO-BRUSH: TITAN SLAYER 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Exo-Brush: 16-Bit ADHD Battle</title>
     <style>
         :root {
-            --p-orange: #ff7b00; --p-blue: #00f2ff; --p-gold: #ffd700;
-            --p-red: #ff3333; --p-bg: #03040a; --p-green: #00ff41;
-            --safe-top: env(safe-area-inset-top);
+            --safe-top: env(safe-area-inset-top, 20px);
+            --neon-cyan: #00f3ff;
+            --pixel-font: 'Courier New', Courier, monospace;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; }
-        body { background: var(--p-bg); color: #fff; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; display: flex; justify-content: center; }
-        #viewport { position: relative; width: 100vw; height: 100vh; max-width: 430px; background: #000; overflow: hidden; border-left: 2px solid #222; border-right: 2px solid #222; }
-        #viewport::after { content: ""; position: absolute; inset: 0; z-index: 9999; pointer-events: none; background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.2) 50%); background-size: 100% 4px; opacity: 0.8; }
-        canvas { display: block; image-rendering: pixelated; }
-        .hud { position: absolute; inset: 0; z-index: 1000; pointer-events: none; padding: calc(var(--safe-top) + 20px) 20px; }
-        #timer-main { font-size: 64px; font-weight: 900; color: var(--p-gold); text-shadow: 0 0 25px var(--p-gold); text-align: center; }
-        .hp-container { width: 100%; height: 18px; background: #300; border: 2px solid #f00; margin-top: 10px; overflow: hidden; }
-        #hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #f00, #ff8c00); transition: width 0.3s; }
-        .screen { position: absolute; inset: 0; z-index: 2000; background: rgba(0,0,0,0.98); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
-        .btn-action { background: var(--p-orange); border: 4px solid #fff; padding: 25px 60px; font-size: 26px; font-weight: 900; color: #fff; cursor: pointer; box-shadow: 0 12px 0 #830; }
-        #flash { position: absolute; inset: 0; background: #fff; z-index: 9000; opacity: 0; pointer-events: none; }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: #000; overflow: hidden; font-family: var(--pixel-font);
+            color: white; user-select: none; -webkit-tap-highlight-color: transparent;
+        }
+        #gameCanvas { image-rendering: pixelated; width: 100vw; height: 100vh; display: block; }
+        
+        /* UI Layers */
+        #ui-overlay {
+            position: absolute; top: var(--safe-top); left: 0; width: 100%;
+            display: flex; flex-direction: column; align-items: center; pointer-events: none;
+        }
+        #timer {
+            font-size: 80px; font-weight: 900; color: var(--neon-cyan);
+            font-variant-numeric: tabular-nums; text-shadow: 0 0 15px rgba(0, 243, 255, 0.7);
+        }
+        #stats { position: absolute; top: 10px; left: 20px; font-size: 18px; color: #fff; }
+        
+        /* Modals */
+        .modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100;
+        }
         .hidden { display: none !important; }
+        .btn {
+            background: var(--neon-cyan); color: #000; padding: 15px 40px;
+            font-size: 24px; border: none; font-weight: bold; cursor: pointer;
+            box-shadow: 4px 4px 0 #0088cc; margin-top: 20px;
+        }
+
+        /* Parental Hotspot */
+        #parent-hotspot {
+            position: fixed; bottom: 0; right: 0; width: 60px; height: 60px;
+            z-index: 1000; cursor: pointer; opacity: 0;
+        }
     </style>
 </head>
 <body>
-<div id="viewport">
-    <div id="flash"></div>
-    <div class="hud">
-        <div id="timer-main">02:00</div>
-        <div class="hp-container"><div id="hp-fill"></div></div>
-        <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:10px;">
-            <div id="b-status" style="color:var(--p-red)">TARGET: TITAN</div>
-            <div style="color:var(--p-gold)">CRYSTALS: <span id="ui-cry">0</span></div>
-        </div>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui-overlay">
+        <div id="stats">STREAK: <span id="streak-val">0</span> | CRYSTALS: <span id="crystal-val">0</span></div>
+        <div id="timer">02:00</div>
     </div>
-    <canvas id="stage"></canvas>
-    <div id="scr-start" class="screen">
-        <h1>EXO-KID<br>VS TITAN</h1>
-        <button class="btn-action" onclick="SFX.unlock(); App.init()">SYNC PILOT</button>
-        <p style="margin-top:20px; font-size:10px; color:#555;">AUDIO & HAPTIC ENABLED</p>
+
+    <!-- Intro Screen -->
+    <div id="intro" class="modal">
+        <h1 style="color: var(--neon-cyan); text-align: center;">NEURAL LINK SYNC</h1>
+        <p>TAP TO INITIALIZE PILOT</p>
+        <button class="btn" onclick="startCountdown()">SYNC NOW</button>
     </div>
-    <div id="scr-win" class="screen hidden">
-        <h2 style="color:var(--p-gold); font-size:32px;">MISSION CLEAR</h2>
-        <div id="loot-box" style="font-size:120px; margin:20px; cursor:pointer;" onclick="App.claim()">🎁</div>
-        <div id="win-stats" class="hidden">
-            <p id="loot-msg" style="color:var(--p-blue); font-size:22px; font-weight:900;"></p>
-            <button class="btn-action" style="margin-top:20px;" onclick="location.reload()">SAVE DATA</button>
-        </div>
+
+    <!-- Loot Box Screen -->
+    <div id="lootbox" class="modal hidden">
+        <h1 id="loot-msg">TITAN DEFEATED!</h1>
+        <div id="loot-anim" style="font-size: 50px;">💎💎💎</div>
+        <button class="btn" onclick="location.reload()">RE-ARM PILOT</button>
     </div>
-</div>
 
-<script>
-/** 16-BIT SFX ENGINE **/
-const SFX = {
-    ctx: null, unlocked: false,
-    unlock() { if(!this.unlocked) { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.unlocked = true; } },
-    play(f, t, d, v) {
-        if(!this.ctx) return; const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-        o.type = t; o.frequency.setValueAtTime(f, this.ctx.currentTime);
-        o.connect(g); g.connect(this.ctx.destination); g.gain.setValueAtTime(v, this.ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + d);
-        o.start(); o.stop(this.ctx.currentTime + d);
-    },
-    laser() { this.play(800, 'square', 0.1, 0.05); },
-    boom() { this.play(100, 'sawtooth', 0.8, 0.4); },
-    beep() { this.play(440, 'triangle', 0.1, 0.1); }
-};
+    <!-- Invisible Hotspot -->
+    <div id="parent-hotspot" onclick="openParentalPanel()"></div>
 
-/** THE ENGINE **/
-const App = {
-    running: false, timer: 120, lastT: 0, shake: 0,
-    save: JSON.parse(localStorage.getItem('exo_slayer_v1')) || { streak: 0, cry: 0, last: null },
-    stars: [], particles: [], bullets: [],
-    hero: { x: 80, y: 0, anim: 0, recoil: 0 },
-    boss: { x: 0, y: 0, hp: 4000, max: 4000, flash: 0, phase: 0 },
+    <script>
+        /** 
+         * AUDIO ENGINE: Web Audio API synthesis 
+         * No external files needed.
+         */
+        const AudioEngine = {
+            ctx: null,
+            init() { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            beep(freq = 440, dur = 0.1) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + dur);
+                osc.start(); osc.stop(this.ctx.currentTime + dur);
+            },
+            laser() {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.15);
+            },
+            boom() {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(100, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 1.5);
+                gain.gain.setValueAtTime(1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.5);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 1.5);
+            }
+        };
 
-    init() {
-        document.getElementById('scr-start').classList.add('hidden');
-        this.canvas = document.getElementById('stage'); this.ctx = this.canvas.getContext('2d', {alpha:false});
-        this.resize(); window.onresize = () => this.resize();
-        for(let i=0; i<150; i++) this.stars.push({x: Math.random()*this.canvas.width, y: Math.random()*this.canvas.height, v: Math.random()*4+1, o: Math.random()});
-        this.updateHUD(); this.running = true; this.lastT = performance.now();
-        requestAnimationFrame((t) => this.loop(t));
-    },
+        /** 
+         * GAME ENGINE & DRAWING 
+         */
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, state = 'IDLE', timer = 120, frames = 0;
+        let particles = [];
 
-    resize() { this.canvas.width = window.innerWidth>430?430:window.innerWidth; this.canvas.height = window.innerHeight; this.hero.y = this.canvas.height-250; this.boss.x = this.canvas.width-170; },
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            ctx.imageSmoothingEnabled = false;
+        }
+        window.onresize = resize;
+        resize();
 
-    loop(t) {
-        if(!this.running) return; const dt = (t - this.lastT)/1000; this.lastT = t;
-        this.update(dt); this.render(); requestAnimationFrame((nt) => this.loop(nt));
-    },
+        // Parallax Layers
+        const stars = Array(100).fill().map(() => ({
+            x: Math.random() * 2000, y: Math.random() * 1000, 
+            s: Math.random() * 3 + 1, c: ['#fff', '#00f3ff', '#ff00ff'][Math.floor(Math.random()*3)]
+        }));
 
-    update(dt) {
-        this.timer -= dt; if(this.timer <= 0) this.megaBoom();
-        if(this.shake > 0) this.shake *= 0.93;
-        this.stars.forEach(s => { s.y += s.v; if(s.y > this.canvas.height) s.y = -20; });
-        this.boss.phase = Math.floor((120-this.timer)/30);
-        this.hero.anim += dt*4; this.hero.y = (this.canvas.height-250)+Math.sin(this.hero.anim)*15;
-        if(this.hero.recoil > 0) this.hero.recoil -= 0.5;
-        if(Math.random() > 0.94) { this.bullets.push({x: this.hero.x+50, y: this.hero.y+35, v: 24}); this.hero.recoil = 8; SFX.laser(); }
-        this.bullets.forEach((b, i) => { 
-            b.x += b.v; 
-            if(b.x > this.boss.x && b.y > this.boss.y && b.y < this.boss.y+220) { 
-                this.boss.flash = 6; this.shake = 6; this.spawn(b.x, b.y, 'gold', 8); this.bullets.splice(i, 1); 
-            } 
-        });
-        this.particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.vy += 0.3; p.l -= 0.03; if(p.l <= 0) this.particles.splice(i, 1); });
-        this.sync();
-    },
+        function drawHero(x, y, recoil) {
+            // High-quality procedural 16-bit Hero (Exo-Suit)
+            ctx.fillStyle = '#444'; // Heavy Metal Chassis
+            ctx.fillRect(x - 30, y - 20, 60, 50); // Body
+            ctx.fillStyle = '#222'; // Joints
+            ctx.fillRect(x - 35, y + 10, 15, 20); ctx.fillRect(x + 20, y + 10, 15, 20); // Legs
+            
+            // Visor (Pilot visible)
+            ctx.fillStyle = 'rgba(0, 243, 255, 0.4)';
+            ctx.fillRect(x - 15, y - 10, 30, 20);
+            ctx.strokeStyle = '#00f3ff'; ctx.strokeRect(x - 15, y - 10, 30, 20);
+            
+            // Recoil Cannon
+            const r = recoil ? 15 : 0;
+            ctx.fillStyle = '#666';
+            ctx.fillRect(x + 30 - r, y + 5, 40, 15);
+            if(recoil) {
+                ctx.fillStyle = '#fff'; ctx.beginPath();
+                ctx.arc(x + 75, y + 12, 10, 0, Math.PI*2); ctx.fill(); // Muzzle Flash
+            }
+        }
 
-    sync() {
-        const m = Math.floor(Math.max(0, this.timer)/60), s = Math.floor(Math.max(0, this.timer)%60);
-        document.getElementById('timer-main').innerText = `${m}:${s<10?'0'+s:s}`;
-        document.getElementById('hp-fill').style.width = (this.timer/120*100) + "%";
-        const st = ["ARMOUR: 100%", "CRACKING!", "LEAKING OIL!", "CORE CRITICAL!"];
-        document.getElementById('b-status').innerText = "STATUS: " + st[this.boss.phase];
-    },
+        function drawTitan(stage) {
+            const tx = width * 0.75, ty = height/2;
+            const wobble = Math.sin(frames * 0.05) * 10;
+            
+            ctx.fillStyle = stage === 4 ? '#500' : '#333';
+            ctx.fillRect(tx - 60, ty - 80 + wobble, 120, 160); // Core body
+            
+            // Damage overlays
+            if(stage >= 2) { // Cracked
+                ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.moveTo(tx-20, ty-40); ctx.lineTo(tx+20, ty+10); ctx.stroke();
+            }
+            if(stage >= 3) { // Leaking
+                ctx.fillStyle = '#000'; ctx.fillRect(tx-10, ty+40, 5, 30); // Oil drip
+                if(frames % 10 < 3) { ctx.fillStyle = '#ff0'; ctx.fillRect(tx+30, ty-20, 4, 4); } // Sparks
+            }
+            if(stage >= 4) { // Exposed Core
+                ctx.shadowBlur = 20; ctx.shadowColor = 'red';
+                ctx.fillStyle = '#f00'; ctx.beginPath(); ctx.arc(tx, ty, 20, 0, Math.PI*2); ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
 
-    spawn(x, y, c, count) { for(let i=0; i<count; i++) this.particles.push({x, y, vx:(Math.random()-0.3)*12, vy:(Math.random()-0.5)*15, l:1.0, c}); },
+        function gameLoop() {
+            frames++;
+            ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
+            
+            // 3-Layer Parallax
+            stars.forEach(s => {
+                s.x -= s.s; if(s.x < 0) s.x = width;
+                ctx.fillStyle = s.c;
+                ctx.fillRect(s.x, s.y % height, s.s, s.s);
+            });
 
-    render() {
-        const ctx = this.ctx; ctx.save();
-        if(this.shake > 1) ctx.translate((Math.random()-0.5)*this.shake, (Math.random()-0.5)*this.shake);
-        ctx.fillStyle = '#000'; ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
-        this.stars.forEach(s => { ctx.fillStyle = '#0ff'; ctx.globalAlpha = s.o; ctx.fillRect(s.x, s.y, s.v/2, s.v/2); });
-        ctx.globalAlpha = 1;
+            if(state === 'BATTLE') {
+                const heroX = 150, heroY = height/2 + Math.sin(frames * 0.05) * 50;
+                const firing = frames % 20 < 2;
+                if(firing) AudioEngine.laser();
+                
+                drawHero(heroX, heroY, firing);
+                
+                const damageStage = Math.min(4, Math.floor((120 - timer) / 30) + 1);
+                drawTitan(damageStage);
+                
+                if(frames % 60 === 0 && timer > 0) {
+                    timer--;
+                    document.getElementById('timer').innerText = 
+                        `${Math.floor(timer/60).toString().padStart(2,'0')}:${(timer%60).toString().padStart(2,'0')}`;
+                    if(timer === 0) triggerEnd();
+                }
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
 
-        // HERO (Bitmask Detail)
-        const h = this.hero;
-        ctx.fillStyle = '#444'; ctx.fillRect(h.x-10-h.recoil, h.y+45, 65, 30); // Legs
-        ctx.fillStyle = 'var(--p-orange)'; ctx.fillRect(h.x-h.recoil, h.y+10, 55, 55); // Armor
-        ctx.fillStyle = '#0ff'; ctx.globalAlpha = 0.5; ctx.fillRect(h.x+15-h.recoil, h.y+20, 30, 20); // Visor Kid
-        ctx.globalAlpha = 1; ctx.fillStyle = '#111'; ctx.fillRect(h.x+40-h.recoil, h.y+35, 45, 15); // Cannon
+        /**
+         * FLOW CONTROL
+         */
+        function startCountdown() {
+            AudioEngine.init();
+            document.getElementById('intro').classList.add('hidden');
+            let count = 5;
+            const iv = setInterval(() => {
+                AudioEngine.beep(440 + (5-count)*100);
+                if(count === 0) {
+                    clearInterval(iv);
+                    state = 'BATTLE';
+                }
+                count--;
+            }, 1000);
+        }
 
-        // BOSS (Bitmask Titan)
-        const b = this.boss; b.y = 180 + Math.sin(Date.now()/800)*50;
-        ctx.fillStyle = b.flash>0?'#fff':(b.phase>2?'#1a1010':'#2a2a2a');
-        ctx.fillRect(b.x, b.y, 140, 220); // Body
-        ctx.fillStyle = '#f00'; // 4 Robot Arms
-        ctx.fillRect(b.x-40, b.y+30, 50, 20); ctx.fillRect(b.x-40, b.y+160, 50, 20);
-        ctx.fillRect(b.x+130, b.y+30, 50, 20); ctx.fillRect(b.x+130, b.y+160, 50, 20);
-        ctx.fillStyle = b.phase>2?'magenta':'red'; ctx.beginPath(); ctx.arc(b.x+70, b.y+130, 25+Math.sin(Date.now()/150)*10, 0, Math.PI*2); ctx.fill(); // Core
+        function triggerEnd() {
+            state = 'END';
+            AudioEngine.boom();
+            // Screen shake / Flash effect
+            canvas.style.filter = 'brightness(5) contrast(2)';
+            setTimeout(() => {
+                canvas.style.filter = 'none';
+                updateStats();
+                document.getElementById('lootbox').classList.remove('hidden');
+            }, 500);
+        }
 
-        ctx.fillStyle = '#0ff'; this.bullets.forEach(bul => ctx.fillRect(bul.x, bul.y, 25, 8));
-        this.particles.forEach(p => { ctx.fillStyle = p.c; ctx.globalAlpha = p.l; ctx.fillRect(p.x, p.y, 5, 5); });
-        ctx.restore();
-    },
+        function updateStats() {
+            let streak = parseInt(localStorage.getItem('streak') || 0) + 1;
+            let crystals = parseInt(localStorage.getItem('crystals') || 0) + 50;
+            localStorage.setItem('streak', streak);
+            localStorage.setItem('crystals', crystals);
+            document.getElementById('streak-val').innerText = streak;
+            document.getElementById('crystal-val').innerText = crystals;
+        }
 
-    megaBoom() {
-        this.running = false; this.shake = 50; SFX.boom();
-        const f = document.getElementById('flash'); f.style.opacity = 1;
-        this.spawn(this.boss.x+70, this.boss.y+110, 'gold', 150);
-        setTimeout(() => { f.style.transition = "opacity 2s"; f.style.opacity = 0; document.getElementById('scr-win').classList.remove('hidden'); }, 400);
-    },
+        function openParentalPanel() {
+            const pin = prompt("Enter Parental PIN:");
+            if(pin === "1234") {
+                const val = prompt("Set Crystals to:");
+                localStorage.setItem('crystals', val);
+                location.reload();
+            }
+        }
 
-    claim() {
-        const r = 250 + (this.save.streak*50); this.save.cry += r;
-        const d = new Date().toDateString(); if(this.save.last !== d) { this.save.streak++; this.save.last = d; }
-        document.getElementById('loot-box').innerHTML = "💎"; document.getElementById('win-stats').classList.remove('hidden');
-        document.getElementById('loot-msg').innerText = `GOT ${r} CRYSTALS!`;
-        localStorage.setItem('exo_slayer_v1', JSON.stringify(this.save)); this.updateHUD();
-    },
-    updateHUD() { document.getElementById('ui-streak').innerText = this.save.streak; document.getElementById('ui-cry').innerText = this.save.cry; }
-};
-App.updateHUD();
-</script>
+        // Initialize display stats
+        document.getElementById('streak-val').innerText = localStorage.getItem('streak') || 0;
+        document.getElementById('crystal-val').innerText = localStorage.getItem('crystals') || 0;
+        gameLoop();
+    </script>
 </body>
 </html>
