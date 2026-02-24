@@ -16,7 +16,6 @@
     --pink:#ff3fb5;
     --accent:#7afcff;
     --glass: rgba(255,255,255,0.04);
-    --ui-contrast: 1;
   }
   html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; -webkit-font-smoothing:antialiased;}
   body{display:flex;align-items:center;justify-content:center;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);overflow:hidden;}
@@ -51,7 +50,7 @@
   /* Intro crawl */
   #intro{background:linear-gradient(180deg,#020617 0%, #041026 100%);align-items:stretch;padding:18px}
   .crawlWrap{flex:1;display:flex;align-items:flex-end;justify-content:center;position:relative;overflow:hidden}
-  .crawl{width:100%;max-width:380px;color:#ffd;transform-origin:center bottom;perspective:600px;font-weight:800;line-height:1.4;text-align:center}
+  .crawl{width:100%;max-width:380px;color:#ffd;transform-origin:center bottom;perspective:800px;font-weight:800;line-height:1.4;text-align:center}
   .crawl p{margin:0 0 12px 0;font-size:18px;text-shadow:0 2px 8px rgba(0,0,0,0.6)}
   .crawl .title{font-size:20px;color:var(--accent);letter-spacing:1px}
 
@@ -60,6 +59,9 @@
   .halftone{position:absolute;inset:0;pointer-events:none;background-image:
     radial-gradient(circle at 10% 10%, rgba(0,0,0,0.02) 0, transparent 20%),
     radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0, transparent 20%);opacity:0.6;mix-blend-mode:overlay}
+
+  /* hero portrait in HUD */
+  .heroPortrait{width:44px;height:44px;border-radius:8px;background:linear-gradient(180deg,#071a2a,#0b1220);display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,0.06);font-weight:900;color:#fff}
 
   /* small */
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -82,11 +84,12 @@
     </div>
 
     <div class="crawlWrap" aria-hidden="false">
-      <div id="crawl" class="crawl" aria-live="polite" role="article" aria-label="Mission briefing">
+      <!-- cinematic Star-Wars-esque crawl: slanted perspective -->
+      <div id="crawl" class="crawl" aria-live="polite" role="article" aria-label="Mission briefing" style="transform:translateY(40%) rotateX(28deg) scale(1)">
         <div class="title">MISSION: CHRONO SYNC</div>
-        <p class="small">Pilot, the Titan Omega has awakened. Its core corrupts the Chrono Grid. You have two minutes to sync the Chrono Core. Fire, stay steady, and earn crystals.</p>
-        <p>Brush with care. Stay bright. Defeat the Titan. Earn crystals and build your streak.</p>
-        <p style="opacity:0.9">This intro can be edited in the source. Default crawl lasts 5 seconds.</p>
+        <p style="font-size:16px;opacity:0.95">A rogue Titan Omega drifts through orbit, corrupting the Chrono Grid. The Chrono Core must be synced before the orbit collapses.</p>
+        <p style="font-size:16px">Pilot, suit up. You are the exo‑suit hero — a kid with a brave heart and a neon laser. Two minutes of steady brushing will sync the core and bring the Titan down.</p>
+        <p style="font-size:14px;opacity:0.9">This cinematic crawl is editable in the source. Default duration 5 seconds. Reduced motion available.</p>
       </div>
     </div>
 
@@ -110,11 +113,16 @@
 
       <div id="hud" aria-hidden="false">
         <div class="topRow">
-          <div class="statBox" id="crystalBox" aria-live="polite"><div style="font-size:18px">💎</div><div><div class="label">Crystals</div><div id="crystals" style="font-size:16px">0</div></div></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="statBox" id="crystalBox" aria-live="polite"><div style="font-size:18px">💎</div><div><div class="label">Crystals</div><div id="crystals" style="font-size:16px">0</div></div></div>
+            <div class="heroPortrait" title="Pilot portrait" id="heroPortrait">👦</div>
+          </div>
+
           <div class="bigTimer" role="timer" aria-live="assertive" aria-atomic="true">
             <div class="ring" aria-hidden="true" id="progressRing"></div>
             <div id="timerText">02:00</div>
           </div>
+
           <div class="statBox" id="streakBox" aria-live="polite"><div style="font-size:18px">🔥</div><div><div class="label">Streak</div><div id="streak" style="font-size:16px">0</div></div></div>
         </div>
       </div>
@@ -162,7 +170,7 @@ const CONFIG = {
   particlePoolSize: 220,
   debrisPoolSize: 120,
   sparklePoolSize: 80,
-  starCount: 100,
+  starCount: 120,
   maxActiveParticles: 180,
   maxActiveDebris: 100,
   audioEnabledDefault: true,
@@ -256,22 +264,10 @@ function tone(freq=880, dur=0.12, type='sine', when=0, vol=0.12){
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   o.stop(t + dur + 0.02);
 }
-function laserSound(){
-  tone(1600 + Math.random()*400, 0.06, 'sawtooth', 0, 0.08);
-}
-function smallExplode(){
-  tone(220 + Math.random()*80, 0.18, 'sine', 0, 0.12);
-  tone(1200 + Math.random()*400, 0.08, 'triangle', 0.02, 0.06);
-}
-function bigBoom(){
-  tone(80, 0.9, 'sine', 0, 0.28);
-  tone(220, 0.6, 'sine', 0.02, 0.18);
-  tone(1200, 0.6, 'sawtooth', 0.04, 0.06);
-}
-function victoryTone(){
-  tone(880,0.18,'sine',0,0.14);
-  tone(1320,0.9,'sine',0.06,0.08);
-}
+function laserSound(){ tone(1600 + Math.random()*400, 0.06, 'sawtooth', 0, 0.08); }
+function smallExplode(){ tone(220 + Math.random()*80, 0.18, 'sine', 0, 0.12); tone(1200 + Math.random()*400, 0.08, 'triangle', 0.02, 0.06); }
+function bigBoom(){ tone(80, 0.9, 'sine', 0, 0.28); tone(220, 0.6, 'sine', 0.02, 0.18); tone(1200, 0.6, 'sawtooth', 0.04, 0.06); }
+function victoryTone(){ tone(880,0.18,'sine',0,0.14); tone(1320,0.9,'sine',0.06,0.08); }
 
 /* ===========================
    POOLS
@@ -285,8 +281,6 @@ class Pool {
   acquire(){ return this.items.length ? this.items.pop() : this.createFn(); }
   release(item){ this.items.push(item); }
 }
-
-/* Particle and debris */
 function createParticle(){ return {x:0,y:0,vx:0,vy:0,life:0,maxLife:0,size:1,color:'#fff',rot:0,rotV:0}; }
 function createDebris(){ return {x:0,y:0,vx:0,vy:0,life:0,maxLife:0,size:4,color:'#aaa',rot:0,rotV:0,shape:0}; }
 function createSparkle(){ return {x:0,y:0,age:0,life:0,size:0,angle:0}; }
@@ -317,30 +311,85 @@ function initStars(){
 }
 
 /* ===========================
-   BOSS (Titan) & PLAYER
+   TITAN & HERO (EXO-SUIT)
    =========================== */
-const TITAN = {
-  x: CONFIG.canvasW*0.5,
-  y: CONFIG.canvasH*0.28,
-  w: CONFIG.canvasW*0.6,
-  h: 160,
-  coreR: 36,
-  damageState: 0 // 0..3 thresholds
-};
-const PLAYER = {
-  x: CONFIG.canvasW*0.5,
-  y: CONFIG.canvasH*0.78,
-  w: 48,
-  h: 64,
-  fireCooldown: 0,
-  fireRate: 0.18
-};
+const TITAN = { x: CONFIG.canvasW*0.5, y: CONFIG.canvasH*0.28, w: CONFIG.canvasW*0.6, h: 160, coreR: 36, damageState: 0 };
+const HERO = { x: CONFIG.canvasW*0.5, y: CONFIG.canvasH*0.78, w: 56, h: 72, fireCooldown: 0, fireRate: 0.12, jetBoost:0 };
 
-function resetBoss(){
-  STATE.bossHP = STATE.bossMaxHP = CONFIG.bossMaxHP;
-  STATE.drainPerSecond = CONFIG.bossMaxHP / CONFIG.duration;
-  TITAN.damageState = 0;
-  updateBossUI();
+/* Draw a more detailed exo-suit hero (kid) with helmet, visor, jetpack and muzzle flash */
+function drawHero(){
+  const x = HERO.x, y = HERO.y;
+  ctx.save();
+  ctx.translate(x, y);
+
+  // body shadow
+  ctx.fillStyle = '#071a2a';
+  roundRect(ctx, -HERO.w/2 - 2, -HERO.h/2 - 2, HERO.w + 4, HERO.h + 4, 8);
+  ctx.fill();
+
+  // suit base
+  roundRect(ctx, -HERO.w/2, -HERO.h/2, HERO.w, HERO.h, 8);
+  ctx.fillStyle = '#0ff';
+  ctx.fill();
+
+  // chest plate
+  ctx.fillStyle = '#041026';
+  roundRect(ctx, -HERO.w/4, -HERO.h/4, HERO.w/2, HERO.h/3, 6);
+  ctx.fill();
+
+  // helmet
+  ctx.beginPath();
+  ctx.ellipse(0, -HERO.h/2 - 8, 22, 18, 0, 0, Math.PI*2);
+  ctx.fillStyle = '#0b1220';
+  ctx.fill();
+  // visor
+  ctx.beginPath();
+  ctx.ellipse(0, -HERO.h/2 - 8, 14, 10, 0, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,240,255,0.95)';
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // jetpack (back)
+  ctx.fillStyle = '#071a2a';
+  ctx.fillRect(-HERO.w/2 - 6, -HERO.h/4, 12, HERO.h/2);
+  ctx.fillRect(HERO.w/2 - 6, -HERO.h/4, 12, HERO.h/2);
+
+  // small thruster flame when firing or boost
+  if(HERO.jetBoost > 0){
+    ctx.save();
+    ctx.globalAlpha = HERO.jetBoost;
+    const flameGrad = ctx.createLinearGradient(-6, HERO.h/4, 6, HERO.h/2 + 20);
+    flameGrad.addColorStop(0, '#ffb86b');
+    flameGrad.addColorStop(1, '#ff3fb5');
+    ctx.fillStyle = flameGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, HERO.h/2 + 6, 10 + HERO.jetBoost*8, 18 + HERO.jetBoost*12, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  ctx.restore();
+
+  // muzzle flash and laser origin
+  if(STATE.brushing){
+    // beam origin slightly above hero center
+    const ox = x;
+    const oy = y - HERO.h*0.28;
+    // small muzzle flash
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(ox, oy, 0, ox, oy, 28);
+    g.addColorStop(0, 'rgba(255,255,255,0.9)');
+    g.addColorStop(0.2, 'rgba(255,200,220,0.8)');
+    g.addColorStop(1, 'rgba(255,63,181,0.0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(ox, oy, 28, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
 }
 
 /* ===========================
@@ -371,6 +420,7 @@ function initHandlers(){
   $('streak').textContent = STATE.streak;
   $('pilotName').textContent = STATE.pilot || '—';
   pilotInput.value = STATE.pilot || '';
+  $('heroPortrait').textContent = STATE.pilot ? STATE.pilot.charAt(0).toUpperCase() : '👦';
 
   STATE.reducedMotion = reducedMotion.checked;
   STATE.highContrast = highContrast.checked;
@@ -412,7 +462,7 @@ function initHandlers(){
   skipBtn.addEventListener('click', ()=>{ skipCountdownOrCrawl(); });
   skipBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); skipCountdownOrCrawl(); });
 
-  pilotInput.addEventListener('input', ()=>{ STATE.pilot = pilotInput.value.trim().slice(0,20); $('pilotName').textContent = STATE.pilot || '—'; saveLS(CONFIG.localKeys.pilot, STATE.pilot); });
+  pilotInput.addEventListener('input', ()=>{ STATE.pilot = pilotInput.value.trim().slice(0,20); $('pilotName').textContent = STATE.pilot || '—'; $('heroPortrait').textContent = STATE.pilot ? STATE.pilot.charAt(0).toUpperCase() : '👦'; saveLS(CONFIG.localKeys.pilot, STATE.pilot); });
 
   // Keyboard
   window.addEventListener('keydown', (e)=>{
@@ -465,7 +515,7 @@ function setView(v){
 }
 
 /* ===========================
-   INTRO CRAWL
+   INTRO CRAWL (Star-Wars-esque)
    =========================== */
 let crawlTimer = null;
 function startIntroFlow(){
@@ -476,11 +526,12 @@ function startIntroFlow(){
 function playCrawl(skip=false){
   const crawlEl = $('crawl');
   const duration = skip ? 0.05 : CONFIG.crawlDuration;
+  // Reset and apply perspective transform for cinematic slant
   crawlEl.style.transition = 'none';
-  crawlEl.style.transform = 'translateY(40%) rotateX(25deg) scale(1)';
+  crawlEl.style.transform = 'translateY(40%) rotateX(28deg) scale(1)';
   void crawlEl.offsetWidth;
   crawlEl.style.transition = `transform ${duration}s linear`;
-  crawlEl.style.transform = 'translateY(-220%) rotateX(25deg) scale(0.6)';
+  crawlEl.style.transform = 'translateY(-220%) rotateX(28deg) scale(0.6)';
   if(STATE.audioReady && !STATE.mute) { tone(1200,0.12,'sawtooth'); tone(1600,0.08,'sine',0.08); }
   STATE.crawlPlaying = true;
   clearTimeout(crawlTimer);
@@ -594,7 +645,6 @@ function handleTap(){
    =========================== */
 function spawnParticle(x,y,vx,vy,life,size,color){
   if(activeParticles.length >= CONFIG.maxActiveParticles){
-    // reuse oldest
     const p = activeParticles.shift();
     Object.assign(p,{x,y,vx,vy,life,maxLife:life,size,color,rot:Math.random()*Math.PI*2,rotV:(Math.random()-0.5)*6});
     activeParticles.push(p);
@@ -636,13 +686,27 @@ function update(dt){
     if(s.y > CONFIG.canvasH + 10){ s.y = -10; s.x = Math.random()*CONFIG.canvasW; s.z = Math.random(); }
   }
 
-  // Player firing (visual only when not brushing)
-  PLAYER.fireCooldown = Math.max(0, PLAYER.fireCooldown - dt);
-  if(!STATE.brushing && PLAYER.fireCooldown <= 0){
-    // idle auto-fire for demo when not brushing
-    PLAYER.fireCooldown = PLAYER.fireRate;
-    // spawn small laser visuals (no effect)
-    spawnParticle(PLAYER.x, PLAYER.y - 10, (Math.random()-0.5)*20, -120 + Math.random()*-40, 0.18, 1.5, '#7afcff');
+  // Hero idle and firing visuals
+  HERO.fireCooldown = Math.max(0, HERO.fireCooldown - dt);
+  if(STATE.brushing){
+    // hero jet boost subtle when firing
+    HERO.jetBoost = clamp(HERO.jetBoost + dt*2, 0, 1);
+    // spawn continuous laser impact visuals on titan
+    if(Math.random() < 0.18){
+      const hitX = TITAN.x + (Math.random()-0.5)*(TITAN.w*0.45);
+      const hitY = TITAN.y + (Math.random()-0.5)*(TITAN.h*0.35);
+      spawnSparkle(hitX, hitY);
+      for(let i=0;i<3;i++){
+        spawnParticle(hitX, hitY, (Math.random()-0.5)*200, (Math.random()-0.8)*-120, 0.4 + Math.random()*0.6, 1 + Math.random()*3, Math.random()<0.5 ? '#fff' : '#ff3fb5');
+      }
+      if(STATE.audioReady && !STATE.mute) laserSound();
+    }
+  } else {
+    HERO.jetBoost = clamp(HERO.jetBoost - dt*2, 0, 1);
+    if(HERO.fireCooldown <= 0){
+      HERO.fireCooldown = HERO.fireRate;
+      spawnParticle(HERO.x, HERO.y - 10, (Math.random()-0.5)*20, -120 + Math.random()*-40, 0.18, 1.5, '#7afcff');
+    }
   }
 
   // Main brushing deterministic drain
@@ -658,36 +722,21 @@ function update(dt){
     const remaining = Math.max(0, CONFIG.duration - STATE.mainElapsed);
     updateTimerUI(remaining);
 
-    // spawn periodic hits and debris proportional to damage rate
-    const hpPct = STATE.bossHP / STATE.bossMaxHP;
-    // spawn small sparks at random positions on titan as it drains
-    if(Math.random() < 0.12){
-      const hitX = TITAN.x + (Math.random()-0.5)*(TITAN.w*0.45);
-      const hitY = TITAN.y + (Math.random()-0.5)*(TITAN.h*0.35);
-      spawnSparkle(hitX, hitY);
-      for(let i=0;i<3;i++){
-        spawnParticle(hitX, hitY, (Math.random()-0.5)*200, (Math.random()-0.8)*-120, 0.4 + Math.random()*0.6, 1 + Math.random()*3, Math.random()<0.5 ? '#fff' : '#ff3fb5');
-      }
-      if(STATE.audioReady && !STATE.mute) laserSound();
-    }
-
     // progressive damage thresholds
+    const hpPct = STATE.bossHP / STATE.bossMaxHP;
     const prevState = TITAN.damageState;
     if(hpPct <= 0.75 && hpPct > 0.5) TITAN.damageState = 1;
     else if(hpPct <= 0.5 && hpPct > 0.25) TITAN.damageState = 2;
     else if(hpPct <= 0.25) TITAN.damageState = 3;
     if(TITAN.damageState !== prevState){
-      // spawn larger debris and sound
       for(let i=0;i<12;i++){
         const ang = Math.random()*Math.PI*2;
         const spd = 80 + Math.random()*240;
         spawnDebris(TITAN.x + (Math.random()-0.5)*TITAN.w*0.6, TITAN.y + (Math.random()-0.5)*TITAN.h*0.6, Math.cos(ang)*spd, Math.sin(ang)*spd - 40, 0.8 + Math.random()*1.2, 6 + Math.random()*8, '#cfcfcf');
       }
       if(STATE.audioReady && !STATE.mute) smallExplode();
-      // camera shake stronger as damage increases
       STATE.cameraShake.amt = 6 + TITAN.damageState*6;
     }
-    // camera shake decay
     STATE.cameraShake.amt = Math.max(0, STATE.cameraShake.amt - dt*6);
   }
 
@@ -702,7 +751,7 @@ function update(dt){
     }
     p.x += p.vx * dt;
     p.y += p.vy * dt;
-    p.vy += 160 * dt; // gravity
+    p.vy += 160 * dt;
     p.rot += p.rotV * dt;
   }
 
@@ -730,7 +779,6 @@ function update(dt){
       sparklePool.release(s);
       continue;
     }
-    // spawn small particles
     if(Math.random() < 0.14){
       spawnParticle(s.x + (Math.random()-0.5)*8, s.y + (Math.random()-0.5)*8, (Math.random()-0.5)*120, (Math.random()-0.8)*-80, 0.4 + Math.random()*0.6, 1 + Math.random()*2, '#fff');
     }
@@ -752,7 +800,6 @@ function endBrushing(victory){
     saveLS(CONFIG.localKeys.streak, STATE.streak);
     saveLS(CONFIG.localKeys.best, STATE.best);
     if(STATE.audioReady && !STATE.mute) bigBoom();
-    // Trigger cinematic final explosion sequence
     triggerFinalExplosion();
   } else {
     STATE.streak = 0;
@@ -762,7 +809,6 @@ function endBrushing(victory){
   updateStreakUI();
   updateBossUI();
   updateTimerUI(0);
-  // small celebration if not final explosion
   for(let i=0;i<20;i++){
     spawnParticle(CONFIG.canvasW*0.5 + (Math.random()-0.5)*80, CONFIG.canvasH*0.45 + (Math.random()-0.5)*40, (Math.random()-0.5)*200, (Math.random()-0.5)*-200, 0.6 + Math.random()*0.8, 2 + Math.random()*4, Math.random()<0.5 ? '#7afcff' : '#ff3fb5');
   }
@@ -772,20 +818,17 @@ function endBrushing(victory){
 let finalExplosionState = {phase:0, t:0, active:false};
 function triggerFinalExplosion(){
   finalExplosionState = {phase:0, t:0, active:true};
-  // spawn initial flash particles
-  for(let i=0;i<120;i++){
+  for(let i=0;i<160;i++){
     const ang = Math.random()*Math.PI*2;
-    const spd = 200 + Math.random()*800;
+    const spd = 200 + Math.random()*1200;
     spawnDebris(TITAN.x, TITAN.y, Math.cos(ang)*spd, Math.sin(ang)*spd - 80, 1.2 + Math.random()*1.8, 6 + Math.random()*10, '#ffd1e8');
   }
-  // big audio handled in endBrushing
 }
 
 /* ===========================
    RENDER
    =========================== */
 function render(){
-  // camera shake offset
   const shakeAmt = STATE.cameraShake.amt;
   const sx = (Math.random()-0.5) * shakeAmt;
   const sy = (Math.random()-0.5) * shakeAmt;
@@ -795,7 +838,7 @@ function render(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.translate(sx, sy);
 
-  // background gradient
+  // background
   const g = ctx.createLinearGradient(0,0,0,canvas.height);
   g.addColorStop(0,'#020617'); g.addColorStop(1,'#041026');
   ctx.fillStyle = g;
@@ -811,7 +854,7 @@ function render(){
     ctx.fill();
   }
 
-  // speed lines (when brushing)
+  // speed lines when brushing
   if(STATE.brushing){
     ctx.strokeStyle = 'rgba(255,255,255,0.03)';
     ctx.lineWidth = 2;
@@ -824,11 +867,32 @@ function render(){
     }
   }
 
-  // Titan body (rounded mechanical plates)
+  // Titan
   drawTitan();
 
-  // Player exo-suit
-  drawPlayer();
+  // Hero (exosuit kid) drawn prominently
+  drawHero();
+
+  // Laser beam from hero to titan when brushing
+  if(STATE.brushing){
+    const px = HERO.x, py = HERO.y - HERO.h*0.28;
+    const tx = TITAN.x, ty = TITAN.y;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const grad = ctx.createLinearGradient(px, py, tx, ty);
+    grad.addColorStop(0, 'rgba(0,240,255,0.95)');
+    grad.addColorStop(0.5, 'rgba(255,63,181,0.95)');
+    grad.addColorStop(1, 'rgba(255,255,255,0.6)');
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    const midx = (px + tx)/2 + Math.sin(now()*12)*6;
+    const midy = (py + ty)/2 + Math.cos(now()*10)*6;
+    ctx.quadraticCurveTo(midx, midy, tx, ty);
+    ctx.stroke();
+    ctx.restore();
+  }
 
   // Debris
   for(let d of activeDebris){
@@ -836,7 +900,6 @@ function render(){
     ctx.translate(d.x, d.y);
     ctx.rotate(d.rot);
     ctx.fillStyle = d.color;
-    // triangular shard shapes
     ctx.beginPath();
     if(d.shape === 0){
       ctx.moveTo(-d.size, -d.size);
@@ -886,7 +949,7 @@ function render(){
     ctx.restore();
   }
 
-  // CRT scanlines drawn on canvas for consistent look
+  // CRT scanlines
   ctx.fillStyle = 'rgba(0,0,0,0.02)';
   for(let y=0;y<canvas.height;y+=4){
     ctx.fillRect(0,y,canvas.width,1);
@@ -894,15 +957,13 @@ function render(){
 
   ctx.restore();
 
-  // HUD ring (SVG) update
+  // HUD ring
   drawTimerRing();
 
   // Final explosion sequence rendering
   if(finalExplosionState.active){
     finalExplosionState.t += 1/60;
-    // Phase 0: flash
     if(finalExplosionState.phase === 0){
-      // immediate flash
       ctx.save();
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
       ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -910,7 +971,6 @@ function render(){
       finalExplosionState.phase = 1;
       finalExplosionState.t = 0;
     } else if(finalExplosionState.phase === 1){
-      // shockwave and bloom
       const t = finalExplosionState.t;
       const maxT = 0.6;
       const r = (t/maxT) * Math.max(canvas.width, canvas.height) * 1.2;
@@ -921,7 +981,6 @@ function render(){
       ctx.arc(TITAN.x, TITAN.y, r, 0, Math.PI*2);
       ctx.stroke();
       ctx.restore();
-      // spawn secondary debris during shockwave
       if(t < 0.2 && Math.random() < 0.6){
         const ang = Math.random()*Math.PI*2;
         spawnDebris(TITAN.x, TITAN.y, Math.cos(ang)*(200+Math.random()*600), Math.sin(ang)*(200+Math.random()*600)-80, 1.2 + Math.random()*1.8, 6 + Math.random()*10, '#ffd1e8');
@@ -931,15 +990,12 @@ function render(){
         finalExplosionState.t = 0;
       }
     } else if(finalExplosionState.phase === 2){
-      // afterglow smoke and fade to victory overlay
       const t = finalExplosionState.t;
-      // spawn smoke particles
       if(t < 4 && Math.random() < 0.3){
         spawnParticle(TITAN.x + (Math.random()-0.5)*TITAN.w, TITAN.y + (Math.random()-0.5)*TITAN.h, (Math.random()-0.5)*40, -40 - Math.random()*40, 2 + Math.random()*2, 6 + Math.random()*8, 'rgba(80,80,90,0.6)');
       }
       if(t > 3.2){
         finalExplosionState.active = false;
-        // show victory overlay
         showVictoryOverlay();
       }
     }
@@ -949,11 +1005,9 @@ function render(){
 /* Draw Titan with visible damage */
 function drawTitan(){
   const x = TITAN.x, y = TITAN.y, w = TITAN.w, h = TITAN.h;
-  // body shadow
   ctx.save();
   ctx.shadowColor = 'rgba(255,80,150,0.12)';
   ctx.shadowBlur = 18;
-  // outer shell
   roundRect(ctx, x - w/2, y - h/2, w, h, 18);
   ctx.fillStyle = '#0b1220';
   ctx.fill();
@@ -962,10 +1016,8 @@ function drawTitan(){
   ctx.stroke();
   ctx.restore();
 
-  // plates and cracks based on damageState
   ctx.save();
   ctx.translate(x, y);
-  // core glow intensity based on HP
   const hpPct = clamp(STATE.bossHP / STATE.bossMaxHP, 0, 1);
   const glow = 0.2 + (1 - hpPct) * 1.2;
   const coreR = TITAN.coreR;
@@ -978,7 +1030,6 @@ function drawTitan(){
   ctx.arc(0, 0, coreR*3, 0, Math.PI*2);
   ctx.fill();
 
-  // core circle
   ctx.beginPath();
   ctx.arc(0,0,coreR,0,Math.PI*2);
   ctx.fillStyle = `rgba(255,80,150,${0.9})`;
@@ -987,16 +1038,13 @@ function drawTitan(){
   ctx.strokeStyle = '#fff';
   ctx.stroke();
 
-  // damage overlays
   if(TITAN.damageState >= 1){
-    // small scorch
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath();
     ctx.ellipse(-w*0.12, -h*0.08, 28, 12, -0.6, 0, Math.PI*2);
     ctx.fill();
   }
   if(TITAN.damageState >= 2){
-    // larger gash
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.beginPath();
     ctx.moveTo(w*0.12, -h*0.05);
@@ -1007,10 +1055,8 @@ function drawTitan(){
     ctx.fill();
   }
   if(TITAN.damageState >= 3){
-    // exposed inner machinery
     ctx.fillStyle = '#222';
     ctx.fillRect(-w*0.18, -h*0.06, w*0.36, h*0.12);
-    // wires
     for(let i=0;i<6;i++){
       ctx.strokeStyle = i%2 ? '#ff3fb5' : '#00f0ff';
       ctx.lineWidth = 2;
@@ -1021,44 +1067,6 @@ function drawTitan(){
     }
   }
   ctx.restore();
-}
-
-/* Draw player exo-suit and lasers */
-function drawPlayer(){
-  const px = PLAYER.x, py = PLAYER.y;
-  // body
-  ctx.save();
-  ctx.translate(px, py);
-  ctx.fillStyle = '#0ff';
-  roundRect(ctx, -PLAYER.w/2, -PLAYER.h/2, PLAYER.w, PLAYER.h, 8);
-  ctx.fillStyle = '#041026';
-  ctx.fillRect(-PLAYER.w/4, -PLAYER.h/4, PLAYER.w/2, PLAYER.h/2);
-  ctx.restore();
-
-  // laser beam when brushing (visual)
-  if(STATE.brushing){
-    // continuous beam from player to titan core
-    const tx = TITAN.x, ty = TITAN.y;
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    const grad = ctx.createLinearGradient(px, py - 20, tx, ty);
-    grad.addColorStop(0, 'rgba(0,240,255,0.9)');
-    grad.addColorStop(0.5, 'rgba(255,63,181,0.9)');
-    grad.addColorStop(1, 'rgba(255,255,255,0.6)');
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.moveTo(px, py - 20);
-    // slight jitter for comic effect
-    const midx = (px + tx)/2 + Math.sin(now()*12)*6;
-    const midy = (py + ty)/2 + Math.cos(now()*10)*6;
-    ctx.quadraticCurveTo(midx, midy, tx, ty);
-    ctx.stroke();
-    ctx.restore();
-  } else {
-    // occasional idle laser
-    if(Math.random() < 0.02) spawnParticle(px, py - 20, (Math.random()-0.5)*40, -120, 0.18, 1.5, '#7afcff');
-  }
 }
 
 /* Timer ring (SVG) */
@@ -1139,6 +1147,24 @@ function showVictoryOverlay(){
   STATE.lastTime = performance.now();
   requestAnimationFrame(loop);
 })();
+
+/* Expose debug hooks */
+window.__TITAN = window.__TITAN || {};
+window.__TITAN.state = STATE;
+window.__TITAN.startGame = startPrecountdown;
+window.__TITAN.setView = setView;
+window.__TITAN.resetBoss = resetBoss;
+window.__TITAN.forceVictory = ()=>{ STATE.bossHP = 0; updateBossUI(); endBrushing(true); };
+
+/* ===========================
+   Helper functions used earlier but declared after for clarity
+   =========================== */
+function resetBoss(){
+  STATE.bossHP = STATE.bossMaxHP = CONFIG.bossMaxHP;
+  STATE.drainPerSecond = CONFIG.bossMaxHP / CONFIG.duration;
+  TITAN.damageState = 0;
+  updateBossUI();
+}
 </script>
 </body>
 </html>
