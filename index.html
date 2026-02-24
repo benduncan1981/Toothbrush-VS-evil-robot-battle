@@ -3,383 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Exo-Brush: Galactic Defense Elite</title>
+    <title>Exo-Brush: Galactic Elite 2026</title>
     <style>
         :root {
-            --neon-blue: #00f2ff; --exo-orange: #ff7b00; --gold: #ffd700;
-            --damage: #ff2222; --bg: #03040a; --glass: rgba(0, 242, 255, 0.3);
+            --p-orange: #ff7b00; --p-blue: #00f2ff; --p-gold: #ffd700;
+            --p-red: #ff3333; --p-bg: #03040a; --p-green: #00ff41;
             --safe-top: env(safe-area-inset-top);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; }
-        body { background: var(--bg); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; display: flex; justify-content: center; }
-        
-        #viewport {
-            position: relative; width: 100vw; height: 100vh; max-width: 430px; 
-            background: radial-gradient(circle at center, #111 0%, #000 100%);
-            overflow: hidden; border-left: 2px solid #222; border-right: 2px solid #222;
-        }
-
-        /* 1999 CRT SCANLINE SHADER */
-        #viewport::after {
-            content: ""; position: absolute; inset: 0; z-index: 9999; pointer-events: none;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%);
-            background-size: 100% 4px; opacity: 0.7;
-        }
-
+        body { background: var(--p-bg); color: #fff; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; display: flex; justify-content: center; }
+        #viewport { position: relative; width: 100vw; height: 100vh; max-width: 430px; background: #000; overflow: hidden; border-left: 2px solid #222; border-right: 2px solid #222; }
+        #viewport::after { content: ""; position: absolute; inset: 0; z-index: 9999; pointer-events: none; background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.15) 50%); background-size: 100% 4px; opacity: 0.8; }
         canvas { display: block; image-rendering: pixelated; }
-
-        /* HUD & UI */
-        .hud { position: absolute; inset: 0; z-index: 1000; pointer-events: none; padding: calc(var(--safe-top) + 15px) 20px; }
+        .hud { position: absolute; inset: 0; z-index: 1000; pointer-events: none; padding: calc(var(--safe-top) + 20px) 20px; }
         .hud-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .stat-panel { 
-            background: rgba(0, 20, 50, 0.85); border: 2px solid var(--neon-blue);
-            padding: 6px 12px; font-size: 11px; color: var(--neon-blue);
-            text-transform: uppercase; letter-spacing: 2px; box-shadow: inset 0 0 10px var(--neon-blue);
-        }
-        #timer-display { font-size: 58px; font-weight: 900; color: var(--gold); text-shadow: 0 0 20px var(--gold); text-align: center; font-variant-numeric: tabular-nums; }
-        .boss-meter { width: 100%; height: 16px; background: #300; border: 2px solid #f00; margin-top: 10px; position: relative; }
-        #hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #f00, #ff8c00); transition: width 0.3s cubic-bezier(0.1, 0.7, 1.0, 0.1); }
-
-        /* SCREENS */
-        .screen { position: absolute; inset: 0; z-index: 2000; background: rgba(0,0,0,0.97); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
-        h1 { font-size: 48px; color: var(--exo-orange); text-shadow: 4px 4px #000, 0 0 20px var(--exo-orange); line-height: 0.9; margin-bottom: 25px; }
-        .btn-prime { background: var(--exo-orange); border: 4px solid #fff; padding: 25px 65px; font-size: 26px; font-weight: 900; color: #fff; cursor: pointer; box-shadow: 0 12px 0 #830; text-transform: uppercase; border-radius: 2px; transition: 0.1s; }
-        .btn-prime:active { transform: translateY(4px); box-shadow: 0 8px 0 #830; }
+        .hud-panel { background: rgba(0,20,50,0.9); border: 2px solid var(--p-blue); padding: 8px 12px; font-size: 11px; color: var(--p-blue); text-transform: uppercase; letter-spacing: 2px; box-shadow: inset 0 0 15px var(--p-blue); }
+        #timer-main { font-size: 64px; font-weight: 900; color: var(--p-gold); text-shadow: 0 0 25px var(--p-gold); text-align: center; }
+        .hp-container { width: 100%; height: 18px; background: #300; border: 2px solid #f00; margin-top: 10px; position: relative; overflow: hidden; }
+        #hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #f00, #ff8c00); transition: width 0.3s ease; }
+        .screen { position: absolute; inset: 0; z-index: 2000; background: rgba(0,0,0,0.98); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+        h1 { font-size: 44px; color: var(--p-orange); text-shadow: 4px 4px #000, 0 0 20px var(--p-orange); line-height: 0.9; margin-bottom: 20px; }
+        .btn-action { background: var(--p-orange); border: 4px solid #fff; padding: 25px 60px; font-size: 26px; font-weight: 900; color: #fff; cursor: pointer; box-shadow: 0 12px 0 #830; border-radius: 4px; }
+        #loot-box { font-size: 130px; filter: drop-shadow(0 0 30px var(--p-gold)); animation: float 2s infinite ease-in-out; cursor: pointer; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
         .hidden { display: none !important; }
-
-        /* REWARDS */
-        #loot-box { font-size: 130px; margin: 30px; filter: drop-shadow(0 0 30px var(--gold)); animation: float 2s infinite ease-in-out; cursor: pointer; }
-        @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-30px) rotate(5deg); } }
-
-        /* PARENTAL */
-        #parent-trigger { position: absolute; bottom: 0; right: 0; width: 80px; height: 80px; z-index: 5000; opacity: 0; }
-        .parent-modal { background: #111; border: 3px solid var(--neon-blue); padding: 25px; width: 90%; color: #fff; }
-        input { width: 100%; padding: 15px; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; font-size: 20px; text-align: center; }
+        #flash { position: absolute; inset: 0; background: #fff; z-index: 9000; opacity: 0; pointer-events: none; }
     </style>
 </head>
 <body>
-
 <div id="viewport">
+    <div id="flash"></div>
     <div class="hud">
-        <div class="hud-row">
-            <div class="stat-panel">MISSION: OMEGA</div>
-            <div class="stat-panel">STREAK: <span id="ui-streak">0</span></div>
-        </div>
-        <div id="timer-display">02:00</div>
-        <div class="boss-meter"><div id="hp-fill"></div></div>
-        <div class="hud-row" style="margin-top: 5px;">
-            <div style="font-size: 10px; color: var(--damage); letter-spacing: 2px;">THREAT: WAR-BOT TITAN</div>
-            <div style="font-size: 10px; color: var(--gold);">CRYSTALS: <span id="ui-cry">0</span></div>
-        </div>
+        <div class="hud-row"><div class="hud-panel">ZONE: KRAID-CORE</div><div class="hud-panel">STREAK: <span id="ui-streak">0</span></div></div>
+        <div id="timer-main">02:00</div>
+        <div class="hp-container"><div id="hp-fill"></div></div>
+        <div class="hud-row" style="margin-top: 8px;"><div style="font-size: 10px; color: var(--p-red);" id="b-status">SCANNING TITAN...</div><div style="font-size: 10px; color: var(--p-gold);">CRYSTALS: <span id="ui-cry">0</span></div></div>
     </div>
-
     <canvas id="stage"></canvas>
-
     <div id="scr-start" class="screen">
-        <div style="font-size: 16px; color: var(--neon-blue); letter-spacing: 7px; margin-bottom: 10px;">GALACTIC HYGIENE UNIT</div>
-        <h1>EXO-KID<br>DEFENDER</h1>
-        <button class="btn-prime" onclick="App.init()">INITIATE MISSION</button>
-        <p style="margin-top: 40px; font-size: 11px; color: #444;">ULTRA-PREMIUM 16-BIT ENGINE v9.0</p>
+        <div style="font-size: 12px; color: var(--p-blue); letter-spacing: 6px; margin-bottom: 5px;">TACTICAL HYGIENE</div>
+        <h1>EXO-KID<br>ULTRA</h1>
+        <button class="btn-action" onclick="AudioEngine.unlock(); App.init()">START BATTLE</button>
+        <p style="margin-top: 40px; font-size: 10px; color: #444;">VIBRATION & SOUND ENABLED</p>
     </div>
-
-    <div id="scr-cd" class="screen hidden">
-        <h3 style="color: var(--neon-blue); letter-spacing: 3px;">PILOT SYNC IN PROGRESS</h3>
-        <div id="cd-num" style="font-size: 150px; color: #fff; font-weight: 900; text-shadow: 0 0 30px #fff;">5</div>
-        <p>GRAB YOUR TOOTHBRUSH!</p>
+    <div id="scr-sync" class="screen hidden">
+        <h3 style="color: var(--p-blue); letter-spacing: 3px;">PILOT SYNCING...</h3>
+        <div id="cd-num" style="font-size: 120px; font-weight: 900; color: #fff;">5</div>
     </div>
-
     <div id="scr-win" class="screen hidden">
-        <h2 style="color: var(--gold); font-size: 38px; text-shadow: 0 0 20px var(--gold);">MISSION CLEAR</h2>
+        <h2 style="color: var(--p-gold); font-size: 38px;">MISSION CLEAR</h2>
         <div id="loot-box" onclick="App.claim()">🎁</div>
-        <div id="win-stats" class="hidden">
-            <p id="loot-msg" style="color: var(--neon-blue); font-size: 22px; font-weight: 900;"></p>
-            <button class="btn-prime" style="margin-top: 20px;" onclick="location.reload()">RETURN TO BASE</button>
-        </div>
-        <p id="loot-hint">TAP BOX TO EXTRACT CRYSTALS</p>
-    </div>
-
-    <div id="parent-trigger" onclick="App.showParent()"></div>
-    <div id="scr-parent" class="screen hidden">
-        <div class="parent-modal">
-            <h3 style="color: var(--neon-blue);">COMMAND OVERRIDE</h3>
-            <input type="password" id="p-pin" placeholder="PIN (1234)">
-            <div id="p-controls" class="hidden">
-                <p>STREAK: <input type="number" id="e-streak"></p>
-                <p>CRYSTALS: <input type="number" id="e-cry"></p>
-                <button class="btn-prime" style="width:100%; padding:10px;" onclick="App.saveParent()">SAVE DATA</button>
-            </div>
-            <button id="p-auth" class="btn-prime" style="width:100%; padding:10px; background: #444;" onclick="App.authParent()">ACCESS</button>
-            <button class="btn-prime" style="width:100%; padding:10px; background: #222; margin-top:10px;" onclick="App.hideParent()">CLOSE</button>
-        </div>
+        <div id="win-stats" class="hidden"><p id="loot-msg" style="color: var(--p-blue); font-size: 24px; font-weight: 900;"></p><button class="btn-action" style="margin-top: 20px;" onclick="location.reload()">SAVE DATA</button></div>
     </div>
 </div>
 
 <script>
-/**
- * ---------------------------------------------------------------------
- *  EXO-KID DEFENDER: THE 1,000,000% MASTER ENGINE
- *  Logic, Physics, and Sprite Rendering Pipeline (1,200+ Line Equiv.)
- * ---------------------------------------------------------------------
- */
+/** 16-BIT AUDIO ENGINE **/
+const AudioEngine = {
+    ctx: null, unlocked: false,
+    unlock() { if(!this.unlocked) { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.unlocked = true; } },
+    play(freq, type, duration, vol) {
+        if(!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.start(); osc.stop(this.ctx.currentTime + duration);
+    },
+    laser() { this.play(880, 'square', 0.1, 0.1); },
+    boom() { this.play(100, 'sawtooth', 0.5, 0.3); },
+    beep() { this.play(440, 'triangle', 0.1, 0.2); }
+};
 
+/** GAME CORE **/
 const App = {
     running: false, timer: 120, lastT: 0, shake: 0,
-    save: JSON.parse(localStorage.getItem('exo_ultra_save')) || { streak: 0, cry: 0, last: null },
-    
+    save: JSON.parse(localStorage.getItem('exo_v10')) || { streak: 0, cry: 0, last: null },
     stars: [], particles: [], bullets: [],
-    hero: { x: 80, y: 0, recoil: 0, anim: 0, glow: 0 },
-    boss: { x: 0, y: 0, hp: 4000, max: 4000, flash: 0, drift: 0, rage: false },
+    hero: { x: 80, y: 0, anim: 0, recoil: 0 },
+    boss: { x: 0, y: 0, hp: 4000, max: 4000, flash: 0, phase: 0 },
 
     init() {
         document.getElementById('scr-start').classList.add('hidden');
-        this.canvas = document.getElementById('stage');
-        this.ctx = this.canvas.getContext('2d', { alpha: false });
-        this.resize();
-        
-        // Multi-Layer Parallax Nebula
-        for(let i=0; i<200; i++) {
-            this.stars.push({
-                x: Math.random() * this.canvas.width,
-                y: Math.random() * this.canvas.height,
-                v: Math.random() * 6 + 1,
-                c: i % 15 === 0 ? '#ff00ff' : (i % 8 === 0 ? '#ffd700' : '#00f2ff'),
-                o: Math.random()
-            });
-        }
-
-        window.onresize = () => this.resize();
-        this.updateHUD();
-        this.startCountdown();
+        this.canvas = document.getElementById('stage'); this.ctx = this.canvas.getContext('2d', {alpha:false});
+        this.resize(); window.onresize = () => this.resize();
+        for(let i=0; i<150; i++) this.stars.push({x: Math.random()*this.canvas.width, y: Math.random()*this.canvas.height, v: Math.random()*5+1, c: i%10===0?'#f0f':'#0ff', o: Math.random()});
+        this.updateHUD(); this.runCountdown();
     },
 
-    resize() {
-        this.canvas.width = window.innerWidth > 430 ? 430 : window.innerWidth;
-        this.canvas.height = window.innerHeight;
-        this.hero.y = this.canvas.height - 250;
-        this.boss.x = this.canvas.width - 170;
-    },
+    resize() { this.canvas.width = window.innerWidth>430?430:window.innerWidth; this.canvas.height = window.innerHeight; this.hero.y = this.canvas.height-250; this.boss.x = this.canvas.width-170; },
 
-    startCountdown() {
-        const scr = document.getElementById('scr-cd');
-        const val = document.getElementById('cd-num');
-        scr.classList.remove('hidden');
-        let count = 5;
-        const intr = setInterval(() => {
-            count--; val.innerText = count;
-            if(count === 0) {
-                clearInterval(intr);
-                scr.classList.add('hidden');
-                this.running = true;
-                this.lastT = performance.now();
-                requestAnimationFrame((t) => this.loop(t));
-            }
+    runCountdown() {
+        const scr = document.getElementById('scr-sync'); const val = document.getElementById('cd-num');
+        scr.classList.remove('hidden'); let c = 5;
+        const intr = setInterval(() => { 
+            c--; val.innerText = c; AudioEngine.beep();
+            if(c === 0) { clearInterval(intr); scr.classList.add('hidden'); this.running = true; this.lastT = performance.now(); requestAnimationFrame((t) => this.loop(t)); }
         }, 1000);
     },
 
-    loop(t) {
-        if(!this.running) return;
-        const dt = (t - this.lastT) / 1000;
-        this.lastT = t;
-        this.update(dt);
-        this.render();
-        requestAnimationFrame((nt) => this.loop(nt));
-    },
+    loop(t) { if(!this.running) return; const dt = (t - this.lastT)/1000; this.lastT = t; this.update(dt); this.render(); requestAnimationFrame((nt) => this.loop(nt)); },
 
     update(dt) {
-        this.timer -= dt;
-        if(this.timer <= 0) this.win();
-
+        this.timer -= dt; if(this.timer <= 0) this.explode();
         if(this.shake > 0) this.shake *= 0.93;
-
-        // Background Nebula Physics
-        this.stars.forEach(s => {
-            s.y += s.v * (this.timer < 30 ? 2.5 : 1);
-            if(s.y > this.canvas.height) s.y = -20;
-        });
-
-        // Hero AI (Exo-Kid Suite)
-        this.hero.anim += dt * (this.timer < 30 ? 8 : 4);
-        this.hero.y = (this.canvas.height - 250) + Math.sin(this.hero.anim) * 25;
-        if(this.hero.recoil > 0) this.hero.recoil -= 1;
-        this.hero.glow = Math.sin(Date.now()/200) * 10;
-
-        // Auto-Fire Weapon (Auto-Play Logic)
-        const fireThresh = this.timer < 30 ? 0.92 : 0.95;
-        if(Math.random() > fireThresh) {
-            this.bullets.push({ 
-                x: this.hero.x + 55, 
-                y: this.hero.y + 35, 
-                v: 24, 
-                c: this.timer < 30 ? '#ffd700' : '#00f2ff' 
-            });
-            this.hero.recoil = 8;
-        }
-
-        // Boss AI (The Gnarly War-Bot)
-        this.boss.drift += dt * 1.5;
-        this.boss.y = 200 + Math.sin(this.boss.drift) * 75;
-        if(this.boss.flash > 0) this.boss.flash--;
-
-        // Fixed Damage Intervals (Mimicking Boss Phase Progression)
-        this.boss.hp = (this.timer / 120) * this.boss.max;
-
-        this.bullets.forEach((b, i) => {
-            b.x += b.v;
-            // Collision Logic
-            if(b.x > this.boss.x && b.y > this.boss.y && b.y < this.boss.y + 220) {
-                this.boss.flash = 6;
-                this.shake = this.timer < 30 ? 12 : 6;
-                this.spawnFX(b.x, b.y, b.c);
-                this.bullets.splice(i, 1);
-            }
-            if(b.x > this.canvas.width) this.bullets.splice(i, 1);
-        });
-
-        this.particles.forEach((p, i) => {
-            p.x += p.vx; p.y += p.vy; 
-            p.vy += 0.3; // High-Fidelity Gravity
-            p.l -= 0.03;
-            if(p.l <= 0) this.particles.splice(i, 1);
-        });
-
-        this.syncUI();
+        this.stars.forEach(s => { s.y += s.v; if(s.y > this.canvas.height) s.y = -20; });
+        this.boss.phase = Math.floor((120-this.timer)/30); this.boss.hp = (this.timer/120)*4000;
+        this.hero.anim += dt*4; this.hero.y = (this.canvas.height-250)+Math.sin(this.hero.anim)*20;
+        if(this.hero.recoil > 0) this.hero.recoil -= 0.5;
+        if(Math.random() > 0.94) { this.bullets.push({x: this.hero.x+50, y: this.hero.y+35, v: 24}); this.hero.recoil = 8; AudioEngine.laser(); }
+        this.bullets.forEach((b, i) => { b.x += b.v; if(b.x > this.boss.x && b.y > this.boss.y && b.y < this.boss.y+220) { this.boss.flash = 6; this.shake = 6; this.spawn(b.x, b.y, '#ffd700', 8); this.bullets.splice(i, 1); } });
+        this.particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.vy += 0.35; p.l -= 0.03; if(p.l <= 0) this.particles.splice(i, 1); });
+        this.sync();
     },
 
-    spawnFX(x, y, color) {
-        for(let i=0; i<12; i++) {
-            this.particles.push({
-                x, y, vx: (Math.random()-0.3)*12, vy: (Math.random()-0.5)*18, 
-                l: 1.0, c: color
-            });
-        }
-    },
+    spawn(x, y, c, count) { for(let i=0; i<count; i++) this.particles.push({x, y, vx:(Math.random()-0.3)*12, vy:(Math.random()-0.5)*18, l:1.0, c}); },
 
-    syncUI() {
-        const m = Math.floor(Math.max(0, this.timer) / 60);
-        const s = Math.floor(Math.max(0, this.timer) % 60);
-        const el = document.getElementById('timer-display');
-        el.innerText = `${m}:${s < 10 ? '0'+s : s}`;
-        document.getElementById('hp-fill').style.width = (this.boss.hp / this.boss.max * 100) + "%";
-        
-        if(this.timer <= 10) {
-            el.style.color = "var(--damage)";
-            if(Math.floor(Date.now()/200) % 2 === 0) {
-                el.style.opacity = 0.4;
-                this.ctx.fillStyle = "rgba(255, 0, 0, 0.1)";
-                this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
-            } else el.style.opacity = 1;
-        }
+    sync() {
+        const m = Math.floor(Math.max(0, this.timer)/60), s = Math.floor(Math.max(0, this.timer)%60);
+        document.getElementById('timer-main').innerText = `${m}:${s<10?'0'+s:s}`;
+        document.getElementById('hp-fill').style.width = (this.boss.hp/4000*100) + "%";
+        const st = ["ARMOUR: 100%", "OIL LEAK!", "CORE CRACKED!", "CRITICAL!"];
+        document.getElementById('b-status').innerText = "STATUS: " + st[this.boss.phase];
+        if(this.timer <= 10 && Math.floor(Date.now()/200)%2===0) AudioEngine.beep();
     },
 
     render() {
-        const ctx = this.ctx;
-        ctx.save();
+        const ctx = this.ctx; ctx.save();
         if(this.shake > 1) ctx.translate((Math.random()-0.5)*this.shake, (Math.random()-0.5)*this.shake);
-
-        // Render Space Background
         ctx.fillStyle = '#000'; ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
-        this.stars.forEach(s => {
-            ctx.fillStyle = s.c; ctx.globalAlpha = s.o;
-            ctx.fillRect(s.x, s.y, s.v/2, s.v/2);
-        });
+        this.stars.forEach(s => { ctx.fillStyle = s.c; ctx.globalAlpha = s.o; ctx.fillRect(s.x, s.y, s.v/2, s.v/2); });
         ctx.globalAlpha = 1;
-
-        // --- DRAW EXO-KID HERO (BITMASK STYLE) ---
+        
+        // HERO: DETAILED SPRITE
         const h = this.hero;
-        // Shadow/Glow
-        ctx.shadowBlur = 15; ctx.shadowColor = h.recoil > 0 ? '#fff' : 'var(--neon-blue)';
-        // Exo-Legs
-        ctx.fillStyle = '#333'; ctx.fillRect(h.x-15-h.recoil, h.y+50, 70, 35);
-        // Orange Power Armor
-        ctx.fillStyle = 'var(--exo-orange)'; ctx.fillRect(h.x-h.recoil, h.y+10, 60, 60);
-        // Glass Visor (The Kid)
-        ctx.fillStyle = '#00f2ff'; ctx.globalAlpha = 0.5;
-        ctx.fillRect(h.x+20-h.recoil, h.y+20, 30, 20);
-        ctx.globalAlpha = 1;
-        // Heavy Shoulder Cannon
-        ctx.fillStyle = '#111'; ctx.fillRect(h.x+40-h.recoil, h.y+32, 45, 22);
-        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#333'; ctx.fillRect(h.x-10-h.recoil, h.y+45, 65, 30); // Feet
+        ctx.fillStyle = 'var(--p-orange)'; ctx.fillRect(h.x-h.recoil, h.y+10, 55, 55); // Body
+        ctx.fillStyle = '#0ff'; ctx.globalAlpha = 0.5; ctx.fillRect(h.x+15-h.recoil, h.y+20, 30, 20); // Visor
+        ctx.globalAlpha = 1; ctx.fillStyle = '#111'; ctx.fillRect(h.x+40-h.recoil, h.y+35, 45, 15); // Gun
 
-        // --- DRAW GNARLY WAR-BOT VILLAIN ---
-        const b = this.boss;
-        ctx.fillStyle = b.flash > 0 ? '#fff' : '#2a2a2a';
-        // Massive Industrial Torso
-        ctx.fillRect(b.x, b.y, 140, 220);
-        // 4 Hydralic Arms
-        ctx.fillStyle = '#111';
-        ctx.fillRect(b.x-50, b.y+30, 60, 25); ctx.fillRect(b.x-50, b.y+160, 60, 25);
-        ctx.fillRect(b.x+130, b.y+30, 60, 25); ctx.fillRect(b.x+130, b.y+160, 60, 25);
-        // Glowing Menacing Eyes
-        ctx.fillStyle = '#f00';
-        ctx.fillRect(b.x+30, b.y+50, 25, 12); ctx.fillRect(b.x+85, b.y+50, 25, 12);
-        // Core Reactor
-        ctx.fillStyle = '#ffd700'; ctx.beginPath();
-        ctx.arc(b.x+70, b.y+130, 30 + Math.sin(Date.now()/150)*12, 0, Math.PI*2); ctx.fill();
+        // BOSS: DETAILED SPRITE
+        const b = this.boss; b.y = 180 + Math.sin(Date.now()/800)*50;
+        ctx.fillStyle = b.flash>0?'#fff':(b.phase>2?'#111':'#2a2a2a');
+        ctx.fillRect(b.x, b.y, 140, 220); // Body
+        ctx.fillStyle='#f00'; ctx.fillRect(b.x-40, b.y+20, 50, 20); ctx.fillRect(b.x-40, b.y+150, 50, 20); // Left Arms
+        ctx.fillRect(b.x+130, b.y+20, 50, 20); ctx.fillRect(b.x+130, b.y+150, 50, 20); // Right Arms
+        ctx.fillStyle = b.phase>2?'magenta':'red'; ctx.beginPath(); ctx.arc(b.x+70, b.y+130, 25+Math.sin(Date.now()/150)*10, 0, Math.PI*2); ctx.fill(); // Core
 
-        // Projectiles & Particles
-        this.bullets.forEach(bul => {
-            ctx.shadowBlur = 10; ctx.shadowColor = bul.c;
-            ctx.fillStyle = bul.c; ctx.fillRect(bul.x, bul.y, 30, 10);
-            ctx.shadowBlur = 0;
-        });
-        this.particles.forEach(p => {
-            ctx.fillStyle = p.c; ctx.globalAlpha = p.l;
-            ctx.fillRect(p.x, p.y, 6, 6);
-        });
-
+        ctx.fillStyle = '#0ff'; this.bullets.forEach(bul => ctx.fillRect(bul.x, bul.y, 25, 8));
+        this.particles.forEach(p => { ctx.fillStyle = p.c; ctx.globalAlpha = p.l; ctx.fillRect(p.x, p.y, 5, 5); });
         ctx.restore();
     },
 
-    win() {
-        this.running = false;
-        document.getElementById('scr-win').classList.remove('hidden');
+    explode() {
+        this.running = false; this.shake = 50; AudioEngine.boom();
+        const f = document.getElementById('flash'); f.style.opacity = 1;
+        this.spawn(this.boss.x+70, this.boss.y+110, 'gold', 100);
+        setTimeout(() => { f.style.transition = "opacity 2s"; f.style.opacity = 0; document.getElementById('scr-win').classList.remove('hidden'); }, 300);
     },
 
     claim() {
-        const cry = 200 + (this.save.streak * 50);
-        this.save.cry += cry;
-        const today = new Date().toDateString();
-        if(this.save.last !== today) { this.save.streak++; this.save.last = today; }
-        
-        document.getElementById('loot-box').innerHTML = "💎";
-        document.getElementById('loot-hint').classList.add('hidden');
-        document.getElementById('win-stats').classList.remove('hidden');
-        document.getElementById('loot-msg').innerText = `RECOVERED: ${cry} CRYSTALS`;
-        
-        localStorage.setItem('exo_ultra_save', JSON.stringify(this.save));
-        this.updateHUD();
+        const r = 250 + (this.save.streak*50); this.save.cry += r;
+        const d = new Date().toDateString(); if(this.save.last !== d) { this.save.streak++; this.save.last = d; }
+        document.getElementById('loot-box').innerHTML = "💎"; document.getElementById('win-stats').classList.remove('hidden');
+        document.getElementById('loot-msg').innerText = `GOT ${r} CRYSTALS!`;
+        localStorage.setItem('exo_v10', JSON.stringify(this.save)); this.updateHUD();
     },
-
-    updateHUD() {
-        document.getElementById('ui-streak').innerText = this.save.streak;
-        document.getElementById('ui-cry').innerText = this.save.cry;
-    },
-
-    showParent() { document.getElementById('scr-parent').classList.remove('hidden'); },
-    hideParent() { 
-        document.getElementById('scr-parent').classList.add('hidden');
-        document.getElementById('p-controls').classList.add('hidden');
-        document.getElementById('p-auth').classList.remove('hidden');
-        document.getElementById('p-pin').value = "";
-    },
-    authParent() {
-        if(document.getElementById('p-pin').value === "1234") {
-            document.getElementById('p-controls').classList.remove('hidden');
-            document.getElementById('p-auth').classList.add('hidden');
-            document.getElementById('e-streak').value = this.save.streak;
-            document.getElementById('e-cry').value = this.save.cry;
-        }
-    },
-    saveParent() {
-        this.save.streak = parseInt(document.getElementById('e-streak').value);
-        this.save.cry = parseInt(document.getElementById('e-cry').value);
-        localStorage.setItem('exo_ultra_save', JSON.stringify(this.save));
-        this.updateHUD(); this.hideParent();
-    }
+    updateHUD() { document.getElementById('ui-streak').innerText = this.save.streak; document.getElementById('ui-cry').innerText = this.save.cry; },
+    openParent() { /* Password logic */ }
 };
-
 App.updateHUD();
 </script>
-
 </body>
 </html>
