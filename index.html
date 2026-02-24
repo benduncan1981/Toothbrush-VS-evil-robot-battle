@@ -12,54 +12,53 @@
     --danger:#ff6b6b;
     --safe-top: env(safe-area-inset-top, 0px);
   }
-  html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
-  #app{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding-top:var(--safe-top);}
-  canvas{image-rendering:pixelated; background:transparent; display:block; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.6);}
-  .ui{
-    position:absolute;left:12px;top:12px;color:var(--hud);text-shadow:0 1px 0 rgba(0,0,0,0.6);
-    display:flex;flex-direction:column;gap:8px;align-items:flex-start;
-  }
+  html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+  #app{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding-top:var(--safe-top);overflow:hidden;}
+  canvas{image-rendering:pixelated;background:transparent;display:block;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.6);}
+  .ui{position:absolute;left:12px;top:12px;color:var(--hud);text-shadow:0 1px 0 rgba(0,0,0,0.6);display:flex;flex-direction:column;gap:8px;align-items:flex-start;z-index:40}
   .timer{
-    font-weight:700;font-size:48px;line-height:1;color:var(--accent);
+    font-weight:900;font-size:56px;line-height:1;color:var(--accent);
     font-variant-numeric: tabular-nums; -webkit-font-variant-numeric: tabular-nums; font-feature-settings: "tnum";
-    padding:6px 10px;background:rgba(0,0,0,0.35);border-radius:8px;border:2px solid rgba(255,255,255,0.04);
+    padding:8px 12px;background:rgba(0,0,0,0.35);border-radius:10px;border:2px solid rgba(255,255,255,0.04);
+    -webkit-font-smoothing:antialiased;
   }
   .countdown{
-    font-size:18px;color:#9ff; background:rgba(0,0,0,0.35);padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);
+    font-size:18px;color:#9ff;background:rgba(0,0,0,0.35);padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);
   }
-  .loot{
-    position:absolute;right:12px;top:12px;color:var(--hud);display:flex;flex-direction:column;gap:8px;align-items:flex-end;
+  .loot{position:absolute;right:12px;top:12px;color:var(--hud);display:flex;flex-direction:column;gap:8px;align-items:flex-end;z-index:40}
+  .stat{background:rgba(0,0,0,0.35);padding:6px 10px;border-radius:8px;border:2px solid rgba(255,255,255,0.04);font-weight:700}
+  .center-hint{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:#9ff;background:rgba(0,0,0,0.25);padding:8px 12px;border-radius:10px;font-size:14px;z-index:40}
+  #hotspot{position:fixed;right:0;bottom:0;width:64px;height:64px;opacity:0;z-index:60}
+  #hotspot.debug{outline:2px dashed rgba(255,255,255,0.06);opacity:0.06}
+  #pinPanel{position:fixed;right:12px;bottom:12px;background:rgba(0,0,0,0.92);color:#fff;padding:12px;border-radius:12px;display:none;flex-direction:column;gap:8px;min-width:240px;z-index:80}
+  #pinPanel input{font-size:18px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:#071026;color:#fff}
+  #pinPanel button{padding:8px;border-radius:8px;border:none;background:var(--accent);font-weight:800;cursor:pointer}
+  #lootModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.85));z-index:90}
+  #lootCard{background:#081226;padding:18px;border-radius:14px;border:2px solid rgba(255,255,255,0.06);min-width:320px;color:#fff;text-align:center}
+  #lootCard .big{font-size:28px;font-weight:900;color:var(--accent);margin:8px 0}
+  #lootCard button{margin-top:12px;padding:10px 14px;border-radius:10px;border:none;background:var(--hud);color:#001;cursor:pointer;font-weight:900}
+  .sr{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+  /* Tap to start overlay for iOS fallback */
+  #startOverlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.6));z-index:100;backdrop-filter: blur(2px)}
+  #startCard{background:#071026;padding:18px;border-radius:14px;border:2px solid rgba(255,255,255,0.04);color:#fff;text-align:center;min-width:260px}
+  #startCard button{margin-top:12px;padding:12px 18px;border-radius:12px;border:none;background:var(--accent);color:#001;font-weight:900;cursor:pointer}
+  /* small responsive */
+  @media (max-width:520px){
+    .timer{font-size:44px}
+    canvas{border-radius:8px}
   }
-  .stat{
-    background:rgba(0,0,0,0.35);padding:6px 10px;border-radius:8px;border:2px solid rgba(255,255,255,0.04);
-    font-weight:600;
-  }
-  .center-hint{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:#9ff;background:rgba(0,0,0,0.25);padding:6px 10px;border-radius:8px;font-size:14px;}
-  /* parental hotspot invisible */
-  #hotspot{position:fixed;right:0;bottom:0;width:64px;height:64px;opacity:0;touch-action:none;}
-  /* PIN panel */
-  #pinPanel{position:fixed;right:12px;bottom:12px;background:rgba(0,0,0,0.85);color:#fff;padding:12px;border-radius:12px;display:none;flex-direction:column;gap:8px;min-width:220px;}
-  #pinPanel input{font-size:18px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:#071026;color:#fff;}
-  #pinPanel button{padding:8px;border-radius:8px;border:none;background:var(--accent);font-weight:700;cursor:pointer;}
-  /* Loot box modal */
-  #lootModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.85));}
-  #lootCard{background:#081226;padding:18px;border-radius:14px;border:2px solid rgba(255,255,255,0.06);min-width:320px;color:#fff;text-align:center;}
-  #lootCard .big{font-size:28px;font-weight:800;color:var(--accent);margin:8px 0;}
-  #lootCard button{margin-top:12px;padding:10px 14px;border-radius:10px;border:none;background:var(--hud);color:#001;cursor:pointer;font-weight:800;}
-  /* small accessibility */
-  .sr{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;}
 </style>
 </head>
 <body>
-<div id="app">
-  <canvas id="game" width="960" height="540"></canvas>
+<div id="app" role="application" aria-label="Toothbrushing battle game">
+  <canvas id="game" width="960" height="540" aria-hidden="false"></canvas>
 
   <div class="ui" aria-hidden="false">
     <div class="timer" id="timer">02:00</div>
     <div class="countdown" id="countdown">Neural Link: Ready</div>
   </div>
 
-  <div class="loot">
+  <div class="loot" aria-hidden="false">
     <div class="stat">Streak: <span id="streak">0</span></div>
     <div class="stat">Crystals: <span id="crystals">0</span></div>
   </div>
@@ -67,7 +66,7 @@
   <div class="center-hint" id="hint">Auto-battle engaged — brush for 2 minutes!</div>
 
   <div id="pinPanel" role="dialog" aria-modal="true" aria-hidden="true">
-    <div style="font-weight:800">Parental Control</div>
+    <div style="font-weight:900">Parental Control</div>
     <input id="pinInput" type="password" placeholder="Enter PIN" inputmode="numeric" />
     <div style="display:flex;gap:8px;">
       <button id="pinUnlock">Unlock</button>
@@ -94,27 +93,41 @@
     </div>
   </div>
 
-  <div id="hotspot" title="Parental Lock"></div>
-  <div class="sr" id="sr">Accessible game for kids with ADHD and Autism. Timer, sounds, and parental controls included.</div>
+  <div id="hotspot" title="Parental Lock" aria-hidden="true"></div>
+
+  <div id="startOverlay" aria-hidden="false">
+    <div id="startCard">
+      <div style="font-weight:900;font-size:18px">GBA-Max Neural Link</div>
+      <div style="margin-top:8px;color:#9ff">Tap to start the sync and unlock sound</div>
+      <button id="startButton">Tap to Start</button>
+      <div style="font-size:12px;margin-top:8px;color:#9aa">If sound doesn't start, tap again or open Safari Web Inspector on a Mac.</div>
+    </div>
+  </div>
+
+  <div class="sr" id="sr">Accessible toothbrushing game. Timer, sounds, and parental controls included.</div>
 </div>
 
 <script>
-/* =========================
-   GBA-Max Toothbrushing App
-   Single-file HTML/CSS/JS
-   ========================= */
+/* Single-file GBA-Max Toothbrushing App
+   - 16-bit bitmask sprites (procedural)
+   - Parallax starfield (3 layers)
+   - Intro countdown, 120s auto-battle, villain degradation every 30s
+   - WebAudio procedural sounds with robust iOS unlock and visible Tap-to-Start fallback
+   - LocalStorage for crystals and streaks
+   - Parental PIN panel (PIN: 1234)
+   - Smooth 60fps with requestAnimationFrame and defensive try/catch
+*/
 
 /* ======= Config ======= */
 const CONFIG = {
   WIDTH: 960,
   HEIGHT: 540,
-  PIXEL_SCALE: 2, // scale for pixel art rendering
-  TOTAL_TIME: 120, // seconds main phase
-  COUNTDOWN: 5, // seconds intro
+  PIXEL_SCALE: 2,
+  TOTAL_TIME: 120,
+  COUNTDOWN: 5,
   VILLAIN_STAGES: 4,
-  VILLAIN_STAGE_INTERVAL: 30, // seconds between visual degradation
-  FIRE_RATE: 400, // ms between shots
-  HERO_SPEED: 0.0025, // horizontal speed factor
+  VILLAIN_STAGE_INTERVAL: 30,
+  FIRE_RATE: 400,
   LOCAL_KEYS: { crystals: 'gba_crystals_v1', streak: 'gba_streak_v1' },
   PIN: '1234'
 };
@@ -126,14 +139,14 @@ canvas.width = CONFIG.WIDTH;
 canvas.height = CONFIG.HEIGHT;
 ctx.imageSmoothingEnabled = false;
 
-/* Scale for crisp pixel art */
+/* Offscreen for crisp pixel art */
 const offscreen = document.createElement('canvas');
-offscreen.width = CONFIG.WIDTH / CONFIG.PIXEL_SCALE;
-offscreen.height = CONFIG.HEIGHT / CONFIG.PIXEL_SCALE;
+offscreen.width = Math.floor(CONFIG.WIDTH / CONFIG.PIXEL_SCALE);
+offscreen.height = Math.floor(CONFIG.HEIGHT / CONFIG.PIXEL_SCALE);
 const ox = offscreen.getContext('2d');
 ox.imageSmoothingEnabled = false;
 
-/* UI Elements */
+/* UI refs */
 const timerEl = document.getElementById('timer');
 const countdownEl = document.getElementById('countdown');
 const hintEl = document.getElementById('hint');
@@ -153,6 +166,8 @@ const setCrystals = document.getElementById('setCrystals');
 const setStreak = document.getElementById('setStreak');
 const saveAdmin = document.getElementById('saveAdmin');
 const resetData = document.getElementById('resetData');
+const startOverlay = document.getElementById('startOverlay');
+const startButton = document.getElementById('startButton');
 
 /* ======= Local Storage ======= */
 function loadStats(){
@@ -168,48 +183,45 @@ let stats = loadStats();
 crystalsEl.textContent = stats.crystals;
 streakEl.textContent = stats.streak;
 
-/* ======= Audio (Web Audio API Procedural) ======= */
+/* ======= Audio Setup (Web Audio API) ======= */
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 const audio = new AudioCtx();
 let masterGain = audio.createGain(); masterGain.gain.value = 0.9; masterGain.connect(audio.destination);
 
-/* Utility: play beep (countdown) */
-function playBeep(freq=880, time=0.08){
+/* Procedural sounds */
+function playBeep(freq=880, time=0.10){
   const t = audio.currentTime;
   const o = audio.createOscillator();
   const g = audio.createGain();
-  o.type = 'square';
-  o.frequency.value = freq;
+  o.type = 'square'; o.frequency.value = freq;
   g.gain.value = 0;
   o.connect(g); g.connect(masterGain);
   o.start(t);
-  g.gain.setValueAtTime(0, t);
+  g.gain.setValueAtTime(0.0001, t);
   g.gain.linearRampToValueAtTime(0.12, t+0.005);
   g.gain.exponentialRampToValueAtTime(0.0001, t+time);
   o.stop(t+time+0.02);
 }
 
-/* Laser pew: short pulse with bit-crisp timbre */
 function playLaser(){
   const t = audio.currentTime;
-  const o = audio.createOscillator();
+  const o1 = audio.createOscillator();
   const o2 = audio.createOscillator();
   const g = audio.createGain();
-  const filter = audio.createBiquadFilter();
-  o.type = 'sawtooth'; o.frequency.value = 1200;
+  const f = audio.createBiquadFilter();
+  o1.type = 'sawtooth'; o1.frequency.value = 1200;
   o2.type = 'square'; o2.frequency.value = 1800;
-  filter.type = 'lowpass'; filter.frequency.value = 2400;
+  f.type = 'lowpass'; f.frequency.value = 2400;
   g.gain.value = 0;
-  o.connect(filter); o2.connect(filter); filter.connect(g); g.connect(masterGain);
-  o.start(t); o2.start(t);
+  o1.connect(f); o2.connect(f); f.connect(g); g.connect(masterGain);
+  o1.start(t); o2.start(t);
   g.gain.setValueAtTime(0.0001,t);
   g.gain.linearRampToValueAtTime(0.18,t+0.01);
   g.gain.exponentialRampToValueAtTime(0.0001,t+0.18);
-  o.frequency.exponentialRampToValueAtTime(600,t+0.18);
-  o.stop(t+0.2); o2.stop(t+0.2);
+  o1.frequency.exponentialRampToValueAtTime(600,t+0.18);
+  o1.stop(t+0.22); o2.stop(t+0.22);
 }
 
-/* Sub-bass boom for final explosion */
 function playBoom(){
   const t = audio.currentTime;
   const o = audio.createOscillator();
@@ -226,38 +238,68 @@ function playBoom(){
   o.stop(t+1.3);
 }
 
-/* White-noise puff for smoke */
 function playSmoke(){
   const t = audio.currentTime;
-  const bufferSize = audio.sampleRate * 0.3;
+  const bufferSize = audio.sampleRate * 0.25;
   const buffer = audio.createBuffer(1, bufferSize, audio.sampleRate);
   const data = buffer.getChannelData(0);
   for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * (1 - i/bufferSize);
   const src = audio.createBufferSource();
   const g = audio.createGain();
   src.buffer = buffer;
-  g.gain.value = 0.25;
+  g.gain.value = 0.18;
   src.connect(g); g.connect(masterGain);
   src.start(t);
 }
 
-/* Unlock audio on first user gesture for mobile Safari */
-function unlockAudio(){
-  if(audio.state === 'suspended'){
-    audio.resume();
+/* Robust iOS unlock: resume on gesture and play tiny confirmation tone */
+function tryResumeAudio(){
+  if(!audio) return;
+  if(audio.state === 'suspended' || audio.state === 'interrupted'){
+    audio.resume().then(()=> {
+      console.log('Audio resumed, state=', audio.state);
+    }).catch((e)=>{
+      console.warn('Audio resume rejected', e);
+    });
+    audio.onstatechange = () => console.log('Audio state changed to', audio.state);
+  } else {
+    console.log('Audio already running:', audio.state);
   }
 }
-window.addEventListener('pointerdown', unlockAudio, { once:true });
+function addAudioUnlockHandlers(){
+  const handler = (ev) => {
+    tryResumeAudio();
+    // tiny confirmation tone
+    try {
+      const o = audio.createOscillator();
+      const g = audio.createGain();
+      o.type = 'square'; o.frequency.value = 440;
+      g.gain.value = 0.0001;
+      o.connect(g); g.connect(masterGain);
+      o.start();
+      g.gain.linearRampToValueAtTime(0.06, audio.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.00001, audio.currentTime + 0.12);
+      o.stop(audio.currentTime + 0.14);
+    } catch(e){ console.warn('confirmation tone failed', e); }
+    document.removeEventListener('pointerdown', handler);
+    document.removeEventListener('touchstart', handler);
+    document.removeEventListener('mousedown', handler);
+  };
+  document.addEventListener('pointerdown', handler, {passive:true});
+  document.addEventListener('touchstart', handler, {passive:true});
+  document.addEventListener('mousedown', handler, {passive:true});
+}
+addAudioUnlockHandlers();
 
 /* ======= Game State ======= */
 let state = {
-  phase: 'intro', // intro, main, outro, ended
+  phase: 'intro',
   countdown: CONFIG.COUNTDOWN,
   timeLeft: CONFIG.TOTAL_TIME,
   lastShot: 0,
   startTime: null,
-  villainStage: 0, // 0..3
-  heroX: 0.1, // normalized 0..1
+  villainStage: 0,
+  heroX: 0.12,
   heroY: 0.5,
   recoil: 0,
   particles: [],
@@ -266,40 +308,28 @@ let state = {
   shotsFired: 0
 };
 
-/* ======= Helpers: Pixel Drawing (Bitmask approach) ======= */
-/*
-  We'll implement a small pixel painter that draws sprites using a bitmask
-  and a palette. The sprites are defined as arrays of rows with hex masks.
-  This allows crisp 16-bit style shapes without blocky rectangles.
-*/
+/* ======= Sprite System (bitmask/palette) ======= */
+/* drawSprite: pixels[][] with palette indices; 0 = transparent */
 function drawSprite(ctx2, sprite, palette, x, y, scale=1, flip=false){
-  // sprite: {w,h,data: [rows as numbers], alphaMask: optional}
   const w = sprite.w, h = sprite.h;
   for(let ry=0; ry<h; ry++){
-    const row = sprite.data[ry];
-    // each pixel uses 4 bits per pixel packed? We'll use nibble palette index per pixel in a string for simplicity
     for(let rx=0; rx<w; rx++){
-      const idx = sprite.pixels ? sprite.pixels[ry][rx] : ((row >> ((w-1-rx)*4)) & 0xF);
-      if(idx === 0) continue; // 0 = transparent
+      const idx = sprite.pixels[ry][rx];
+      if(!idx) continue;
       const col = palette[idx] || '#000';
-      ctx2.fillStyle = col;
       const px = flip ? (x + (w-1-rx)*scale) : (x + rx*scale);
+      ctx2.fillStyle = col;
       ctx2.fillRect(px, y + ry*scale, scale, scale);
     }
   }
 }
 
-/* Procedural sprite builders for hero and villain using small pixel maps */
+/* Hero 24x24 (kid pilot in exo-suit) - palette indices */
 function makeHeroSprite(){
-  // 24x24 sprite using palette indices (0 transparent)
-  const p = [
-    '#000000','#0ff6ff','#00b3b3','#ffffff','#9ff','#444','#ffd24d','#ffb3b3',
-    '#222','#666','#999','#222','#ff','rgba(0,0,0,0)'
-  ];
-  // We'll define pixels as arrays of numbers (palette indices)
+  const palette = ['#000000','#0ff6ff','#00b3b3','#ffffff','#9ff','#444','#ffd24d','#ffb3b3','#222','#666'];
   const px = [
-    // 24 columns each row; using numbers 0..7
-    [0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,2,3,3,3,3,3,3,3,3,3,2,0,0,0,0,0,0,0],
     [0,0,0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0,0,0],
     [0,0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0,0],
     [0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0],
@@ -310,26 +340,25 @@ function makeHeroSprite(){
     [2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0],
     [2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0],
     [2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0],
-    [2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0],
-    [0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0],
-    [0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0],
-    [0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0],
-    [0,0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0,0],
-    [0,0,0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0,0,0],
-    [0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0],
+    [0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0],
+    [0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0],
+    [0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0,0],
+    [0,0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0,0,0],
+    [0,0,0,0,0,2,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    // lower rows for suit details
     [0,0,0,0,0,0,6,6,6,6,6,6,6,6,6,6,6,0,0,0,0,0,0,0],
     [0,0,0,0,0,6,6,6,6,6,6,6,6,6,6,6,6,6,0,0,0,0,0,0],
     [0,0,0,0,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,0,0,0,0,0],
     [0,0,0,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,0,0,0,0],
     [0,0,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,0,0,0]
   ];
-  return { w:24, h:24, pixels: px, palette: ['#000000','#0ff6ff','#00b3b3','#ffffff','#9ff','#444','#ffd24d','#ffb3b3'] };
+  return { w:24, h:24, pixels: px, palette };
 }
 
+/* Cannon 12x8 */
 function makeCannonSprite(){
-  // small 12x8 cannon
+  const palette = ['#000','#0ff6ff','#00b3b3','#fff','#9ff','#444','#ffd24d','#ffb3b3'];
   const px = [
     [0,0,0,7,7,7,7,7,0,0,0,0],
     [0,0,7,7,7,7,7,7,7,0,0,0],
@@ -340,26 +369,26 @@ function makeCannonSprite(){
     [0,7,7,7,7,7,7,7,7,7,7,0],
     [0,0,7,7,7,7,7,7,7,7,0,0]
   ];
-  return { w:12, h:8, pixels:px, palette:['#000','#0ff6ff','#00b3b3','#fff','#9ff','#444','#ffd24d','#ffb3b3'] };
+  return { w:12, h:8, pixels:px, palette };
 }
 
+/* Villain base 48x48 procedural */
 function makeVillainBase(){
-  // 48x48 rough robot using palette indices
   const w = 48, h = 48;
   const pixels = Array.from({length:h}, ()=>Array.from({length:w}, ()=>0));
-  // draw a circular core and arms procedurally
+  const palette = ['#000','#222','#444','#ffb36b','#ffd24d','#999','#666','#ff6b6b'];
   const cx = Math.floor(w/2), cy = Math.floor(h/2);
   for(let y=0;y<h;y++){
     for(let x=0;x<w;x++){
       const dx = x-cx, dy = y-cy;
       const r = Math.sqrt(dx*dx+dy*dy);
-      if(r < 10) pixels[y][x] = 3; // core bright
-      else if(r < 18) pixels[y][x] = 6; // armor
-      else if((Math.abs(dx) < 4 && Math.abs(dy) < 20) || (Math.abs(dy) < 4 && Math.abs(dx) < 20)) pixels[y][x] = 6;
+      if(r < 8) pixels[y][x] = 3;
+      else if(r < 16) pixels[y][x] = 4;
+      else if((Math.abs(dx) < 3 && Math.abs(dy) < 18) || (Math.abs(dy) < 3 && Math.abs(dx) < 18)) pixels[y][x] = 5;
       else pixels[y][x] = 0;
     }
   }
-  // add four arms
+  // four arms
   for(let i=0;i<4;i++){
     const ax = [0, w-1, 0, w-1][i];
     const ay = [0, 0, h-1, h-1][i];
@@ -371,7 +400,7 @@ function makeVillainBase(){
       }
     }
   }
-  return { w,h,pixels, palette:['#000','#222','#444','#ffb36b','#ffd24d','#999','#666','#ff6b6b'] };
+  return { w,h,pixels,palette };
 }
 
 /* Create sprites */
@@ -379,11 +408,11 @@ const heroSprite = makeHeroSprite();
 const cannonSprite = makeCannonSprite();
 const villainSpriteBase = makeVillainBase();
 
-/* ======= Parallax Starfield ======= */
+/* ======= Starfield (3-layer parallax) ======= */
 const starLayers = [
-  { speed: 0.02, density: 40, color: '#0b1f3a', stars: [] }, // nebula blobs
+  { speed: 0.02, density: 36, color: '#0b1f3a', stars: [] }, // nebula blobs
   { speed: 0.06, density: 120, color: '#9ff', stars: [] }, // mid stars
-  { speed: 0.12, density: 60, color: '#ffd24d', stars: [] } // foreground debris
+  { speed: 0.12, density: 64, color: '#ffd24d', stars: [] } // foreground debris
 ];
 
 function initStars(){
@@ -394,15 +423,16 @@ function initStars(){
         x: Math.random()*offscreen.width,
         y: Math.random()*offscreen.height,
         s: Math.random()*2 + (layer.speed*6),
-        a: Math.random()*0.8 + 0.2
+        a: Math.random()*0.8 + 0.2,
+        tw: Math.random()*1.2 + 0.2
       });
     }
   });
 }
 initStars();
 
-/* ======= Particles System ======= */
-function spawnParticle(x,y,vx,vy,color,life=100,size=2){
+/* ======= Particles ======= */
+function spawnParticle(x,y,vx,vy,color,life=120,size=2){
   state.particles.push({x,y,vx,vy,color,life,size});
 }
 function updateParticles(dt){
@@ -411,15 +441,15 @@ function updateParticles(dt){
     p.x += p.vx * dt;
     p.y += p.vy * dt;
     p.life -= dt;
-    p.vy += 0.0005 * dt; // gravity
+    p.vy += 0.0005 * dt;
     if(p.life <= 0) state.particles.splice(i,1);
   }
 }
 function drawParticles(ctx2, scale){
   state.particles.forEach(p=>{
-    ctx2.globalAlpha = Math.max(0, p.life/120);
+    ctx2.globalAlpha = Math.max(0, p.life/160);
     ctx2.fillStyle = p.color;
-    ctx2.fillRect(p.x*scale, p.y*scale, p.size*scale, p.size*scale);
+    ctx2.fillRect(Math.round(p.x)*scale, Math.round(p.y)*scale, Math.max(1,p.size)*scale, Math.max(1,p.size)*scale);
     ctx2.globalAlpha = 1;
   });
 }
@@ -436,42 +466,26 @@ function fireShot(){
   if(now - lastShotTime < CONFIG.FIRE_RATE) return;
   lastShotTime = now;
   state.shotsFired++;
-  // spawn muzzle flash and smoke
   playLaser();
   playSmoke();
   state.recoil = 6;
-  // spawn projectile particle
-  const hx = (state.heroX * offscreen.width) + 28;
+  const hx = (state.heroX * offscreen.width) + 18;
   const hy = state.heroY * offscreen.height + 6;
   spawnParticle(hx, hy, 0.6, -0.02, '#9ff', 120, 2);
-  // spawn smoke
   for(let i=0;i<6;i++){
     spawnParticle(hx-4, hy+2, (Math.random()-0.5)*0.2, -0.05 - Math.random()*0.1, '#ccc', 80 + Math.random()*40, 2 + Math.random()*2);
   }
 }
 
-/* Villain degradation visuals */
+/* Villain stage calculation */
 function villainStageForElapsed(elapsed){
-  // elapsed seconds since main start
-  const stage = Math.min(CONFIG.VILLAIN_STAGES-1, Math.floor(elapsed / CONFIG.VILLAIN_STAGE_INTERVAL));
-  return stage;
+  return Math.min(CONFIG.VILLAIN_STAGES-1, Math.floor(elapsed / CONFIG.VILLAIN_STAGE_INTERVAL));
 }
 
 /* ======= Countdown & Timer ======= */
 let introTimer = CONFIG.COUNTDOWN;
 let mainTimer = CONFIG.TOTAL_TIME;
-let lastTick = performance.now();
 let countdownBeepIndex = CONFIG.COUNTDOWN;
-
-function startIntro(){
-  state.phase = 'intro';
-  introTimer = CONFIG.COUNTDOWN;
-  countdownEl.textContent = 'Neural Link Sync';
-  countdownBeepIndex = CONFIG.COUNTDOWN;
-  // play initial beep immediately
-  playBeep(880,0.12);
-  setTimeout(()=>playBeep(880,0.12), 200);
-}
 
 /* Start main phase */
 function startMain(){
@@ -480,31 +494,32 @@ function startMain(){
   mainTimer = CONFIG.TOTAL_TIME;
   countdownEl.textContent = 'Battle Engaged';
   hintEl.textContent = 'Brush! The Hero auto-fires — keep going!';
-  // reset villain stage
   state.villainStage = 0;
   state.shotsFired = 0;
+  // enable parental hotspot after start
+  hotspot.style.pointerEvents = 'auto';
+  hotspot.setAttribute('aria-hidden','false');
+  // hide start overlay
+  startOverlay.style.display = 'none';
+  startOverlay.setAttribute('aria-hidden','true');
 }
 
 /* Trigger outro explosion and loot */
 function triggerOutro(){
   if(state.phase === 'outro' || state.phase === 'ended') return;
   state.phase = 'outro';
-  // explosion visuals
   playBoom();
   screenShake(18);
-  // spawn many golden particles
   for(let i=0;i<400;i++){
     const angle = Math.random()*Math.PI*2;
     const speed = Math.random()*6 + 1;
     spawnParticle(offscreen.width/2, offscreen.height/2, Math.cos(angle)*speed, Math.sin(angle)*speed, '#ffd24d', 200 + Math.random()*200, 2 + Math.random()*3);
   }
-  // show loot after short delay
   setTimeout(()=>showLoot(), 800);
 }
 
 /* Loot calculation and display */
 function showLoot(){
-  // simple reward: base crystals + streak bonus
   const base = Math.max(1, Math.floor(state.shotsFired / 6));
   const bonus = Math.floor(stats.streak / 2);
   const gained = base + bonus;
@@ -512,7 +527,6 @@ function showLoot(){
   lootText.textContent = `You fired ${state.shotsFired} shots. Bonus: ${bonus}`;
   lootModal.style.display = 'flex';
   lootModal.setAttribute('aria-hidden','false');
-  // store pending gain
   lootModal.dataset.gain = String(gained);
 }
 
@@ -531,6 +545,8 @@ claimLoot.addEventListener('click', ()=>{
 });
 
 /* ======= Parental Lock Hotspot ======= */
+/* Hotspot initially non-blocking until start; becomes active after startMain() */
+hotspot.style.pointerEvents = 'none';
 hotspot.addEventListener('click', (e)=>{
   pinPanel.style.display = 'flex';
   pinPanel.setAttribute('aria-hidden','false');
@@ -569,14 +585,38 @@ resetData.addEventListener('click', ()=>{
   }
 });
 
-/* ======= Main Render Loop ======= */
+/* ======= Start overlay handling (ensures trusted gesture on iOS) ======= */
+startButton.addEventListener('click', (ev)=>{
+  // resume audio and start intro countdown
+  tryResumeAudio();
+  // small confirmation tone already played by tryResumeAudio handlers
+  startOverlay.style.display = 'none';
+  startOverlay.setAttribute('aria-hidden','true');
+  beginIntroSequence();
+});
+
+/* Also allow tapping canvas to start if overlay hidden */
+canvas.addEventListener('pointerdown', ()=>{
+  tryResumeAudio();
+});
+
+/* ======= Intro sequence ======= */
+function beginIntroSequence(){
+  state.phase = 'intro';
+  introTimer = CONFIG.COUNTDOWN;
+  countdownBeepIndex = CONFIG.COUNTDOWN;
+  countdownEl.textContent = 'Neural Link Sync';
+  // immediate beep
+  playBeep(880,0.12);
+  // schedule beeps via update loop (no separate interval)
+}
+
+/* ======= Update & Render Loop ======= */
 function update(dt){
   if(state.phase === 'intro'){
-    // countdown logic
     introTimer -= dt/1000;
-    const nextInt = Math.ceil(introTimer);
+    const nextInt = Math.max(0, Math.ceil(introTimer));
     countdownEl.textContent = `Neural Link Sync ${nextInt}`;
-    // beep each second
     if(nextInt < countdownBeepIndex){
       countdownBeepIndex = nextInt;
       playBeep(880 - (CONFIG.COUNTDOWN-nextInt)*40, 0.12);
@@ -585,65 +625,52 @@ function update(dt){
       startMain();
     }
   } else if(state.phase === 'main'){
-    // update timer
     const elapsed = (performance.now() - state.startTime)/1000;
     const remaining = Math.max(0, CONFIG.TOTAL_TIME - elapsed);
     mainTimer = remaining;
     const mm = String(Math.floor(remaining/60)).padStart(2,'0');
     const ss = String(Math.floor(remaining%60)).padStart(2,'0');
     timerEl.textContent = `${mm}:${ss}`;
-    // villain stage update
     const stage = villainStageForElapsed(elapsed);
     if(stage !== state.villainStage){
       state.villainStage = stage;
-      // spawn visual degradation effects
       for(let i=0;i<40;i++){
         spawnParticle(offscreen.width*0.7 + Math.random()*40 - 20, offscreen.height*0.3 + Math.random()*40 - 20, (Math.random()-0.5)*0.6, (Math.random()-0.5)*0.6, '#ff6b6b', 120, 2);
       }
     }
-    // hero movement: smooth sine wave across vertical axis and slow horizontal drift
     const t = elapsed;
     state.heroX = 0.12 + (Math.sin(t*1.2)*0.06);
     state.heroY = 0.45 + Math.sin(t*2.1)*0.08;
-    // auto-fire
     if(performance.now() - state.lastShot > CONFIG.FIRE_RATE){
       fireShot();
       state.lastShot = performance.now();
     }
-    // recoil decay
     state.recoil = Math.max(0, state.recoil - dt*0.02);
-    // particles
     updateParticles(dt);
-    // end condition
     if(remaining <= 0){
       triggerOutro();
     }
   } else if(state.phase === 'outro'){
-    // update particles and shake decay
     updateParticles(dt);
     state.explosionShake = Math.max(0, state.explosionShake - dt*0.05);
   } else {
-    // ended: idle
     updateParticles(dt);
   }
 }
 
-/* Draw everything to offscreen canvas then scale up */
+/* Render to offscreen then scale to main canvas */
 function render(){
-  // clear
+  // clear offscreen
   ox.fillStyle = '#071026';
   ox.fillRect(0,0,offscreen.width,offscreen.height);
 
   // parallax starfield
   starLayers.forEach((layer, idx)=>{
     layer.stars.forEach(s=>{
-      // move star
       s.x -= layer.speed;
       if(s.x < -2) s.x = offscreen.width + 2;
-      // draw
       ox.globalAlpha = s.a;
       if(idx === 0){
-        // nebula: soft blob
         ox.fillStyle = layer.color;
         ox.fillRect(Math.floor(s.x), Math.floor(s.y), Math.ceil(s.s*2), Math.ceil(s.s*2));
       } else {
@@ -654,29 +681,24 @@ function render(){
     });
   });
 
-  // draw villain (center-right)
-  const vScale = 1;
-  const vx = Math.floor(offscreen.width*0.65);
-  const vy = Math.floor(offscreen.height*0.25);
-  // copy base pixels and apply degradation overlays
+  // villain (center-right)
   const v = villainSpriteBase;
+  const vScale = 1;
+  const vx = Math.floor(offscreen.width*0.62);
+  const vy = Math.floor(offscreen.height*0.18);
   for(let y=0;y<v.h;y++){
     for(let x=0;x<v.w;x++){
       const idx = v.pixels[y][x];
       if(idx === 0) continue;
       let color = v.palette[idx] || '#666';
-      // apply stage effects
       if(state.villainStage >= 1){
-        // cracked armor: add darker lines
-        if(Math.random() < 0.02) color = '#222';
+        if(((x+y) % 17) === 0) color = '#222';
       }
       if(state.villainStage >= 2){
-        // leaking oil/sparks
         if(Math.random() < 0.01) color = '#000';
         if(Math.random() < 0.01) color = '#ffd24d';
       }
       if(state.villainStage >= 3){
-        // exposed burning core: red/orange near center
         const cx = Math.floor(v.w/2), cy = Math.floor(v.h/2);
         const dx = x-cx, dy = y-cy;
         if(Math.sqrt(dx*dx+dy*dy) < 8){
@@ -688,34 +710,31 @@ function render(){
     }
   }
 
-  // draw hero exo-suit (left)
+  // hero
   const hs = heroSprite;
   const heroXpx = Math.floor(state.heroX * offscreen.width);
   const heroYpx = Math.floor(state.heroY * offscreen.height);
-  // draw suit body
   drawSprite(ox, hs, hs.palette, heroXpx, heroYpx, 1, false);
-  // draw cannon attached to suit with recoil
+
+  // cannon with recoil
   const cannonX = heroXpx + 18;
   const cannonY = heroYpx + 8 - Math.round(state.recoil);
   drawSprite(ox, cannonSprite, cannonSprite.palette, cannonX, cannonY, 1, false);
 
-  // muzzle flash when recoil > 0
   if(state.recoil > 0.5){
     ox.fillStyle = '#fff';
     ox.fillRect(cannonX + 10, cannonY + 2, 3, 3);
-    // smoke puff
     ox.fillStyle = 'rgba(200,200,200,0.6)';
     ox.fillRect(cannonX + 8, cannonY + 6, 6, 2);
   }
 
-  // draw particles
+  // particles
   drawParticles(ox, 1);
 
-  // HUD elements drawn on offscreen for crispness
-  // small health bar for villain (visual only)
+  // villain health bar
   const barW = 120, barH = 8;
-  const barX = offscreen.width*0.65;
-  const barY = offscreen.height*0.15;
+  const barX = Math.floor(offscreen.width*0.62);
+  const barY = Math.floor(offscreen.height*0.12);
   const hpPct = 1 - (state.villainStage / (CONFIG.VILLAIN_STAGES-1));
   ox.fillStyle = '#000';
   ox.fillRect(barX-2, barY-2, barW+4, barH+4);
@@ -724,9 +743,8 @@ function render(){
   ox.fillStyle = '#ff6b6b';
   ox.fillRect(barX, barY, Math.max(0, Math.floor(barW*hpPct)), barH);
 
-  // copy offscreen to main canvas with scaling
+  // copy to main canvas with shake
   ctx.save();
-  // apply screen shake
   const shake = state.explosionShake;
   const sx = (Math.random()*2-1) * shake;
   const sy = (Math.random()*2-1) * shake;
@@ -736,42 +754,7 @@ function render(){
   ctx.restore();
 }
 
-/* ======= Main Loop ======= */
-function loop(now){
-  const dt = now - state.lastFrame;
-  state.lastFrame = now;
-  update(dt);
-  render();
-  requestAnimationFrame(loop);
-}
-state.lastFrame = performance.now();
-startIntro();
-requestAnimationFrame(loop);
-
-/* ======= Countdown Beep Sequence (visual + audio) ======= */
-/* We'll schedule beeps for the intro countdown using setInterval for reliability */
-let introInterval = setInterval(()=>{
-  if(state.phase !== 'intro'){
-    clearInterval(introInterval);
-    return;
-  }
-  // play beep each second and show number
-  const remaining = Math.max(0, Math.ceil(introTimer));
-  countdownEl.textContent = `Neural Link Sync ${remaining}`;
-  playBeep(880 + (remaining*20), 0.12);
-}, 250);
-
-/* ======= Accessibility: large tabular timer font via CSS injection ======= */
-(function injectTimerStyle(){
-  timerEl.style.fontFamily = '"SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-  timerEl.style.letterSpacing = '0.5px';
-})();
-
-/* ======= Final Explosion Visual: screen flash and golden particles handled in triggerOutro ======= */
-/* Add white flash overlay when explosion occurs */
-const flashCanvas = document.createElement('canvas');
-flashCanvas.width = canvas.width; flashCanvas.height = canvas.height;
-const fctx = flashCanvas.getContext('2d');
+/* Flash overlay for final explosion */
 let flashAlpha = 0;
 function flashUpdate(){
   if(state.phase === 'outro' && flashAlpha < 1){
@@ -790,23 +773,43 @@ function flashUpdate(){
 }
 requestAnimationFrame(flashUpdate);
 
-/* ======= Prevent screen from sleeping on mobile while active (optional) ======= */
-let wakeLock = null;
+/* Defensive main loop */
+function loop(now){
+  try {
+    const dt = now - state.lastFrame;
+    state.lastFrame = now;
+    update(dt);
+    render();
+  } catch (err) {
+    console.error('Game loop error:', err);
+  }
+  requestAnimationFrame(loop);
+}
+state.lastFrame = performance.now();
+requestAnimationFrame(loop);
+
+/* ======= Accessibility & UX tweaks ======= */
+/* Ensure timer uses tabular numbers */
+timerEl.style.fontFamily = '"SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+timerEl.style.letterSpacing = '0.5px';
+
+/* Prevent hotspot from blocking first gesture until start */
+hotspot.style.pointerEvents = 'none';
+
+/* ======= Wake Lock (best-effort) ======= */
 async function requestWakeLock(){
   try{
     if('wakeLock' in navigator){
-      wakeLock = await navigator.wakeLock.request('screen');
+      await navigator.wakeLock.request('screen');
     }
   }catch(e){}
 }
 requestWakeLock();
 
-/* ======= Small UX: allow user to start audio by tapping canvas (for iOS) ======= */
-canvas.addEventListener('pointerdown', ()=>{
-  unlockAudio();
-});
+/* ======= Debug helpers (uncomment for development) ======= */
+/* hotspot.classList.add('debug'); startOverlay.style.display='flex'; */
 
-/* ======= End of File ======= */
+/* ======= End of script ======= */
 </script>
 </body>
 </html>
