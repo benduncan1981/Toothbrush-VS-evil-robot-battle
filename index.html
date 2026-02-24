@@ -1,463 +1,386 @@
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TITAN OMEGA: CHRONO-SYNC</title>
-    <style>
-        /* [DASHBOARD STYLING - 150 LINES] */
-        :root { --b: #050505; --g: #ffd700; --c: #00ffff; --p: #bc42f5; --r: #ff4545; --deep: #111; }
-        body { margin: 0; background: var(--b); color: #fff; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; touch-action: none; -webkit-user-select: none; }
-        #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; align-items: center; }
-        
-        #header { width: 100%; height: 100px; background: var(--deep); border-bottom: 3px solid #333; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        #title-text { font-size: 18px; color: var(--g); letter-spacing: 4px; font-weight: 900; margin-bottom: 5px; text-shadow: 0 0 10px var(--g); }
-        #main-clock { font-size: 48px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: 2px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>TITAN OMEGA v3</title>
 
-        #viewport { position: relative; width: 100%; flex-grow: 1; max-width: 430px; background: #000; overflow: hidden; border-left: 2px solid #222; border-right: 2px solid #222; }
-        canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+<style>
+:root{
+ --bg:#050505;
+ --gold:#ffd700;
+ --cyan:#00ffff;
+ --purple:#bc42f5;
+ --red:#ff4545;
+ --panel:#111;
+}
 
-        #footer { width: 100%; height: 130px; background: var(--deep); border-top: 3px solid #333; display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; text-align: center; }
-        .stat-label { font-size: 10px; color: #666; letter-spacing: 1px; }
-        .stat-value { font-size: 24px; font-weight: bold; color: var(--g); display: block; }
+body{
+ margin:0;
+ background:var(--bg);
+ color:#fff;
+ font-family:'Courier New',monospace;
+ overflow:hidden;
+ height:100vh;
+}
 
-        /* [ANIMATED OVERLAYS - 100 LINES] */
-        #intro-overlay { position: absolute; inset: 0; background: #000; z-index: 5000; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; text-align: center; }
-        .crawl-vane { width: 100%; height: 45%; perspective: 200px; overflow: hidden; border-bottom: 1px solid #333; margin-bottom: 20px; }
-        .crawl-inner { position: absolute; width: 100%; color: var(--g); font-size: 22px; font-weight: bold; line-height: 1.6; transform-origin: 50% 100%; animation: crawlMove 45s linear forwards; }
-        @keyframes crawlMove { 0% { transform: rotateX(25deg) translateY(500px); } 100% { transform: rotateX(25deg) translateY(-1800px); } }
+#app{
+ display:flex;
+ flex-direction:column;
+ height:100vh;
+ max-width:430px;
+ margin:0 auto;
+}
 
-        #countdown-modal { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 6000; display: none; align-items: center; justify-content: center; font-size: 200px; font-weight: 900; color: var(--c); text-shadow: 0 0 30px var(--c); }
-        
-        #hp-container { position: absolute; top: 20px; left: 10%; width: 80%; height: 20px; border: 2px solid #fff; background: #200; z-index: 100; box-shadow: 0 0 15px rgba(255,0,0,0.5); }
-        #hp-bar { height: 100%; width: 100%; background: linear-gradient(90deg, var(--r), #ffaa00); transition: width 0.1s linear; }
+#header{
+ height:100px;
+ background:var(--panel);
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+ justify-content:center;
+ border-bottom:3px solid #222;
+}
 
-        /* [PREMIUM REWARDS - 50 LINES] */
-        #reward-modal { position: absolute; inset: 0; background: rgba(0,0,0,0.95); z-index: 7000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .crystal-mesh { width: 120px; height: 160px; background: var(--p); clip-path: polygon(50% 0%, 100% 30%, 100% 70%, 50% 100%, 0% 70%, 0% 30%); border: 4px solid #fff; animation: crystalPulse 2s infinite ease-in-out; box-shadow: 0 0 60px var(--p); }
-        @keyframes crystalPulse { 0%, 100% { transform: scale(1) rotateY(0); filter: brightness(1); } 50% { transform: scale(1.15) rotateY(180deg); filter: brightness(1.4); } }
+#title{
+ font-size:16px;
+ letter-spacing:3px;
+ color:var(--gold);
+}
 
-        /* [PARENTAL DASHBOARD - 50 LINES] */
-        #admin-ui { position: absolute; inset: 0; background: #111; z-index: 8000; display: none; padding: 40px; border: 5px solid var(--p); }
-        .admin-input { background: #000; border: 2px solid var(--c); color: var(--c); padding: 15px; font-size: 20px; width: 80%; margin: 10px 0; }
-        .btn-action { padding: 15px 30px; background: var(--c); color: #000; font-weight: bold; border: none; text-transform: uppercase; cursor: pointer; border-radius: 5px; }
+#timer{
+ font-size:46px;
+ font-weight:900;
+}
 
-        #secret-hotspot { position: absolute; bottom: 0; right: 0; width: 80px; height: 80px; z-index: 9000; }
-    </style>
+#viewport{
+ flex:1;
+ position:relative;
+ background:#000;
+}
+
+canvas{
+ width:100%;
+ height:100%;
+ image-rendering:pixelated;
+}
+
+#hp-wrap{
+ position:absolute;
+ top:15px;
+ left:10%;
+ width:80%;
+ height:18px;
+ border:2px solid #fff;
+ background:#200;
+}
+
+#hp{
+ height:100%;
+ width:100%;
+ background:linear-gradient(90deg,var(--red),#ffaa00);
+}
+
+#footer{
+ height:120px;
+ background:var(--panel);
+ display:flex;
+ justify-content:space-around;
+ align-items:center;
+ border-top:3px solid #222;
+}
+
+.stat{
+ text-align:center;
+}
+
+.stat span{
+ display:block;
+ font-size:24px;
+ color:var(--gold);
+ font-weight:bold;
+}
+
+button{
+ padding:14px 24px;
+ font-weight:bold;
+ background:var(--cyan);
+ border:none;
+ border-radius:6px;
+}
+
+#overlay{
+ position:absolute;
+ inset:0;
+ background:#000;
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+ justify-content:center;
+ z-index:10;
+}
+
+#reward{
+ position:absolute;
+ inset:0;
+ background:#000;
+ display:none;
+ flex-direction:column;
+ align-items:center;
+ justify-content:center;
+ z-index:20;
+}
+</style>
 </head>
+
 <body>
-
 <div id="app">
-    <!-- UI LAYERS -->
-    <div id="intro-overlay">
-        <div class="crawl-vane"><div class="crawl-inner" id="crawl-text"></div></div>
-        <input type="text" id="pilot-name" placeholder="ENTER PILOT NAME" style="background:#000; border:2px solid var(--c); color:var(--c); padding:15px; text-align:center; font-size:18px; width:200px;">
-        <button class="btn-action" style="margin-top:20px;" id="btn-engage">ENGAGE NEURAL LINK</button>
-    </div>
 
-    <div id="countdown-modal">5</div>
+<div id="header">
+<div id="title">TITAN OMEGA: CHRONO-SYNC</div>
+<div id="timer">02:00</div>
+</div>
 
-    <div id="header">
-        <div id="title-text">TITAN OMEGA: MISSION CONTROL</div>
-        <div id="main-clock">02:00</div>
-    </div>
+<div id="viewport">
+<div id="hp-wrap"><div id="hp"></div></div>
+<canvas id="game"></canvas>
 
-    <div id="viewport">
-        <div id="hp-container"><div id="hp-bar"></div></div>
-        <canvas id="gameCanvas"></canvas>
-    </div>
+<div id="overlay">
+<input id="name" placeholder="PILOT NAME" style="padding:10px;margin-bottom:20px;">
+<button id="startBtn">ENGAGE</button>
+</div>
 
-    <div id="footer">
-        <div class="stat-group"><span class="stat-label">PILOT</span><span class="stat-value" id="ui-pilot">---</span></div>
-        <div class="stat-group"><span class="stat-label">STREAK</span><span class="stat-value" id="ui-streak">0</span></div>
-        <div class="stat-group"><span class="stat-label">CRYSTALS</span><span class="stat-value" id="ui-crystals">0</span></div>
-    </div>
+<div id="reward">
+<h1>MISSION COMPLETE</h1>
+<h2 id="rewardText"></h2>
+<button onclick="location.reload()">SYNC & EXIT</button>
+</div>
+</div>
 
-    <div id="reward-modal">
-        <h1 style="color:var(--p); font-size:32px; letter-spacing:5px;">MISSION COMPLETE</h1>
-        <div class="crystal-mesh"></div>
-        <h2 style="margin-top:40px; color:#fff;">+100 KINETIC CRYSTALS</h2>
-        <button class="btn-action" onclick="location.reload()">SYNC & EXIT</button>
-    </div>
+<div id="footer">
+<div class="stat">PILOT<span id="uiPilot">---</span></div>
+<div class="stat">STREAK<span id="uiStreak">0</span></div>
+<div class="stat">CRYSTALS<span id="uiCrystals">0</span></div>
+</div>
 
-    <div id="admin-ui">
-        <h2>COMMAND OVERRIDE</h2>
-        <label>CRYSTALS:</label><br><input type="number" id="adm-cry" class="admin-input"><br>
-        <label>STREAK:</label><br><input type="number" id="adm-str" class="admin-input"><br>
-        <button class="btn-action" id="btn-adm-save">SAVE DATA</button>
-        <button class="btn-action" style="background:#444; color:#fff;" onclick="closeAdmin()">CANCEL</button>
-    </div>
-
-    <div id="secret-hotspot"></div>
 </div>
 
 <script>
-/**
- * PART 1: CORE ENGINE & STATE
- * [APPROX 500 LINES]
- */
+/* ================================
+   CONFIG
+================================ */
 
-const CONFIG = {
-    SESSION_TIME: 120,
-    REWARD_AMOUNT: 100,
-    ADMIN_PIN: "1234",
-    OVERDRIVE_THRESHOLD: 30,
-    FPS: 60
+const CONFIG={
+ duration:120,
+ bossHP:1000,
+ laserDamage:8,
+ overdriveThreshold:30,
+ reward:100,
+ limits:{stars:60,particles:120,lasers:40}
 };
 
-let state = {
-    active: false,
-    paused: false,
-    timeLeft: CONFIG.SESSION_TIME,
-    frameCount: 0,
-    shakeIntensity: 0,
-    lastHitTime: 0,
-    pilotName: "PILOT",
-    crystals: parseInt(localStorage.getItem('gba_crystals_v2')) || 0,
-    streak: parseInt(localStorage.getItem('gba_streak_v2')) || 0,
-    stars: [],
-    lasers: [],
-    particles: [],
-    overdriveActive: false
+/* ================================
+   STATE
+================================ */
+
+const state={
+ active:false,
+ time:CONFIG.duration,
+ boss:CONFIG.bossHP,
+ stars:[],
+ lasers:[],
+ particles:[],
+ overdrive:false,
+ crystals:parseInt(localStorage.getItem("tooth_crystals"))||0,
+ streak:parseInt(localStorage.getItem("tooth_streak"))||0
 };
 
-// ... To be continued in Part 2 ...
+/* ================================
+   CANVAS
+================================ */
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d",{alpha:false});
+canvas.width=430;
+canvas.height=932;
+
+/* ================================
+   INIT
+================================ */
+
+function initStars(){
+ state.stars=[];
+ for(let i=0;i<CONFIG.limits.stars;i++){
+  state.stars.push({
+   x:Math.random()*430,
+   y:Math.random()*932,
+   v:2+Math.random()*4,
+   o:Math.random()
+  });
+ }
+}
+
+initStars();
+
+/* ================================
+   LOOP
+================================ */
+
+let last=0;
+
+function loop(now){
+ const dt=(now-last)/1000;
+ last=now;
+
+ if(state.active){
+  update(dt);
+  render();
+ }
+
+ requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+
+/* ================================
+   UPDATE
+================================ */
+
+function update(dt){
+
+ state.time-=dt;
+ if(state.time<=0){victory();return;}
+
+ if(state.time<=CONFIG.overdriveThreshold)
+  state.overdrive=true;
+
+ autoFire();
+
+ moveLasers(dt);
+ moveParticles(dt);
+ updateUI();
+}
+
+function autoFire(){
+ if(state.lasers.length>=CONFIG.limits.lasers) return;
+
+ state.lasers.push({
+  x:215,
+  y:700,
+  vy:-500
+ });
+}
+
+function moveLasers(dt){
+ for(let i=state.lasers.length-1;i>=0;i--){
+  const l=state.lasers[i];
+  l.y+=l.vy*dt;
+
+  if(l.y<200){
+   state.boss-=CONFIG.laserDamage;
+   spawnImpact(l.x,l.y);
+   state.lasers.splice(i,1);
+  }
+
+  if(l.y<0) state.lasers.splice(i,1);
+ }
+}
+
+function spawnImpact(x,y){
+ for(let i=0;i<5;i++){
+  if(state.particles.length>=CONFIG.limits.particles) return;
+  state.particles.push({
+   x,y,
+   vx:(Math.random()-0.5)*200,
+   vy:(Math.random()-0.5)*200,
+   life:1
+  });
+ }
+}
+
+function moveParticles(dt){
+ for(let i=state.particles.length-1;i>=0;i--){
+  const p=state.particles[i];
+  p.x+=p.vx*dt;
+  p.y+=p.vy*dt;
+  p.life-=dt;
+  if(p.life<=0) state.particles.splice(i,1);
+ }
+}
+
+function victory(){
+ state.active=false;
+ state.crystals+=CONFIG.reward;
+ state.streak+=1;
+ localStorage.setItem("tooth_crystals",state.crystals);
+ localStorage.setItem("tooth_streak",state.streak);
+
+ document.getElementById("rewardText").innerText=
+ "+"+CONFIG.reward+" CRYSTALS";
+
+ document.getElementById("reward").style.display="flex";
+}
+
+/* ================================
+   RENDER
+================================ */
+
+function render(){
+ ctx.fillStyle="#000";
+ ctx.fillRect(0,0,430,932);
+
+ state.stars.forEach(s=>{
+  s.y+=s.v*(state.overdrive?3:1);
+  if(s.y>932) s.y=0;
+  ctx.fillStyle="rgba(255,255,255,"+s.o+")";
+  ctx.fillRect(s.x,s.y,2,2);
+ });
+
+ ctx.fillStyle=state.overdrive?"#ff0000":"#555";
+ ctx.fillRect(150,150,130,130);
+
+ ctx.fillStyle="#00ffff";
+ state.lasers.forEach(l=>{
+  ctx.fillRect(l.x,l.y,4,20);
+ });
+
+ state.particles.forEach(p=>{
+  ctx.globalAlpha=p.life;
+  ctx.fillStyle="#ffd700";
+  ctx.fillRect(p.x,p.y,4,4);
+ });
+ ctx.globalAlpha=1;
+}
+
+/* ================================
+   UI
+================================ */
+
+function updateUI(){
+ const m=Math.floor(state.time/60);
+ const s=Math.floor(state.time%60);
+ document.getElementById("timer").innerText=
+  String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+
+ document.getElementById("hp").style.width=
+  (state.boss/CONFIG.bossHP)*100+"%";
+
+ document.getElementById("uiCrystals").innerText=state.crystals;
+ document.getElementById("uiStreak").innerText=state.streak;
+}
+
+/* ================================
+   START
+================================ */
+
+document.getElementById("startBtn").onclick=()=>{
+ const name=document.getElementById("name").value||"PILOT";
+ document.getElementById("uiPilot").innerText=name.toUpperCase();
+ document.getElementById("overlay").style.display="none";
+ state.active=true;
+};
 </script>
 </body>
 </html>
-/**
- * PART 2: THE SPRITE ARCHITECT & COMBAT ENGINE
- * [APPROX 700 LINES]
- */
-
-const SPRITES = {
-    // 16-bit Mega-Pilot (5 Frames of Shaded Detail)
-    HERO: [
-        "000044440000", "000477774000", "004771177400", "047771177740", 
-        "477777777774", "444444444444", "044444444440", "004400004400"
-    ],
-    // High-Detail Cyborg Sentinel (Breathing Core)
-    TITAN: [
-        "022222222200", "225222222522", "222222222222", "225555555522",
-        "222222222222", "022255552220", "002222222200", "000222222000"
-    ],
-    // Kinetic Crystal Shard
-    CRYSTAL: [
-        "00077000", "00777700", "07777770", "77777777",
-        "07777770", "00777700", "00077000"
-    ]
-};
-
-const PALETTE = {
-    0: 'transparent', 1: '#fff', 2: '#1a1a1a', 3: '#333', 
-    4: '#0055ff', 5: '#ff0000', 6: '#00ffff', 7: '#bc42f5'
-};
-
-/** 
- * BITMASK RENDERER
- * Converts binary string arrays into HQ pixel data with scaling
- */
-function renderSprite(ctx, mask, x, y, size, frameOffset = 0) {
-    const scale = size / mask[0].length;
-    mask.forEach((row, ri) => {
-        [...row].forEach((px, pi) => {
-            const color = PALETTE[parseInt(px)];
-            if (color !== 'transparent') {
-                ctx.fillStyle = color;
-                // Add sub-pixel "jitter" for GBA feel
-                ctx.fillRect(x + pi * scale, y + ri * scale + frameOffset, scale, scale);
-            }
-        });
-    });
-}
-
-/**
- * STARFIELD GENERATOR
- * Creates 100 stars with 4-layer parallax and velocity tracking
- */
-function initStars() {
-    state.stars = [];
-    for (let i = 0; i < 100; i++) {
-        state.stars.push({
-            x: Math.random() * 430,
-            y: Math.random() * 932,
-            v: Math.random() * 12 + 2, // Speed
-            o: Math.random(),          // Opacity
-            size: Math.random() * 3 + 1,
-            layer: Math.floor(Math.random() * 4)
-        });
-    }
-}
-
-/**
- * WEAPON & COLLISION ENGINE
- * Handles standard fire and Triple-Laser Overdrive
- */
-function handleCombat(now) {
-    const elapsed = (now - state.start) / 1000;
-    state.timeLeft = Math.max(0, CONFIG.SESSION_TIME - elapsed);
-    
-    // Check for Phase Transition (30s Overdrive)
-    if (state.timeLeft <= CONFIG.OVERDRIVE_THRESHOLD && !state.overdriveActive) {
-        state.overdriveActive = true;
-        state.shakeIntensity = 20; // Massive impact on entry
-    }
-
-    // Auto-Fire Logic (8 frames per shot)
-    if (state.frameCount % 8 === 0) {
-        const hX = 190 + Math.sin(state.frameCount * 0.05) * 60;
-        const hY = 550 + Math.sin(state.frameCount * 0.1) * 10;
-        
-        if (state.overdriveActive) {
-            // Triple Radial Spread
-            [-0.2, 0, 0.2].forEach(angle => {
-                state.lasers.push({ x: hX + 25, y: hY + 15, vx: angle * 15, vy: -25, p: 3 });
-            });
-        } else {
-            // Standard Linear Bolt
-            state.lasers.push({ x: hX + 25, y: hY + 15, vx: 0, vy: -25, p: 1 });
-        }
-    }
-
-    // Laser Movement & Titan Collision
-    const tBox = { x: 155 + Math.sin(state.frameCount * 0.03) * 70, y: 120, w: 130, h: 130 };
-    
-    for (let i = state.lasers.length - 1; i >= 0; i--) {
-        let l = state.lasers[i];
-        l.x += l.vx;
-        l.y += l.vy;
-
-        // Collision Check
-        if (l.x > tBox.x && l.x < tBox.x + tBox.w && l.y < tBox.y + tBox.h && l.y > tBox.y) {
-            state.lastHitTime = performance.now();
-            state.shakeIntensity = state.overdriveActive ? 15 : 8;
-            
-            // Spawn Impact Shards
-            for(let j=0; j<5; j++) {
-                state.particles.push({
-                    x: l.x, y: l.y, 
-                    vx: (Math.random()-0.5)*10, 
-                    vy: (Math.random()-0.5)*10, 
-                    life: 1.0, 
-                    c: state.overdriveActive ? '#bc42f5' : '#fff'
-                });
-            }
-            state.lasers.splice(i, 1);
-        } else if (l.y < -50) {
-            state.lasers.splice(i, 1);
-        }
-    }
-}
-
-/**
- * PARTICLE ENGINE
- * Shard physics for explosions and impacts
- */
-function updateParticles() {
-    for (let i = state.particles.length - 1; i >= 0; i--) {
-        let p = state.particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.life -= 0.03;
-        if (p.life <= 0) state.particles.splice(i, 1);
-    }
-}
-
-// ... To be continued in Part 3 ...
-/**
- * PART 3: CINEMATICS, REWARDS & PARENTAL VAULT
- * [FINAL 800 LINES]
- */
-
-const UI = {
-    timer: document.getElementById('main-clock'),
-    hp: document.getElementById('hp-bar'),
-    crystals: document.getElementById('ui-crystals'),
-    streak: document.getElementById('ui-streak'),
-    countdown: document.getElementById('countdown-modal'),
-    loot: document.getElementById('reward-modal')
-};
-
-/**
- * STAR WARS CRAWL ENGINE
- * Dynamically injects narrative into the perspective-shifted vane
- */
-function runIntro() {
-    const text = "A long time ago in a mouth far, far away... THE CYBORG TITAN has unleashed a plaque-bot invasion. Pilot, you have 120 seconds to scrub the core. Success grants 100 Purple Kinetic Crystals. THE FATE OF YOUR SMILE DEPENDS ON YOU!";
-    document.getElementById('crawl-text').innerText = text;
-}
-
-/**
- * CHRONO-SYNC SYSTEM
- * High-precision timing anchored to performance.now()
- */
-function loop(now) {
-    if (!state.active || state.paused) return;
-
-    // Fixed 120s Countdown logic
-    const delta = (now - state.start) / 1000;
-    state.timeLeft = Math.max(0, CONFIG.SESSION_TIME - delta);
-    
-    // Update Dashboard outside the Game Loop
-    updateDashboard();
-
-    if (state.timeLeft <= 0) return triggerMegaExplosion();
-
-    state.frameCount++;
-    
-    // Render Space & Combat
-    drawScene();
-    handleCombat(now);
-    updateParticles();
-
-    requestAnimationFrame(loop);
-}
-
-function updateDashboard() {
-    const m = Math.floor(state.timeLeft / 60);
-    const s_ = Math.floor(state.timeLeft % 60);
-    UI.timer.innerText = `${String(m).padStart(2, '0')}:${String(s_).padStart(2, '0')}`;
-    UI.hp.style.width = `${(state.timeLeft / CONFIG.SESSION_TIME) * 100}%`;
-}
-
-/**
- * THE MEGA-EXPLOSION FINALE
- * 200+ procedural shards with 'Deep Boom' visual feedback
- */
-function triggerMegaExplosion() {
-    state.active = false;
-    state.shakeIntensity = 50; // Maximum screen shake
-    
-    // Generate 300 golden shards
-    for(let i=0; i<300; i++) {
-        state.particles.push({
-            x: 215, y: 300,
-            vx: (Math.random() - 0.5) * 40,
-            vy: (Math.random() - 0.5) * 40,
-            life: 2.0,
-            c: i % 2 === 0 ? '#ffd700' : '#fff'
-        });
-    }
-
-    // Flash-to-White transition
-    let flash = 1.0;
-    const endAnim = setInterval(() => {
-        ctx.fillStyle = `rgba(255,255,255,${flash})`;
-        ctx.fillRect(0,0,430,932);
-        flash -= 0.05;
-        if(flash <= 0) {
-            clearInterval(endAnim);
-            showLoot();
-        }
-    }, 30);
-}
-
-function showLoot() {
-    state.crystals += CONFIG.REWARD_AMOUNT;
-    state.streak += 1;
-    localStorage.setItem('gba_crystals_v2', state.crystals);
-    localStorage.setItem('gba_streak_v2', state.streak);
-    UI.loot.style.display = 'flex';
-}
-
-/**
- * PARENTAL COMMAND VAULT (PIN: 1234)
- * Secure hotspot logic for stat overrides
- */
-let secretTaps = 0;
-document.getElementById('secret-hotspot').addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    secretTaps++;
-    if (secretTaps >= 5) {
-        const pin = prompt("ACCESS COMMAND VAULT:");
-        if (pin === CONFIG.ADMIN_PIN) {
-            document.getElementById('admin-ui').style.display = 'block';
-            document.getElementById('adm-cry').value = state.crystals;
-            document.getElementById('adm-str').value = state.streak;
-        }
-        secretTaps = 0;
-    }
-});
-
-function saveAdmin() {
-    state.crystals = parseInt(document.getElementById('adm-cry').value);
-    state.streak = parseInt(document.getElementById('adm-str').value);
-    localStorage.setItem('gba_crystals_v2', state.crystals);
-    localStorage.setItem('gba_streak_v2', state.streak);
-    location.reload();
-}
-
-/**
- * INITIALIZATION BINDINGS
- */
-document.getElementById('btn-engage').addEventListener('click', () => {
-    state.pilotName = document.getElementById('pilot-name').value || "PILOT";
-    document.getElementById('ui-pilot').innerText = state.pilotName.toUpperCase();
-    document.getElementById('intro-overlay').style.display = 'none';
-    
-    // 5s Countdown Modal
-    UI.countdown.style.display = 'flex';
-    let c = 5;
-    const itv = setInterval(() => {
-        c--;
-        UI.countdown.innerText = c;
-        if (c <= 0) {
-            clearInterval(itv);
-            UI.countdown.style.display = 'none';
-            initStars();
-            state.active = true;
-            state.start = performance.now();
-            requestAnimationFrame(loop);
-        }
-    }, 1000);
-});
-
-// Canvas Draw Controller
-function drawScene() {
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, 430, 932);
-
-    // Parallax Star Draw
-    state.stars.forEach(st => {
-        st.y += st.v * (state.overdriveActive ? 3 : 1);
-        if (st.y > 932) st.y = -20;
-        ctx.fillStyle = `rgba(255,255,255,${st.o})`;
-        ctx.fillRect(st.x, st.y, st.size, st.size);
-    });
-
-    ctx.save();
-    // Apply Shake
-    if(state.shakeIntensity > 1) {
-        ctx.translate((Math.random()-0.5)*state.shakeIntensity, (Math.random()-0.5)*state.shakeIntensity);
-        state.shakeIntensity *= 0.9;
-    }
-
-    // Render Characters
-    const tX = 155 + Math.sin(state.frameCount * 0.03) * 70;
-    renderSprite(ctx, SPRITES.TITAN, tX, 120, 130);
-    
-    const hX = 190 + Math.sin(state.frameCount * 0.05) * 60;
-    const hY = 550 + Math.sin(state.frameCount * 0.1) * 10;
-    renderSprite(ctx, SPRITES.HERO, hX, hY, 55);
-
-    // Render Lasers
-    state.lasers.forEach(l => {
-        ctx.fillStyle = l.color || '#0ff';
-        ctx.fillRect(l.x, l.y, 4, 30);
-    });
-
-    // Render Particles
-    state.particles.forEach(p => {
-        ctx.globalAlpha = p.life;
-        ctx.fillStyle = p.c;
-        ctx.fillRect(p.x, p.y, 4, 4);
-    });
-    
-    ctx.restore();
-    ctx.globalAlpha = 1.0;
-}
-
-runIntro();
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="icon.png">
