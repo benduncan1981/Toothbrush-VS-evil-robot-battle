@@ -3,236 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EXO-BRUSH: TITAN FALL</title>
+    <title>EXO-BRUSH: TITAN OMEGA</title>
     <style>
-        :root { --p1: #081820; --p2: #346856; --p3: #88c070; --p4: #e0f8d0; --gold: #fcc201; --red: #ff4545; }
-        body, html { margin: 0; padding: 0; background: #000; overflow: hidden; height: 100%; font-family: 'Courier New', Courier, monospace; }
-        #stage { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
-        canvas { background: var(--p1); image-rendering: pixelated; width: 100%; height: 100%; max-width: 430px; aspect-ratio: 9/19.5; border-left: 2px solid #222; border-right: 2px solid #222; }
+        :root { --p1: #0d1117; --p2: #21262d; --p3: #306230; --p4: #9bbc0f; --accent: #ff4500; --gold: #ffd700; }
+        body, html { margin: 0; padding: 0; background: #000; overflow: hidden; height: 100vh; font-family: 'Courier New', monospace; }
+        #game-wrap { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); }
+        canvas { background: var(--p1); image-rendering: pixelated; width: 100%; height: 100%; max-width: 430px; aspect-ratio: 9/19.5; box-shadow: 0 0 50px rgba(0,0,0,1); }
         
-        /* Scanline Overlay */
-        #stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03)); background-size: 100% 3px, 3px 100%; z-index: 5; }
+        /* Premium CRT & Scanline FX */
+        .crt::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); z-index: 15; background-size: 100% 2px, 3px 100%; pointer-events: none; }
+        .crt::after { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: rgba(18, 16, 16, 0.1); opacity: 0; z-index: 16; pointer-events: none; animation: flicker 0.15s infinite; }
+        @keyframes flicker { 0% { opacity: 0.1; } 50% { opacity: 0.05; } 100% { opacity: 0.1; } }
 
-        #ui-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; background: rgba(0,0,0,0.85); color: var(--p4); text-align: center; }
-        .start-btn { padding: 25px 50px; background: var(--p2); border: 6px solid var(--p4); color: white; font-size: 28px; font-weight: 900; cursor: pointer; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); transition: transform 0.1s; }
-        .start-btn:active { transform: scale(0.9); }
-        
-        #parent-gate { position: absolute; bottom: 0; right: 0; width: 64px; height: 64px; z-index: 100; cursor: default; }
+        #ui { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20; background: rgba(0,0,0,0.9); color: var(--p4); transition: 0.5s; }
+        .btn { background: var(--p3); border: 4px solid var(--p4); color: #fff; padding: 20px 40px; font-size: 24px; font-weight: bold; text-transform: uppercase; cursor: pointer; transform: skewX(-10deg); }
+        .btn:active { transform: skewX(-10deg) scale(0.95); }
     </style>
 </head>
 <body>
 
-<div id="stage">
+<div id="game-wrap" class="crt">
     <canvas id="c"></canvas>
-    <div id="ui-overlay">
-        <div id="sync-text" style="font-size: 18px; letter-spacing: 4px; margin-bottom: 10px;">NEURAL LINK STANDBY</div>
-        <div id="timer-display" style="font-size: 120px; font-weight: 900; margin-bottom: 20px;">READY</div>
-        <button class="start-btn" onclick="initCore()">ENGAGE BRUSH</button>
+    <div id="ui">
+        <div style="font-size: 14px; letter-spacing: 5px; margin-bottom: 20px;">SYSTEMS INITIALIZING...</div>
+        <div id="big-timer" style="font-size: 100px; font-weight: 900; color: #fff;">READY</div>
+        <button class="btn" onclick="bootSequence()">Ignite Link</button>
     </div>
-    <div id="parent-gate" ontouchstart="handleGate()"></div>
 </div>
 
 <script>
 /** 
- * GBA-MAX ENGINE
- * High-performance 16-bit logic for neurodivergent engagement
+ * OMEGA ENGINE v2.0
+ * Pixel-Perfect Sprite Renderer + Physics-based Juicing
  */
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
-const ui = document.getElementById('ui-overlay');
-const timerVal = document.getElementById('timer-display');
+const ui = document.getElementById('ui');
+const timerText = document.getElementById('big-timer');
 
 let state = {
-    active: false,
-    time: 120,
-    frame: 0,
-    shake: 0,
-    shots: 0,
+    active: false, time: 120, frame: 0, shake: 0, shots: 0,
     crystals: parseInt(localStorage.getItem('gba_crystals_v1')) || 0,
     streak: parseInt(localStorage.getItem('gba_streak_v1')) || 0,
-    particles: []
+    combo: 0, comboScale: 0, particles: []
 };
 
-// Audio Engine (Premium Synth)
-let audioCtx;
-const playSound = (freq, type, dur, vol=0.1) => {
-    if(!audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + dur);
-    g.gain.setValueAtTime(vol, audioCtx.currentTime);
-    g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + dur);
-    osc.connect(g); g.connect(audioCtx.destination);
-    osc.start(); osc.stop(audioCtx.currentTime + dur);
+// 16-bit Bitmask for Hero
+const HERO_MASK = [
+    "00033300", "00344430", "03466443", "346666443", "361111643", "346666443", "03466443", "00333330"
+];
+const P_GBA = ['transparent', '#0d1117', '#21262d', '#306230', '#8bac0f', '#9bbc0f', '#00ffff'];
+
+let audio;
+const playBeep = (f, t, d, v=0.1) => {
+    if(!audio) return;
+    const o = audio.createOscillator();
+    const g = audio.createGain();
+    o.type = t; o.frequency.setValueAtTime(f, audio.currentTime);
+    g.gain.setValueAtTime(v, audio.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + d);
+    o.connect(g); g.connect(audio.destination);
+    o.start(); o.stop(audio.currentTime + d);
 };
 
-function initCore() {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    document.querySelector('.start-btn').style.display = 'none';
-    let count = 5;
-    const countdown = setInterval(() => {
-        timerVal.innerText = count;
-        playSound(200 + (6-count)*100, 'square', 0.2);
-        count--;
-        if(count < 0) {
-            clearInterval(countdown);
-            ui.style.display = 'none';
+function bootSequence() {
+    audio = new (window.AudioContext || window.webkitAudioContext)();
+    document.querySelector('.btn').style.display = 'none';
+    let c = 3;
+    const itv = setInterval(() => {
+        timerText.innerText = c;
+        playBeep(300 + (3-c)*100, 'square', 0.2);
+        c--;
+        if(c < 0) {
+            clearInterval(itv);
+            ui.style.opacity = '0';
+            setTimeout(() => ui.style.display = 'none', 500);
             state.active = true;
-            canvas.width = 430; canvas.height = 932; // iPhone 15 Res
-            requestAnimationFrame(gameLoop);
+            canvas.width = 430; canvas.height = 932;
+            requestAnimationFrame(loop);
         }
     }, 1000);
 }
 
-// Particle System
-const spawnParticles = (x, y, color, count, speed) => {
-    for(let i=0; i<count; i++) {
-        state.particles.push({
-            x, y, 
-            vx: (Math.random()-0.5)*speed, 
-            vy: (Math.random()-0.5)*speed, 
-            life: 1, 
-            c: color
-        });
-    }
+const spawn = (x, y, color, speed, num) => {
+    for(let i=0; i<num; i++) state.particles.push({
+        x, y, vx: (Math.random()-0.5)*speed, vy: (Math.random()-0.5)*speed,
+        l: 1, c: color, s: Math.random()*5+2
+    });
 };
 
-function drawHero(x, y) {
-    const recoil = Math.sin(state.frame * 0.8) * (state.shake * 0.5);
-    // Draw Pilot Body (16-bit style)
-    ctx.fillStyle = '#e0f8d0';
-    ctx.fillRect(x - 30, y + recoil, 60, 80); // Chassis
-    ctx.fillStyle = '#00ffff'; 
-    ctx.fillRect(x - 20, y + 10 + recoil, 40, 20); // Visor
-    // Cannon
-    ctx.fillStyle = '#346856';
-    ctx.fillRect(x + 20, y + 40 + recoil, 40, 15);
+function drawHero() {
+    const x = 215, y = 700;
+    const bob = Math.sin(state.frame * 0.1) * 10;
+    const recoil = state.shake * 0.8;
     
-    if(state.frame % 20 === 0) { // Muzzle Flash
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(x + 60, y + 35 + recoil, 20, 25);
-        state.shake = 10;
+    // Smooth Bitmask Render
+    HERO_MASK.forEach((row, ri) => {
+        [...row].forEach((px, pi) => {
+            const color = P_GBA[parseInt(px)];
+            if(color !== 'transparent') {
+                ctx.fillStyle = color;
+                ctx.fillRect(x - 40 + pi*10, y + bob + ri*10 + recoil, 10, 10);
+            }
+        });
+    });
+
+    if(state.frame % 15 === 0) { // Auto-fire logic
         state.shots++;
-        playSound(150, 'sawtooth', 0.1, 0.05);
-        spawnParticles(x+60, y+45, '#fff', 5, 10);
+        state.shake = 15;
+        state.combo++;
+        state.comboScale = 2.0;
+        playBeep(150, 'sawtooth', 0.1, 0.03);
+        spawn(x, y + bob - 20, '#fff', 8, 4);
     }
 }
 
-function drawTitan(stage) {
-    const drift = Math.sin(state.frame * 0.02) * 20;
-    const centerX = 215 + drift;
-    const centerY = 250;
+function drawTitan() {
+    const stage = Math.min(3, Math.floor((120 - state.time) / 30));
+    const centerX = 215 + Math.sin(state.frame * 0.03) * 30;
+    const centerY = 280 + Math.cos(state.frame * 0.02) * 10;
     
-    // Core
-    const colors = ['#88c070', '#fcc201', '#ff4545', '#ff0000'];
-    ctx.fillStyle = colors[stage];
+    // Main Body Squash/Stretch
+    const ss = 1 + Math.sin(state.frame * 0.05) * 0.05;
+    ctx.fillStyle = stage === 0 ? '#306230' : (stage === 1 ? '#8bac0f' : '#ff4500');
+    
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.scale(ss, 2-ss);
     ctx.beginPath();
-    ctx.arc(centerX, centerY, 100, 0, Math.PI*2);
+    ctx.arc(0, 0, 100 - (stage*10), 0, Math.PI*2);
     ctx.fill();
-
-    // Damage Sparks
-    if(stage > 1 && state.frame % 5 === 0) {
-        spawnParticles(centerX + (Math.random()-0.5)*150, centerY + (Math.random()-0.5)*150, '#fff', 2, 5);
+    
+    // Core Cracks
+    if(stage > 0) {
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.moveTo(-50, -20); ctx.lineTo(50, 20); ctx.stroke();
     }
+    ctx.restore();
+
+    if(stage >= 2 && state.frame % 10 === 0) spawn(centerX, centerY, '#ff0', 5, 2);
 }
 
-function gameLoop() {
+function loop() {
     if(!state.active) return;
-    
-    // 1. Logic
     state.frame++;
     if(state.frame % 60 === 0) state.time--;
-    if(state.shake > 0) state.shake *= 0.9;
+    if(state.shake > 0) state.shake *= 0.85;
+    if(state.comboScale > 1.0) state.comboScale -= 0.05;
 
-    // 2. Render
-    ctx.fillStyle = '#081820';
+    ctx.fillStyle = '#0d1117';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Parallax Stars
-    ctx.fillStyle = '#346856';
-    for(let i=0; i<30; i++) {
-        let py = (i * 40 + state.frame * 2) % canvas.height;
-        ctx.fillRect((i * 77) % canvas.width, py, 4, 4);
+    // Parallax
+    for(let i=0; i<3; i++) {
+        ctx.fillStyle = `rgba(48, 98, 48, ${0.2 * (i+1)})`;
+        for(let j=0; j<10; j++) {
+            let py = (j * 150 + state.frame * (i+1)) % canvas.height;
+            ctx.fillRect((j * 90 + i * 30) % canvas.width, py, 4, 4);
+        }
     }
 
-    // Shake Application
     ctx.save();
     if(state.shake > 1) ctx.translate((Math.random()-0.5)*state.shake, (Math.random()-0.5)*state.shake);
-
-    const stage = Math.min(3, Math.floor((120 - state.time) / 30));
-    drawTitan(stage);
-    drawHero(215, 650 + Math.sin(state.frame*0.05)*30);
+    
+    drawTitan();
+    drawHero();
 
     // Particles
     state.particles.forEach((p, i) => {
-        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
-        ctx.fillStyle = p.c;
-        ctx.globalAlpha = p.life;
-        ctx.fillRect(p.x, p.y, 6, 6);
-        if(p.life <= 0) state.particles.splice(i, 1);
+        p.x += p.vx; p.y += p.vy; p.l -= 0.02;
+        ctx.globalAlpha = p.l; ctx.fillStyle = p.c;
+        ctx.fillRect(p.x, p.y, p.s, p.s);
+        if(p.l <= 0) state.particles.splice(i, 1);
     });
     ctx.restore();
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = 1.0;
 
-    // HUD
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(0, 0, canvas.width, 120);
-    ctx.fillStyle = '#fff';
-    ctx.font = "900 30px 'Courier New'";
-    ctx.fillText(`TIME: ${Math.max(0, state.time)}s`, 30, 60);
-    ctx.fillStyle = '#fcc201';
-    ctx.fillText(`CRYSTALS: ${state.crystals}`, 30, 100);
-
-    if(state.time <= 0) return triggerMegaExplosion();
-    requestAnimationFrame(gameLoop);
-}
-
-function triggerMegaExplosion() {
-    state.active = false;
-    playSound(60, 'sawtooth', 2, 0.5); // Deep sub boom
-    spawnParticles(215, 250, '#fff', 300, 40);
-    spawnParticles(215, 250, '#fcc201', 200, 30);
+    // Premium HUD
+    ctx.fillStyle = '#fff'; ctx.font = "900 24px 'Courier New'";
+    ctx.fillText(`BIO-SYNC: ${Math.max(0, state.time)}s`, 30, 60);
+    ctx.fillStyle = '#ffd700';
+    ctx.fillText(`CRYSTALS: ${state.crystals}`, 30, 95);
     
-    let flash = 0;
-    const endInt = setInterval(() => {
-        ctx.fillStyle = `rgba(255,255,255, ${1 - flash})`;
-        ctx.fillRect(0,0,canvas.width, canvas.height);
-        flash += 0.05;
-        if(flash >= 1) {
-            clearInterval(endInt);
-            showLoot();
-        }
-    }, 30);
-}
-
-function showLoot() {
-    const earned = Math.floor(state.shots / 6) + (state.streak * 2);
-    state.crystals += earned;
-    state.streak++;
-    localStorage.setItem('gba_crystals_v1', state.crystals);
-    localStorage.setItem('gba_streak_v1', state.streak);
-    
-    ui.style.display = 'flex';
-    timerVal.innerText = "VICTORY";
-    timerVal.style.fontSize = "60px";
-    document.getElementById('sync-text').innerText = `+${earned} CRYSTALS ACQUIRED`;
-    document.getElementById('sync-text').style.color = "gold";
-}
-
-let gateTaps = 0;
-function handleGate() {
-    gateTaps++;
-    if(gateTaps >= 5) {
-        const p = prompt("ADMIN PIN:");
-        if(p === "1234") {
-            state.crystals = parseInt(prompt("Set Crystals:", state.crystals));
-            localStorage.setItem('gba_crystals_v1', state.crystals);
-            location.reload();
-        }
-        gateTaps = 0;
+    // Combo Text (Juicy)
+    if(state.combo > 5) {
+        ctx.save();
+        ctx.translate(300, 150); ctx.scale(state.comboScale, state.comboScale);
+        ctx.fillStyle = '#ff4500'; ctx.font = "900 40px 'Courier New'";
+        ctx.fillText(`${state.combo}x`, 0, 0);
+        ctx.restore();
     }
+
+    if(state.time <= 0) finish();
+    else requestAnimationFrame(loop);
+}
+
+function finish() {
+    state.active = false;
+    playBeep(60, 'sawtooth', 3, 0.4);
+    spawn(215, 300, '#fff', 50, 400);
+    
+    setTimeout(() => {
+        const earned = Math.floor(state.shots / 5) + (state.streak * 5);
+        state.crystals += earned; state.streak++;
+        localStorage.setItem('gba_crystals_v1', state.crystals);
+        localStorage.setItem('gba_streak_v1', state.streak);
+        
+        ui.style.display = 'flex'; ui.style.opacity = '1';
+        timerText.innerText = "TITAN OVERTHROWN";
+        timerText.style.fontSize = "30px";
+        document.querySelector('div[style*="letter-spacing"]').innerText = `+${earned} CRYSTALS SYNCED`;
+    }, 1000);
 }
 </script>
 </body>
