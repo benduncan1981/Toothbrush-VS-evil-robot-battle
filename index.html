@@ -1,585 +1,239 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
-<title>TITAN SCRUB EX — GBA‑Max Brush Battle</title>
-<style>
-  :root{
-    --bg:#08080a; --ui-ink:#0ff6ff; --gold:#ffd24d; --warm:#ffb36b; --core:#ff6b6b;
-    --metal:#444444; --plate:#999999; --shadow:#222222; --white:#ffffff;
-    --safe-top: env(safe-area-inset-top, 12px);
-  }
-  html,body{height:100%;margin:0;background:radial-gradient(circle,#1a1a2e 0%, #08080a 100%);font-family: "Courier New", monospace; -webkit-text-size-adjust:100%;}
-  #stage{position:fixed;inset:0;padding-top:var(--safe-top);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow:hidden}
-  canvas{display:block;border-radius:10px;box-shadow:0 12px 48px rgba(0,0,0,0.6);image-rendering:pixelated;background:transparent}
-  /* HUD top */
-  #hud-top{position:absolute;left:7.5%;right:7.5%;top:calc(var(--safe-top) + 8px);z-index:60;pointer-events:none}
-  .hud-row{display:flex;justify-content:space-between;align-items:center;color:var(--gold);font-weight:900;letter-spacing:1px}
-  .bar-container{height:28px;background:rgba(0,0,0,0.45);border:2px solid var(--metal);border-radius:6px;overflow:hidden;margin-top:8px;box-shadow:0 6px 18px rgba(0,0,0,0.5)}
-  #hp-bar{height:100%;width:100%;background:linear-gradient(90deg,var(--core),#a00);transition:width 0.35s cubic-bezier(.17,.67,.83,.67)}
-  #sector-dots{display:flex;gap:8px;margin-top:8px}
-  .dot{width:18px;height:8px;background:var(--shadow);border:1px solid var(--metal);border-radius:3px;box-shadow:inset 0 -2px rgba(0,0,0,0.4)}
-  .dot.active{background:var(--ui-ink);box-shadow:0 0 10px var(--ui-ink)}
-  /* Prompt */
-  #prompt-box{position:absolute;bottom:14%;width:100%;text-align:center;color:var(--white);font-weight:900;letter-spacing:2px;z-index:60;pointer-events:none}
-  .glitch{animation:glitchFlash 0.9s infinite; font-size:22px; color:var(--ui-ink)}
-  @keyframes glitchFlash{0%{opacity:1}50%{opacity:0.35}100%{opacity:1}}
-  /* Start screen */
-  #start-screen{position:absolute;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,0.6));display:flex;align-items:center;justify-content:center;z-index:220}
-  #startCard{background:#071026;padding:22px;border-radius:14px;border:2px solid rgba(255,255,255,0.04);text-align:center;box-shadow:0 12px 48px rgba(0,0,0,0.6)}
-  #startCard h1{margin:0;color:var(--ui-ink);font-size:34px;letter-spacing:2px}
-  #startCard p{margin:10px 0 18px;color:var(--gold);font-weight:700}
-  .btn-ready{background:var(--gold);border:none;padding:14px 36px;font-size:18px;font-weight:900;color:#000;cursor:pointer;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.5)}
-  .btn-ready:active{transform:scale(0.98)}
-  /* Loot modal */
-  #lootModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.85));z-index:240}
-  #lootCard{background:#081226;padding:18px;border-radius:14px;border:2px solid rgba(255,255,255,0.06);min-width:320px;color:#fff;text-align:center}
-  #lootCard .big{font-size:28px;font-weight:900;color:var(--gold);margin:8px 0}
-  #lootCard button{margin-top:12px;padding:10px 14px;border-radius:10px;border:none;background:var(--ui-ink);color:#001;cursor:pointer;font-weight:900}
-  /* Parental PIN */
-  #pinPanel{position:fixed;right:12px;bottom:12px;background:rgba(0,0,0,0.92);color:#fff;padding:12px;border-radius:12px;display:none;flex-direction:column;gap:8px;min-width:240px;z-index:260}
-  #pinPanel input{font-size:18px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:#071026;color:#fff}
-  #hotspot{position:fixed;right:0;bottom:0;width:64px;height:64px;opacity:0;z-index:280}
-  /* small notes */
-  .note{font-size:12px;color:#9aa}
-  @media (max-width:420px){ #startCard h1{font-size:28px} .glitch{font-size:18px} }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EXO-BRUSH: TITAN FALL</title>
+    <style>
+        :root { --p1: #081820; --p2: #346856; --p3: #88c070; --p4: #e0f8d0; --gold: #fcc201; --red: #ff4545; }
+        body, html { margin: 0; padding: 0; background: #000; overflow: hidden; height: 100%; font-family: 'Courier New', Courier, monospace; }
+        #stage { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
+        canvas { background: var(--p1); image-rendering: pixelated; width: 100%; height: 100%; max-width: 430px; aspect-ratio: 9/19.5; border-left: 2px solid #222; border-right: 2px solid #222; }
+        
+        /* Scanline Overlay */
+        #stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03)); background-size: 100% 3px, 3px 100%; z-index: 5; }
+
+        #ui-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; background: rgba(0,0,0,0.85); color: var(--p4); text-align: center; }
+        .start-btn { padding: 25px 50px; background: var(--p2); border: 6px solid var(--p4); color: white; font-size: 28px; font-weight: 900; cursor: pointer; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); transition: transform 0.1s; }
+        .start-btn:active { transform: scale(0.9); }
+        
+        #parent-gate { position: absolute; bottom: 0; right: 0; width: 64px; height: 64px; z-index: 100; cursor: default; }
+    </style>
 </head>
 <body>
-<div id="stage" role="application" aria-label="Titan Scrub Brush Battle">
-  <canvas id="game" width="540" height="960" aria-hidden="false"></canvas>
 
-  <div id="hud-top" aria-hidden="false">
-    <div class="hud-row">
-      <div>TITAN_CORRUPTION</div>
-      <div id="percent-txt">100%</div>
+<div id="stage">
+    <canvas id="c"></canvas>
+    <div id="ui-overlay">
+        <div id="sync-text" style="font-size: 18px; letter-spacing: 4px; margin-bottom: 10px;">NEURAL LINK STANDBY</div>
+        <div id="timer-display" style="font-size: 120px; font-weight: 900; margin-bottom: 20px;">READY</div>
+        <button class="start-btn" onclick="initCore()">ENGAGE BRUSH</button>
     </div>
-    <div class="bar-container"><div id="hp-bar"></div></div>
-    <div id="sector-dots" aria-hidden="true">
-      <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-    </div>
-  </div>
-
-  <div id="prompt-box">
-    <div id="zone-label" class="glitch">FRONT CANINES</div>
-    <div class="note" style="margin-top:6px">MANUAL SCRUB IN PROGRESS...</div>
-  </div>
-
-  <div id="start-screen" role="dialog" aria-modal="true">
-    <div id="startCard">
-      <h1>TITAN SCRUB</h1>
-      <p>MISSION: 120 SECONDS TO DECONTAMINATE</p>
-      <button class="btn-ready" id="startBtn">INITIATE</button>
-      <div class="note" style="margin-top:10px">Tap to start — this unlocks sound on iOS.</div>
-    </div>
-  </div>
-
-  <div id="lootModal" role="dialog" aria-modal="true" aria-hidden="true">
-    <div id="lootCard">
-      <div style="font-size:16px;color:var(--ui-ink)">LOOT BOX</div>
-      <div class="big" id="lootAmount">+0</div>
-      <div id="lootText">You earned crystals!</div>
-      <button id="claimLoot">CLAIM</button>
-    </div>
-  </div>
-
-  <div id="pinPanel" role="dialog" aria-modal="true" aria-hidden="true">
-    <div style="font-weight:900">Parental Control</div>
-    <input id="pinInput" type="password" placeholder="Enter PIN" inputmode="numeric" />
-    <div style="display:flex;gap:8px;">
-      <button id="pinUnlock">Unlock</button>
-      <button id="pinClose" style="background:#444;color:#fff;">Close</button>
-    </div>
-    <div id="adminArea" style="display:none;flex-direction:column;gap:8px;margin-top:8px;">
-      <label style="font-size:13px;text-align:left;">Set Crystals</label>
-      <input id="setCrystals" type="number" />
-      <label style="font-size:13px;text-align:left;">Set Streak</label>
-      <input id="setStreak" type="number" />
-      <div style="display:flex;gap:8px;">
-        <button id="saveAdmin">Save</button>
-        <button id="resetData" style="background:#ff6b6b;">Reset</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="hotspot" title="Parental Lock" aria-hidden="true"></div>
+    <div id="parent-gate" ontouchstart="handleGate()"></div>
 </div>
 
 <script>
-/* TITAN SCRUB EX — Single file game
-   - Portrait-first 540x960 logical canvas
-   - Bitmask sprites (procedural), deterministic villain degradation
-   - 5s intro, 120s main, 30s stage changes
-   - WebAudio procedural SFX with robust iOS unlock
-   - Canvas-drawn HUD + DOM overlays for accessibility
-   - LocalStorage: crystals & streak; parental PIN hotspot
-*/
+/** 
+ * GBA-MAX ENGINE
+ * High-performance 16-bit logic for neurodivergent engagement
+ */
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const ui = document.getElementById('ui-overlay');
+const timerVal = document.getElementById('timer-display');
 
-/* ===== CONFIG ===== */
-const CONFIG = {
-  WIDTH: 540, HEIGHT: 960,
-  COUNTDOWN: 5, TOTAL_TIME: 120,
-  FIRE_RATE: 360, STAGE_INTERVAL: 30, STAGES: 4,
-  LOCAL_KEYS: { crystals: 'gba_crystals_v1', streak: 'gba_streak_v1' },
-  PIN: '1234', MAX_PARTICLES: 900
+let state = {
+    active: false,
+    time: 120,
+    frame: 0,
+    shake: 0,
+    shots: 0,
+    crystals: parseInt(localStorage.getItem('gba_crystals_v1')) || 0,
+    streak: parseInt(localStorage.getItem('gba_streak_v1')) || 0,
+    particles: []
 };
 
-/* ===== Canvas & scaling ===== */
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d', { alpha: false });
-canvas.width = CONFIG.WIDTH;
-canvas.height = CONFIG.HEIGHT;
-ctx.imageSmoothingEnabled = false;
-
-function fitCanvas(){
-  const maxH = window.innerHeight - 120;
-  const scale = Math.min(maxH / CONFIG.HEIGHT, (window.innerWidth - 24) / CONFIG.WIDTH);
-  canvas.style.width = Math.floor(CONFIG.WIDTH * scale) + 'px';
-  canvas.style.height = Math.floor(CONFIG.HEIGHT * scale) + 'px';
-}
-window.addEventListener('resize', fitCanvas);
-fitCanvas();
-
-/* ===== UI refs ===== */
-const startScreen = document.getElementById('start-screen');
-const startBtn = document.getElementById('startBtn');
-const hpBar = document.getElementById('hp-bar');
-const percentTxt = document.getElementById('percent-txt');
-const zoneLabel = document.getElementById('zone-label');
-const dots = document.querySelectorAll('.dot');
-const lootModal = document.getElementById('lootModal');
-const lootAmount = document.getElementById('lootAmount');
-const lootText = document.getElementById('lootText');
-const claimLoot = document.getElementById('claimLoot');
-const crystalsDom = document.getElementById('crystalsDom') || (function(){let d=document.createElement('span');d.id='crystalsDom';return d;})();
-const streakDom = document.getElementById('streakDom') || (function(){let d=document.createElement('span');d.id='streakDom';return d;})();
-
-/* ===== Storage ===== */
-function loadStats(){ const c=parseInt(localStorage.getItem(CONFIG.LOCAL_KEYS.crystals)||'0',10); const s=parseInt(localStorage.getItem(CONFIG.LOCAL_KEYS.streak)||'0',10); return {crystals:isNaN(c)?0:c, streak:isNaN(s)?0:s}; }
-function saveStats(st){ localStorage.setItem(CONFIG.LOCAL_KEYS.crystals, String(st.crystals)); localStorage.setItem(CONFIG.LOCAL_KEYS.streak, String(st.streak)); }
-let stats = loadStats();
-if(document.getElementById('crystalsDom')) document.getElementById('crystalsDom').textContent = stats.crystals;
-if(document.getElementById('streakDom')) document.getElementById('streakDom').textContent = stats.streak;
-
-/* ===== Audio (procedural) ===== */
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-let audio;
-let masterGain;
-function initAudio(){
-  if(audio) return;
-  audio = new AudioCtx();
-  masterGain = audio.createGain(); masterGain.gain.value = 0.9; masterGain.connect(audio.destination);
-}
-function tryResumeAudio(){
-  if(!audio) initAudio();
-  if(audio.state === 'suspended' || audio.state === 'interrupted'){
-    audio.resume().then(()=>console.log('Audio resumed', audio.state)).catch(e=>console.warn('resume failed', e));
-    audio.onstatechange = ()=>console.log('Audio state', audio.state);
-  }
-}
-function playBeep(freq=880, dur=0.1){
-  if(!audio) return;
-  const t = audio.currentTime;
-  const o = audio.createOscillator(), g = audio.createGain();
-  o.type='square'; o.frequency.value=freq;
-  o.connect(g); g.connect(masterGain);
-  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.12,t+0.005); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-  o.start(t); o.stop(t+dur+0.02);
-}
-function playLaser(){
-  if(!audio) return;
-  const t = audio.currentTime;
-  const o1 = audio.createOscillator(), o2 = audio.createOscillator();
-  const f = audio.createBiquadFilter(), g = audio.createGain();
-  o1.type='sawtooth'; o1.frequency.value=1200; o2.type='square'; o2.frequency.value=1800;
-  f.type='lowpass'; f.frequency.value=2600;
-  o1.connect(f); o2.connect(f); f.connect(g); g.connect(masterGain);
-  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.18,t+0.008); g.gain.exponentialRampToValueAtTime(0.0001,t+0.18);
-  o1.frequency.exponentialRampToValueAtTime(700,t+0.18);
-  o1.start(t); o2.start(t); o1.stop(t+0.22); o2.stop(t+0.22);
-}
-function playBoom(){
-  if(!audio) return;
-  const t = audio.currentTime;
-  const o = audio.createOscillator(), g = audio.createGain(), comp = audio.createDynamicsCompressor();
-  o.type='sine'; o.frequency.value=55;
-  o.connect(g); g.connect(comp); comp.connect(masterGain);
-  comp.threshold.value = -8;
-  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(1.2,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+1.2);
-  o.start(t); o.stop(t+1.3);
-}
-function playSmoke(){
-  if(!audio) return;
-  const t = audio.currentTime;
-  const bufferSize = Math.floor(audio.sampleRate * 0.22);
-  const buffer = audio.createBuffer(1, bufferSize, audio.sampleRate);
-  const data = buffer.getChannelData(0);
-  for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * (1 - i/bufferSize);
-  const src = audio.createBufferSource(), g = audio.createGain();
-  src.buffer = buffer; g.gain.value = 0.16; src.connect(g); g.connect(masterGain); src.start(t);
-}
-
-/* Attach robust unlock handlers */
-(function attachUnlock(){
-  const handler = ()=>{
-    tryResumeAudio();
-    try {
-      const o = audio.createOscillator(), g = audio.createGain();
-      o.type='square'; o.frequency.value=440; o.connect(g); g.connect(masterGain);
-      g.gain.setValueAtTime(0.0001, audio.currentTime); g.gain.linearRampToValueAtTime(0.06, audio.currentTime+0.01);
-      g.gain.exponentialRampToValueAtTime(0.00001, audio.currentTime+0.12);
-      o.start(audio.currentTime); o.stop(audio.currentTime+0.14);
-    } catch(e){}
-    document.removeEventListener('pointerdown', handler);
-    document.removeEventListener('touchstart', handler);
-    document.removeEventListener('mousedown', handler);
-  };
-  document.addEventListener('pointerdown', handler, {passive:true});
-  document.addEventListener('touchstart', handler, {passive:true});
-  document.addEventListener('mousedown', handler, {passive:true});
-})();
-
-/* ===== Bitmask sprites (higher-res simplified procedural grids) =====
-   For brevity sprites are generated procedurally (not huge literal arrays).
-   drawSpriteBitmask(ctx, gridFn, x,y,scale) will call gridFn(rx,ry) to get palette index.
-*/
-const PALETTE = [null, '#000000', '#0ff6ff', '#00b3b3', '#bfefff', '#ffd24d', '#ffb36b', '#ff6b6b', '#444444', '#999999', '#222222', '#ffffff'];
-
-/* Hero 72x72 generator */
-function heroGridAt(rx, ry){
-  // center visor at (18,18) radius 14
-  const cx=18, cy=18, r=14;
-  const dx = rx - cx, dy = ry - cy, d = Math.sqrt(dx*dx+dy*dy);
-  if(d < r-3) return 4; // highlight
-  if(d < r) return 3; // visor mid
-  if(ry > 36 && rx > 6 && rx < 48) return ( (rx+ry)%6===0 ? 9 : 8 );
-  if(ry > 28 && rx < 12) return 10;
-  return 0;
-}
-
-/* Villain 96x96 base */
-function villainBaseAt(rx, ry){
-  const w=96,h=96,cx=48,cy=48;
-  const dx=rx-cx, dy=ry-cy, r=Math.sqrt(dx*dx+dy*dy);
-  if(r<14) return 5;
-  if(r<34) return 9;
-  if(r<46) return 8;
-  return 0;
-}
-
-/* Deterministic overlay masks using hash */
-function hash2(i,j,seed=1337){
-  let v = (i*374761393 + j*668265263) ^ seed;
-  v = (v ^ (v >> 13)) * 1274126177;
-  return ((v ^ (v >> 16)) >>> 0) / 4294967295;
-}
-function villainOverlayAt(stage, rx, ry){
-  const n = hash2(rx, ry, 1000 + stage*97);
-  if(stage === 1){
-    if(n < 0.035 && ((rx+ry)%5===0)) return 10; // crack (shadow)
-  } else if(stage === 2){
-    if(n < 0.03 && (rx%3===0)) return 0; // oil (we'll draw black)
-    if(n > 0.995) return 11; // spark
-  } else if(stage === 3){
-    const cx=48, cy=48; const d=Math.sqrt((rx-cx)*(rx-cx)+(ry-cy)*(ry-cy));
-    if(d < 18 && n < 0.6) return 7; // core glow
-    if(n > 0.98) return 11; // spark
-  }
-  return null;
-}
-
-/* draw bitmask by calling generator for each pixel */
-function drawBitmaskGen(ctx2, w, h, genFn, palette, x, y, scale=1){
-  for(let ry=0; ry<h; ry++){
-    for(let rx=0; rx<w; rx++){
-      const idx = genFn(rx, ry);
-      if(!idx) continue;
-      ctx2.fillStyle = palette[idx] || '#000';
-      ctx2.fillRect(x + rx*scale, y + ry*scale, scale, scale);
-    }
-  }
-}
-
-/* ================= Particles (pooled) ================ */
-const pool = [];
-for(let i=0;i<CONFIG.MAX_PARTICLES;i++) pool.push({alive:false,x:0,y:0,vx:0,vy:0,color:'#fff',life:0,size:1});
-function spawnParticle(x,y,vx,vy,color,life=120,size=2){
-  for(let i=0;i<pool.length;i++){
-    const p = pool[i];
-    if(!p.alive){ p.alive=true; p.x=x; p.y=y; p.vx=vx; p.vy=vy; p.color=color; p.life=life; p.size=size; return p; }
-  }
-}
-function updateParticles(dt){
-  for(let i=0;i<pool.length;i++){
-    const p = pool[i];
-    if(!p.alive) continue;
-    p.x += p.vx * dt * 0.06;
-    p.y += p.vy * dt * 0.06;
-    p.life -= dt * 0.06;
-    p.vy += 0.0009 * dt * 0.06;
-    if(p.life <= 0) p.alive = false;
-  }
-}
-function drawParticles(ctx2){
-  for(let i=0;i<pool.length;i++){
-    const p = pool[i];
-    if(!p.alive) continue;
-    const a = Math.max(0, Math.min(1, p.life/120));
-    ctx2.globalAlpha = a;
-    ctx2.fillStyle = p.color;
-    ctx2.fillRect(Math.round(p.x), Math.round(p.y), Math.max(1,p.size), Math.max(1,p.size));
-    ctx2.globalAlpha = 1;
-  }
-}
-
-/* ================= GAME STATE ================= */
-const ZONES = ["LOWER LEFT","LOWER RIGHT","UPPER LEFT","UPPER RIGHT","FRONT CANINES"];
-let game = {
-  phase: 'idle', // idle, intro, main, outro, ended
-  introTimer: CONFIG.COUNTDOWN,
-  mainStart: 0,
-  timeLeft: CONFIG.TOTAL_TIME,
-  lastShot: 0,
-  villainStage: 0,
-  hero: { x:0.12, y:0.45, recoil:0, shots:0 },
-  frame: 0,
-  shake: 0
+// Audio Engine (Premium Synth)
+let audioCtx;
+const playSound = (freq, type, dur, vol=0.1) => {
+    if(!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + dur);
+    g.gain.setValueAtTime(vol, audioCtx.currentTime);
+    g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + dur);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + dur);
 };
 
-/* ======= Game actions ======= */
-function fire(){
-  const now = performance.now();
-  if(now - game.lastShot < CONFIG.FIRE_RATE) return;
-  game.lastShot = now;
-  game.hero.shots++;
-  playLaser(); playSmoke();
-  game.hero.recoil = 10;
-  const hx = Math.floor(game.hero.x * CONFIG.WIDTH) + 44;
-  const hy = Math.floor(game.hero.y * CONFIG.HEIGHT) + 28;
-  spawnParticle(hx, hy, 6 + Math.random()*2, -1 - Math.random()*0.6, '#9ff', 120, 2);
-  for(let i=0;i<8;i++) spawnParticle(hx-6, hy+6, (Math.random()-0.5)*2, -Math.random()*1.2, '#ddd', 80 + Math.random()*40, 2 + Math.random()*2);
+function initCore() {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    document.querySelector('.start-btn').style.display = 'none';
+    let count = 5;
+    const countdown = setInterval(() => {
+        timerVal.innerText = count;
+        playSound(200 + (6-count)*100, 'square', 0.2);
+        count--;
+        if(count < 0) {
+            clearInterval(countdown);
+            ui.style.display = 'none';
+            state.active = true;
+            canvas.width = 430; canvas.height = 932; // iPhone 15 Res
+            requestAnimationFrame(gameLoop);
+        }
+    }, 1000);
 }
 
-/* Villain stage from elapsed */
-function stageForElapsed(elapsed){
-  return Math.min(CONFIG.STAGES-1, Math.floor(elapsed / CONFIG.STAGE_INTERVAL));
-}
-
-/* ======= Intro / Main / Outro flow ======= */
-function beginIntro(){
-  game.phase = 'intro';
-  game.introTimer = CONFIG.COUNTDOWN;
-  game.lastBeep = CONFIG.COUNTDOWN;
-  syncNote('Neural Link Sync');
-  playBeep(920,0.12);
-}
-function startMain(){
-  game.phase = 'main';
-  game.mainStart = performance.now();
-  game.hero.shots = 0;
-  document.getElementById('start-screen').style.display = 'none';
-  hotspot.style.pointerEvents = 'auto';
-  hotspot.setAttribute('aria-hidden','false');
-}
-function triggerOutro(){
-  if(game.phase === 'outro' || game.phase === 'ended') return;
-  game.phase = 'outro';
-  playBoom();
-  game.shake = 20;
-  for(let i=0;i<600;i++){
-    const a = Math.random()*Math.PI*2, s = Math.random()*8+2;
-    spawnParticle(CONFIG.WIDTH/2, CONFIG.HEIGHT/2, Math.cos(a)*s, Math.sin(a)*s, '#ffd24d', 220 + Math.random()*200, 2 + Math.random()*3);
-  }
-  setTimeout(showLoot, 900);
-}
-function showLoot(){
-  const base = Math.max(1, Math.floor(game.hero.shots / 6));
-  const bonus = Math.floor(stats.streak / 2);
-  const gained = base + bonus;
-  lootAmount.textContent = `+${gained}`;
-  lootText.textContent = `You fired ${game.hero.shots} shots. Bonus: ${bonus}`;
-  lootModal.style.display = 'flex';
-  lootModal.setAttribute('aria-hidden','false');
-  lootModal.dataset.gain = String(gained);
-}
-claimLoot.addEventListener('click', ()=>{
-  const gain = parseInt(lootModal.dataset.gain || '0',10);
-  stats.crystals += gain; stats.streak += 1; saveStats(stats);
-  if(document.getElementById('crystalsDom')) document.getElementById('crystalsDom').textContent = stats.crystals;
-  if(document.getElementById('streakDom')) document.getElementById('streakDom').textContent = stats.streak;
-  lootModal.style.display = 'none'; lootModal.setAttribute('aria-hidden','true'); game.phase='ended';
-});
-
-/* ======= UI helpers ======= */
-function syncNote(text){ document.getElementById('syncNote') && (document.getElementById('syncNote').textContent = text); }
-
-/* ======= Main loop ======= */
-function update(dt){
-  game.frame++;
-  if(game.phase === 'intro'){
-    game.introTimer -= dt/1000;
-    const next = Math.max(0, Math.ceil(game.introTimer));
-    syncNote(`Neural Link Sync ${next}`);
-    if(next < game.lastBeep){ game.lastBeep = next; playBeep(880 - (CONFIG.COUNTDOWN-next)*30, 0.12); }
-    if(game.introTimer <= 0) startMain();
-  } else if(game.phase === 'main'){
-    const elapsed = (performance.now() - game.mainStart)/1000;
-    const remaining = Math.max(0, CONFIG.TOTAL_TIME - elapsed);
-    game.timeLeft = remaining;
-    const mm = String(Math.floor(remaining/60)).padStart(2,'0'), ss = String(Math.floor(remaining%60)).padStart(2,'0');
-    document.getElementById('timerDom') && (document.getElementById('timerDom').textContent = `${mm}:${ss}`);
-    const stage = stageForElapsed(elapsed);
-    if(stage !== game.villainStage){
-      game.villainStage = stage;
-      // update zone label and dots
-      const zoneIdx = Math.min(4, stage);
-      zoneLabel.textContent = ZONES[zoneIdx];
-      dots.forEach((d,i)=>d.classList.toggle('active', i===zoneIdx));
-      game.shake = 18;
-      playBeep(720,0.08); playBeep(920,0.08);
-      // small sparks
-      for(let i=0;i<40;i++) spawnParticle(CONFIG.WIDTH*0.68 + Math.random()*60 - 30, CONFIG.HEIGHT*0.28 + Math.random()*60 - 30, (Math.random()-0.5)*0.6, (Math.random()-0.5)*0.6, '#ff6b6b', 120, 2);
+// Particle System
+const spawnParticles = (x, y, color, count, speed) => {
+    for(let i=0; i<count; i++) {
+        state.particles.push({
+            x, y, 
+            vx: (Math.random()-0.5)*speed, 
+            vy: (Math.random()-0.5)*speed, 
+            life: 1, 
+            c: color
+        });
     }
-    // hero movement
-    const t = elapsed;
-    game.hero.x = 0.12 + Math.sin(t*1.05)*0.06 + Math.sin(t*0.25)*0.01;
-    game.hero.y = 0.42 + Math.sin(t*2.1)*0.08;
-    // auto-fire
-    if(performance.now() - game.lastShot > CONFIG.FIRE_RATE) fire();
-    // recoil decay
-    game.hero.recoil = Math.max(0, game.hero.recoil - dt*0.02);
-    updateParticles(dt);
-    // update top bar
-    const pct = Math.ceil((game.timeLeft / CONFIG.TOTAL_TIME) * 100);
-    hpBar.style.width = pct + '%';
-    percentTxt.textContent = pct + '%';
-    if(remaining <= 0) triggerOutro();
-  } else if(game.phase === 'outro'){
-    updateParticles(dt);
-    game.shake = Math.max(0, game.shake - dt*0.05);
-  } else {
-    updateParticles(dt);
-  }
+};
+
+function drawHero(x, y) {
+    const recoil = Math.sin(state.frame * 0.8) * (state.shake * 0.5);
+    // Draw Pilot Body (16-bit style)
+    ctx.fillStyle = '#e0f8d0';
+    ctx.fillRect(x - 30, y + recoil, 60, 80); // Chassis
+    ctx.fillStyle = '#00ffff'; 
+    ctx.fillRect(x - 20, y + 10 + recoil, 40, 20); // Visor
+    // Cannon
+    ctx.fillStyle = '#346856';
+    ctx.fillRect(x + 20, y + 40 + recoil, 40, 15);
+    
+    if(state.frame % 20 === 0) { // Muzzle Flash
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(x + 60, y + 35 + recoil, 20, 25);
+        state.shake = 10;
+        state.shots++;
+        playSound(150, 'sawtooth', 0.1, 0.05);
+        spawnParticles(x+60, y+45, '#fff', 5, 10);
+    }
 }
 
-/* ======= Render ======= */
-function render(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  // apply shake
-  if(game.shake > 0){
+function drawTitan(stage) {
+    const drift = Math.sin(state.frame * 0.02) * 20;
+    const centerX = 215 + drift;
+    const centerY = 250;
+    
+    // Core
+    const colors = ['#88c070', '#fcc201', '#ff4545', '#ff0000'];
+    ctx.fillStyle = colors[stage];
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 100, 0, Math.PI*2);
+    ctx.fill();
+
+    // Damage Sparks
+    if(stage > 1 && state.frame % 5 === 0) {
+        spawnParticles(centerX + (Math.random()-0.5)*150, centerY + (Math.random()-0.5)*150, '#fff', 2, 5);
+    }
+}
+
+function gameLoop() {
+    if(!state.active) return;
+    
+    // 1. Logic
+    state.frame++;
+    if(state.frame % 60 === 0) state.time--;
+    if(state.shake > 0) state.shake *= 0.9;
+
+    // 2. Render
+    ctx.fillStyle = '#081820';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Parallax Stars
+    ctx.fillStyle = '#346856';
+    for(let i=0; i<30; i++) {
+        let py = (i * 40 + state.frame * 2) % canvas.height;
+        ctx.fillRect((i * 77) % canvas.width, py, 4, 4);
+    }
+
+    // Shake Application
     ctx.save();
-    ctx.translate((Math.random()-0.5)*game.shake, (Math.random()-0.5)*game.shake);
-  }
-  // background subtle stars
-  ctx.fillStyle = '#0b0b12';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  // draw villain (96x96) centered right
-  const vW = 96, vH = 96;
-  const vx = Math.floor(canvas.width*0.62), vy = Math.floor(canvas.height*0.12);
-  // base
-  for(let y=0;y<vH;y++){
-    for(let x=0;x<vW;x++){
-      const idx = villainBaseAt(x,y);
-      if(!idx) continue;
-      ctx.fillStyle = PALETTE[idx]; ctx.fillRect(vx + x, vy + y, 1, 1);
-    }
-  }
-  // overlays
-  for(let y=0;y<vH;y++){
-    for(let x=0;x<vW;x++){
-      const ov = villainOverlayAt(game.villainStage, x, y);
-      if(ov === null) continue;
-      if(ov === 0) { ctx.fillStyle = '#000'; ctx.fillRect(vx+x, vy+y, 1,1); } // oil
-      else { ctx.fillStyle = PALETTE[ov]; ctx.fillRect(vx+x, vy+y, 1,1); }
-    }
-  }
-  // villain core pulse (simple)
-  const corePulse = 1 + Math.sin(game.frame * 0.06) * 0.08;
-  ctx.globalAlpha = 0.9;
-  // hero (72x72) left bottom
-  const hW = 72, hH = 72;
-  const hx = Math.floor(canvas.width*0.12 + game.hero.x*40), hy = Math.floor(canvas.height - 260 + game.hero.y*20);
-  for(let y=0;y<hH;y++){
-    for(let x=0;x<hW;x++){
-      const idx = heroGridAt(x,y);
-      if(!idx) continue;
-      ctx.fillStyle = PALETTE[idx]; ctx.fillRect(hx + x, hy + y, 1, 1);
-    }
-  }
-  // cannon muzzle flash if recoil
-  if(game.hero.recoil > 0.5){
-    ctx.fillStyle = '#fff'; ctx.fillRect(hx + 44 + 18, hy + 28 + 6, 4, 4);
-    ctx.fillStyle = 'rgba(220,220,220,0.6)'; ctx.fillRect(hx + 44 + 14, hy + 28 + 12, 10, 3);
-  }
-  // beam
-  ctx.globalAlpha = 0.9;
-  ctx.strokeStyle = (game.frame % 2 === 0) ? '#0ff6ff' : '#ffffff';
-  ctx.lineWidth = 6;
-  ctx.beginPath(); ctx.moveTo(hx + 36, hy + 24); ctx.lineTo(vx + 48 + Math.sin(game.frame*0.03)*6, vy + 48); ctx.stroke();
-  // particles
-  drawParticles(ctx);
-  ctx.globalAlpha = 1;
-  if(game.shake > 0) ctx.restore();
+    if(state.shake > 1) ctx.translate((Math.random()-0.5)*state.shake, (Math.random()-0.5)*state.shake);
+
+    const stage = Math.min(3, Math.floor((120 - state.time) / 30));
+    drawTitan(stage);
+    drawHero(215, 650 + Math.sin(state.frame*0.05)*30);
+
+    // Particles
+    state.particles.forEach((p, i) => {
+        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+        ctx.fillStyle = p.c;
+        ctx.globalAlpha = p.life;
+        ctx.fillRect(p.x, p.y, 6, 6);
+        if(p.life <= 0) state.particles.splice(i, 1);
+    });
+    ctx.restore();
+    ctx.globalAlpha = 1;
+
+    // HUD
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(0, 0, canvas.width, 120);
+    ctx.fillStyle = '#fff';
+    ctx.font = "900 30px 'Courier New'";
+    ctx.fillText(`TIME: ${Math.max(0, state.time)}s`, 30, 60);
+    ctx.fillStyle = '#fcc201';
+    ctx.fillText(`CRYSTALS: ${state.crystals}`, 30, 100);
+
+    if(state.time <= 0) return triggerMegaExplosion();
+    requestAnimationFrame(gameLoop);
 }
 
-/* ======= Main RAF loop ======= */
-let last = performance.now();
-function loop(now){
-  const dt = now - last; last = now;
-  update(dt);
-  render();
-  requestAnimationFrame(loop);
+function triggerMegaExplosion() {
+    state.active = false;
+    playSound(60, 'sawtooth', 2, 0.5); // Deep sub boom
+    spawnParticles(215, 250, '#fff', 300, 40);
+    spawnParticles(215, 250, '#fcc201', 200, 30);
+    
+    let flash = 0;
+    const endInt = setInterval(() => {
+        ctx.fillStyle = `rgba(255,255,255, ${1 - flash})`;
+        ctx.fillRect(0,0,canvas.width, canvas.height);
+        flash += 0.05;
+        if(flash >= 1) {
+            clearInterval(endInt);
+            showLoot();
+        }
+    }, 30);
 }
 
-/* ======= Start handlers ======= */
-startBtn.addEventListener('click', ()=>{
-  initAudio(); tryResumeAudio();
-  startScreenHide();
-  beginIntro();
-});
-function startScreenHide(){ startScreen.style.display = 'none'; startScreen.setAttribute('aria-hidden','true'); }
+function showLoot() {
+    const earned = Math.floor(state.shots / 6) + (state.streak * 2);
+    state.crystals += earned;
+    state.streak++;
+    localStorage.setItem('gba_crystals_v1', state.crystals);
+    localStorage.setItem('gba_streak_v1', state.streak);
+    
+    ui.style.display = 'flex';
+    timerVal.innerText = "VICTORY";
+    timerVal.style.fontSize = "60px";
+    document.getElementById('sync-text').innerText = `+${earned} CRYSTALS ACQUIRED`;
+    document.getElementById('sync-text').style.color = "gold";
+}
 
-/* ======= Parental PIN handlers ======= */
-const hotspot = document.getElementById('hotspot');
-hotspot.style.pointerEvents = 'none';
-hotspot.addEventListener('click', ()=>{
-  const panel = document.getElementById('pinPanel');
-  panel.style.display = 'flex'; panel.setAttribute('aria-hidden','false');
-  document.getElementById('pinInput').value = '';
-  document.getElementById('pinInput').focus();
-});
-document.getElementById('pinClose').addEventListener('click', ()=>{
-  document.getElementById('pinPanel').style.display = 'none';
-});
-document.getElementById('pinUnlock').addEventListener('click', ()=>{
-  const v = document.getElementById('pinInput').value;
-  if(v === CONFIG.PIN){ document.getElementById('adminArea').style.display = 'flex'; document.getElementById('setCrystals').value = stats.crystals; document.getElementById('setStreak').value = stats.streak; }
-  else alert('Incorrect PIN');
-});
-document.getElementById('saveAdmin').addEventListener('click', ()=>{
-  const c = parseInt(document.getElementById('setCrystals').value||'0',10);
-  const s = parseInt(document.getElementById('setStreak').value||'0',10);
-  stats.crystals = isNaN(c)?0:c; stats.streak = isNaN(s)?0:s; saveStats(stats);
-  document.getElementById('crystalsDom') && (document.getElementById('crystalsDom').textContent = stats.crystals);
-  document.getElementById('streakDom') && (document.getElementById('streakDom').textContent = stats.streak);
-  alert('Saved');
-});
-document.getElementById('resetData').addEventListener('click', ()=>{
-  if(confirm('Reset crystals and streak to zero?')){ stats.crystals=0; stats.streak=0; saveStats(stats); document.getElementById('crystalsDom') && (document.getElementById('crystalsDom').textContent=0); document.getElementById('streakDom') && (document.getElementById('streakDom').textContent=0); alert('Reset'); }
-});
-
-/* ======= Loot claim handled above ======= */
-
-/* ======= Utility: heroGridAt & villainBaseAt & villainOverlayAt used earlier ======= */
-/* (They are defined above in the code block) */
-
-/* ======= Initialize & start RAF ======= */
-requestAnimationFrame(loop);
-
-/* ======= Expose small debug helpers (optional) ======= */
-// window._game = game; window._pool = pool;
-
+let gateTaps = 0;
+function handleGate() {
+    gateTaps++;
+    if(gateTaps >= 5) {
+        const p = prompt("ADMIN PIN:");
+        if(p === "1234") {
+            state.crystals = parseInt(prompt("Set Crystals:", state.crystals));
+            localStorage.setItem('gba_crystals_v1', state.crystals);
+            location.reload();
+        }
+        gateTaps = 0;
+    }
+}
 </script>
 </body>
 </html>
