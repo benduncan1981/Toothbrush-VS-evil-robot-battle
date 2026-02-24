@@ -1,781 +1,270 @@
-<!doctype html>
-<html lang="en-GB">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<title>TITAN OMEGA — Toothbrush Mode (Kid Friendly)</title>
-<style>
-  /* ====== Layout & safe area (no scrolling) ====== */
-  :root{
-    --bg:#05050a;
-    --panel:#071827;
-    --sonic-blue:#00bfff;
-    --neon-pink:#ff4fb5;
-    --neon-green:#7cff6b;
-    --gold:#ffd700;
-    --danger:#ff5a5a;
-    --glass: rgba(255,255,255,0.03);
-    --max-width:760px;
-  }
-  html,body{
-    height:100%;
-    margin:0;
-    background:linear-gradient(180deg,#000 0%, #05050a 100%);
-    font-family: "Segoe UI", Roboto, Arial, sans-serif;
-    -webkit-font-smoothing:antialiased;
-    -webkit-text-size-adjust:100%;
-    color:#fff;
-  }
-
-  /* container sized to viewport minus safe areas so no scroll */
-  #app{
-    height:calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-    width:100%;
-    max-width:var(--max-width);
-    margin:0 auto;
-    display:flex;
-    flex-direction:column;
-    border-radius:12px;
-    overflow:hidden;
-    background:linear-gradient(180deg,var(--panel), #071827);
-    box-shadow:0 18px 60px rgba(0,0,0,0.6);
-    border:1px solid rgba(255,255,255,0.03);
-  }
-
-  /* header */
-  .header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:12px 14px;
-    gap:12px;
-    border-bottom:1px solid rgba(255,255,255,0.03);
-  }
-  .brand{display:flex;flex-direction:column}
-  .brand .title{font-weight:900;color:var(--sonic-blue);letter-spacing:1px;font-size:16px}
-  .brand .sub{font-size:12px;color:#cfeaf6}
-
-  /* HUD */
-  .hud{display:flex;align-items:center;gap:12px}
-  .time-big{display:flex;flex-direction:column;align-items:center;min-width:120px}
-  .time-big .time{font-weight:900;font-size:34px;color:var(--neon-pink);letter-spacing:1px}
-  .time-big .label{font-size:11px;color:#9aa0a6}
-
-  .ring{width:84px;height:84px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 30%, rgba(0,191,255,0.06), transparent 40%);box-shadow:0 12px 40px rgba(0,191,255,0.06)}
-
-  .controls{display:flex;gap:8px;align-items:center}
-  .btn{
-    background:linear-gradient(180deg,var(--sonic-blue),#00a3d6);
-    color:#001;padding:8px 12px;border-radius:10px;border:none;font-weight:900;cursor:pointer;
-    box-shadow:0 10px 30px rgba(0,191,255,0.06);
-  }
-  .btn.ghost{background:transparent;border:2px solid rgba(255,255,255,0.04);color:#fff}
-  .btn[disabled]{opacity:0.45;cursor:not-allowed;transform:none;box-shadow:none}
-
-  /* main viewport (no scroll) */
-  .viewport{flex:1;display:flex;align-items:center;justify-content:center;padding:12px;position:relative;overflow:hidden}
-
-  /* canvas wrapper sized to fit available space */
-  .canvas-wrap{
-    width:100%;
-    height:100%;
-    max-width:520px;
-    max-height:calc(100vh - 220px);
-    border-radius:12px;
-    overflow:hidden;
-    background:#000;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    position:relative;
-    box-shadow: inset 0 0 80px rgba(0,0,0,0.6);
-  }
-
-  canvas{
-    width:100%;
-    height:100%;
-    image-rendering:pixelated;
-    display:block;
-  }
-
-  /* HUD overlay inside canvas */
-  .hud-overlay{position:absolute;inset:auto 14px 14px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;pointer-events:none;z-index:40}
-
-  .hp-wrap{width:62%;height:26px;background:linear-gradient(90deg,#111,#0b0b0b);border-radius:999px;padding:4px;pointer-events:auto}
-  .hp-bar{height:100%;width:100%;background:linear-gradient(90deg,var(--danger),#ffb84d);border-radius:999px;transition:width 0.25s linear;box-shadow:0 12px 40px rgba(255,80,80,0.08)}
-
-  /* simple action row (disabled during active) */
-  .action-row{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:12px;pointer-events:auto}
-  .big-btn{
-    background:linear-gradient(180deg,var(--neon-pink),#ff2f9a);
-    color:#fff;border:none;padding:12px 18px;border-radius:12px;font-weight:900;font-size:15px;
-    box-shadow:0 12px 30px rgba(255,80,160,0.12);cursor:pointer;
-  }
-  .big-btn[disabled]{opacity:0.45;cursor:not-allowed;box-shadow:none}
-
-  /* overlays */
-  .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.75));z-index:80;padding:18px}
-  .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 12px 40px rgba(0,0,0,0.6)}
-
-  /* crawl page */
-  .crawl-page{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px;text-align:center}
-  .crawl-title{font-size:24px;font-weight:900;color:var(--neon-green)}
-  .crawl-box{width:92%;max-width:640px;height:320px;perspective:600px;overflow:hidden;border-radius:10px;padding:14px;background:linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,0.95));border:1px solid rgba(255,255,255,0.02)}
-  .crawl-inner{transform-origin:50% 100%;color:#ffd;font-weight:700;text-transform:uppercase;letter-spacing:1px;line-height:1.4;font-size:15px;transform:rotateX(20deg) translateY(100%);opacity:0}
-  .crawl-inner.play{animation:crawlAnim linear forwards}
-  @keyframes crawlAnim{0%{transform:rotateX(20deg) translateY(100%);opacity:1}100%{transform:rotateX(20deg) translateY(-220%);opacity:0.95}}
-
-  /* countdown big */
-  .countdown-big{font-weight:900;font-size:96px;color:var(--gold);text-shadow:0 12px 40px rgba(255,200,80,0.08)}
-
-  /* speed lines & halftone & CRT */
-  .speed-lines{position:absolute;inset:0;pointer-events:none;z-index:30}
-  .halftone{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:0.06;background-image:radial-gradient(circle at 10px 10px, rgba(255,255,255,0.06) 1px, transparent 2px);background-size:12px 12px;z-index:35}
-  .crt{pointer-events:none;position:absolute;inset:0;mix-blend-mode:overlay;opacity:0.06;background-image:linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);background-size:100% 3px;z-index:50}
-
-  /* confetti */
-  .confetti{position:absolute;inset:0;pointer-events:none;z-index:120;overflow:hidden}
-
-  /* footer */
-  .footer{padding:10px 14px;border-top:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#9aa0a6}
-
-  /* ensure no page scroll on iOS */
-  html,body,#app{touch-action:manipulation;overscroll-behavior:none}
-  @media (max-width:520px){
-    .time-big .time{font-size:28px}
-    .countdown-big{font-size:64px}
-    .canvas-wrap{max-width:420px}
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>TITAN OMEGA</title>
+    <style>
+        :root {
+            --neon-blue: #00f2ff; --neon-pink: #ff00ff; --bright-yellow: #ffff00;
+            --dark-bg: #050510; --comic-outline: 4px solid #000;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: var(--dark-bg); color: white; font-family: 'Arial Black', sans-serif;
+            overflow: hidden; touch-action: none;
+        }
+        /* CRT & Comic Overlay */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 100;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 4px, 3px 100%;
+            opacity: 0.3;
+        }
+        .vignette {
+            position: fixed; inset: 0; pointer-events: none; z-index: 101;
+            background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.6) 100%);
+        }
+        /* Intro Crawl Page */
+        #intro-view {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; perspective: 400px; text-align: center;
+        }
+        .crawl-container {
+            position: relative; width: 80%; height: 60%; overflow: hidden;
+            transform: rotateX(25deg); mask-image: linear-gradient(transparent, black 30%);
+        }
+        .crawl-content {
+            position: absolute; top: 100%; width: 100%;
+            animation: crawl 8s linear forwards; color: var(--bright-yellow);
+            font-size: 2.5rem; text-transform: uppercase; line-height: 1.5;
+        }
+        @keyframes crawl { 0% { top: 100%; } 100% { top: -150%; } }
+        
+        /* Game Page */
+        #game-view { display: none; height: 100vh; position: relative; }
+        #game-canvas { width: 100%; height: 100%; display: block; }
+        
+        /* HUD Elements */
+        .hud {
+            position: absolute; width: 100%; padding: 20px;
+            display: flex; flex-direction: column; align-items: center; z-index: 10;
+        }
+        .hp-container {
+            width: 80%; height: 30px; border: var(--comic-outline);
+            background: #222; position: relative; border-radius: 15px; overflow: hidden;
+            box-shadow: 0 0 15px var(--neon-pink);
+        }
+        #hp-bar {
+            width: 100%; height: 100%; background: linear-gradient(90deg, #ff0055, #ff6600);
+            transition: width 0.1s linear;
+        }
+        .timer-circle {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 180px; height: 180px; border-radius: 50%;
+            border: 8px solid var(--neon-blue); display: flex;
+            align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.5); font-size: 3rem; color: #fff;
+            box-shadow: 0 0 30px var(--neon-blue);
+        }
+        .stats {
+            position: absolute; bottom: 120px; width: 100%;
+            display: flex; justify-content: space-around; font-size: 1.2rem;
+            color: var(--neon-pink); text-shadow: 2px 2px #000;
+        }
+        /* Buttons */
+        .controls {
+            position: absolute; bottom: 30px; width: 100%;
+            display: flex; justify-content: center; gap: 20px;
+        }
+        button {
+            padding: 15px 30px; font-size: 1.2rem; font-family: inherit;
+            border: var(--comic-outline); border-radius: 10px; cursor: pointer;
+            text-transform: uppercase; transition: 0.2s;
+        }
+        .btn-start { background: var(--bright-yellow); color: #000; }
+        .btn-action { background: var(--neon-blue); color: #000; }
+        button:disabled { opacity: 0.4; filter: grayscale(1); transform: scale(0.95); }
+        
+        #pre-countdown {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            display: none; align-items: center; justify-content: center;
+            font-size: 12rem; color: var(--neon-pink); z-index: 200;
+        }
+    </style>
 </head>
-<body>
-<div id="app" role="application" aria-label="Titan Omega Toothbrush Mode">
+<body onload="init()">
+    <div class="overlay"></div>
+    <div class="vignette"></div>
 
-  <!-- header -->
-  <div class="header">
-    <div class="brand">
-      <div class="title">TITAN OMEGA</div>
-      <div class="sub">CHRONO SYNC — Toothbrush Mode</div>
-    </div>
-
-    <div class="hud">
-      <div class="time-big" aria-live="polite">
-        <div id="bigTime" class="time">02:00</div>
-        <div class="label">TIME LEFT</div>
-      </div>
-
-      <div class="ring" aria-hidden="true">
-        <svg id="progressSvg" width="84" height="84" viewBox="0 0 100 100" aria-hidden="true">
-          <defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#00bfff"/><stop offset="1" stop-color="#ff4fb5"/></linearGradient></defs>
-          <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.06)" stroke-width="8" fill="none"></circle>
-          <circle id="progressCircle" cx="50" cy="50" r="40" stroke="url(#g1)" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="0" transform="rotate(-90 50 50)"></circle>
-        </svg>
-      </div>
-
-      <div style="display:flex;flex-direction:column;align-items:flex-end">
-        <div style="font-size:12px;color:#9aa0a6">CRYSTALS</div>
-        <div id="uiCrystals" style="font-weight:900;color:var(--gold)">0</div>
-      </div>
-
-      <div class="controls" style="pointer-events:auto">
-        <button id="muteBtn" class="btn" aria-pressed="false">MUTE</button>
-        <button id="pauseBtn" class="btn ghost" aria-pressed="false" disabled>PAUSE</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CRAWL VIEW (separate page) -->
-  <section id="view-crawl" class="crawl-page" role="region" aria-label="Intro crawl">
-    <div class="crawl-title">TITAN OMEGA: CHRONO SYNC</div>
-    <div style="max-width:720px;color:#cfeaf6">A friendly two‑minute brushing mission. Watch the intro, then press START. During the 2:00 brushing time all buttons are disabled — your hands are busy. After the timer ends, buttons re-enable.</div>
-
-    <div class="crawl-box panel" role="article" aria-label="Star crawl">
-      <div id="crawlInner" class="crawl-inner" aria-hidden="false">
-        <div style="font-size:18px;color:var(--neon-green);margin-bottom:10px">TITAN OMEGA</div>
-        <p>CHRONO SYNC INITIATED. PILOT, YOU HAVE TWO MINUTES TO COMPLETE THE ORBITAL BRUSHING PROTOCOL.</p>
-        <p>ALIGN THE BRUSH, MAINTAIN RHYTHM, AND SWEEP GENTLY. THIS MISSION IS FOR FUN — AND CLEAN TEETH.</p>
-        <p>BRUSH THE TOP TEETH FIRST, THEN THE BOTTOM. KEEP MOVING. STAY WITH THE BEAT.</p>
-        <p>READY? LET'S GO!</p>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:12px;align-items:center">
-      <button id="crawlStart" class="big-btn">START MISSION</button>
-      <button id="crawlSkip" class="btn ghost">SKIP INTRO</button>
-    </div>
-  </section>
-
-  <!-- GAME VIEW -->
-  <section id="view-game" class="viewport" role="region" aria-label="Game" style="display:none">
-    <div class="canvas-wrap panel" role="application" aria-label="Game canvas area">
-      <canvas id="gameCanvas" width="430" height="932" aria-label="Game canvas"></canvas>
-
-      <div class="hud-overlay" aria-hidden="true">
-        <div class="hp-wrap panel" role="progressbar" aria-label="Boss health">
-          <div id="hpBar" class="hp-bar" style="width:100%"></div>
+    <!-- Intro View -->
+    <div id="intro-view">
+        <div class="crawl-container">
+            <div class="crawl-content" id="crawl-text">
+                Prepare for Sync...<br><br>The Germ Legion is invading!<br><br>Only the Chrono Brush can stop them...<br><br>Brush well, Pilot!
+            </div>
         </div>
+        <button class="btn-start" onclick="startSequence()">Start Mission</button>
+    </div>
 
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-          <div style="font-size:12px;color:#9aa0a6">STREAK</div>
-          <div id="uiStreak" style="font-weight:900;color:var(--gold)">0</div>
+    <!-- Pre-Countdown Overlay -->
+    <div id="pre-countdown">5</div>
+
+    <!-- Game View -->
+    <div id="game-view">
+        <div class="hud">
+            <div class="hp-container"><div id="hp-bar"></div></div>
+            <div class="timer-circle" id="timer-display">02:00</div>
         </div>
-      </div>
-
-      <div class="speed-lines" aria-hidden="true"></div>
-      <div class="halftone" aria-hidden="true"></div>
-      <div class="crt" aria-hidden="true"></div>
-      <div id="confetti" class="confetti" aria-hidden="true"></div>
+        <canvas id="game-canvas"></canvas>
+        <div class="stats">
+            <div>CRYSTALS: <span id="crystal-count">0</span></div>
+            <div>STREAK: <span id="streak-count">0</span></div>
+        </div>
+        <div class="controls">
+            <button id="tap-btn" class="btn-action" onmousedown="handleTap()">Sparkle!</button>
+            <button id="mute-btn" onclick="toggleMute()">Mute</button>
+        </div>
     </div>
 
-    <div class="action-row">
-      <button id="tapBtn" class="big-btn" disabled>TAP FOR SPARKLE</button>
-      <button id="skipBtn" class="btn ghost">BACK TO INTRO</button>
-    </div>
+    <script>
+        let audioCtx, isMuted = false, state = 'intro';
+        let timer = 120, crystals = parseInt(localStorage.getItem('titan_crystals')) || 0;
+        let streak = parseInt(localStorage.getItem('titan_streak')) || 0;
+        let canvas, ctx, particles = [];
 
-    <div style="position:absolute;bottom:18px;left:18px;color:#9aa0a6;font-size:13px">Space = Tap (disabled while brushing) • P = Pause (disabled while brushing) • M = Mute</div>
-  </section>
+        function init() {
+            canvas = document.getElementById('game-canvas');
+            ctx = canvas.getContext('2d');
+            resize();
+            window.addEventListener('resize', resize);
+            document.getElementById('crystal-count').innerText = crystals;
+            document.getElementById('streak-count').innerText = streak;
+            
+            // iOS PWA Scroll Prevention
+            document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+        }
 
-  <!-- footer -->
-  <div class="footer">
-    <div style="display:flex;gap:12px;align-items:center">
-      <div style="background:var(--glass);padding:8px 12px;border-radius:999px;font-weight:900;color:var(--gold)" id="uiPilot">PILOT</div>
-      <div style="color:#9aa0a6;font-size:13px">Kid friendly • Smart UI • 2:00 brushing</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center"><div style="font-size:12px;color:#9aa0a6">v</div><div style="font-weight:900;color:var(--gold)">4.3</div></div>
-  </div>
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
 
-</div>
+        // Procedural Web Audio API sound generation
+        function playSfx(freq, type, duration) {
+            if (isMuted || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + duration);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
 
-<script>
-/* =========================
-   CONFIG & STATE
-   ========================= */
-const CONFIG = {
-  duration: 120,            // 2 minutes
-  preCountdown: 5,
-  crawlDuration: 5,
-  bossHP: 1200,
-  bonusPerTap: 0,           // taps disabled during brushing
-  particlesLimit: 220,
-  canvas: { w: 430, h: 932 },
-  audio: { sfxVol: 0.9 }
-};
+        function startSequence() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            document.getElementById('intro-view').style.display = 'none';
+            const countdownEl = document.getElementById('pre-countdown');
+            countdownEl.style.display = 'flex';
+            
+            let count = 5;
+            const countInt = setInterval(() => {
+                count--;
+                playSfx(440, 'square', 0.1);
+                if (count <= 0) {
+                    clearInterval(countInt);
+                    countdownEl.style.display = 'none';
+                    startGame();
+                } else {
+                    countdownEl.innerText = count;
+                }
+            }, 1000);
+        }
 
-const state = {
-  view: 'crawl',
-  active: false,
-  paused: false,
-  time: CONFIG.duration,
-  bossHP: CONFIG.bossHP,
-  crystals: parseInt(localStorage.getItem('titan_crystals')) || 0,
-  streak: parseInt(localStorage.getItem('titan_streak')) || 0,
-  best: parseInt(localStorage.getItem('titan_best')) || 0,
-  pilot: localStorage.getItem('titan_pilot') || 'PILOT',
-  particles: [],
-  pools: { particles: [] },
-  shake: 0,
-  flash: 0,
-  muted: false
-};
+        function startGame() {
+            document.getElementById('game-view').style.display = 'block';
+            document.getElementById('tap-btn').disabled = true;
+            state = 'brushing';
+            
+            const gameLoop = setInterval(() => {
+                timer -= 0.1;
+                updateHUD();
+                drawBoss();
+                if (timer <= 0) {
+                    clearInterval(gameLoop);
+                    endSession();
+                }
+            }, 100);
+            animate();
+        }
 
-/* =========================
-   DOM refs
-   ========================= */
-const viewCrawl = document.getElementById('view-crawl');
-const viewGame  = document.getElementById('view-game');
-const crawlInner = document.getElementById('crawlInner');
-const crawlStart = document.getElementById('crawlStart');
-const crawlSkip  = document.getElementById('crawlSkip');
-const tapBtn     = document.getElementById('tapBtn');
-const skipBtn    = document.getElementById('skipBtn');
-const muteBtn    = document.getElementById('muteBtn');
-const pauseBtn   = document.getElementById('pauseBtn');
-const bigTime    = document.getElementById('bigTime');
-const progressCircle = document.getElementById('progressCircle');
-const hpBar      = document.getElementById('hpBar');
-const uiCrystals = document.getElementById('uiCrystals');
-const uiPilot    = document.getElementById('uiPilot');
-const uiStreak   = document.getElementById('uiStreak');
-const confettiEl = document.getElementById('confetti');
-const speedLinesContainer = document.querySelector('.speed-lines');
+        function updateHUD() {
+            const m = Math.floor(timer / 60);
+            const s = Math.floor(timer % 60);
+            document.getElementById('timer-display').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+            document.getElementById('hp-bar').style.width = (timer / 120 * 100) + '%';
+        }
 
-/* =========================
-   Canvas setup
-   ========================= */
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d', { alpha: false });
-canvas.width = CONFIG.canvas.w;
-canvas.height = CONFIG.canvas.h;
-function resizeCanvas(){
-  const wrap = canvas.parentElement;
-  const rect = wrap.getBoundingClientRect();
-  const scale = Math.min(rect.width / canvas.width, rect.height / canvas.height);
-  canvas.style.width = Math.floor(canvas.width * scale) + 'px';
-  canvas.style.height = Math.floor(canvas.height * scale) + 'px';
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+        function drawBoss() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Simple procedural boss (bouncing orb)
+            const bounce = Math.sin(Date.now() / 200) * 20;
+            ctx.shadowBlur = 20; ctx.shadowColor = '#ff00ff';
+            ctx.fillStyle = '#ff00ff';
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, canvas.height/3 + bounce, 60, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw particles
+            particles.forEach((p, i) => {
+                p.x += p.vx; p.y += p.vy; p.alpha -= 0.02;
+                ctx.fillStyle = `rgba(0, 242, 255, ${p.alpha})`;
+                ctx.fillRect(p.x, p.y, 4, 4);
+                if (p.alpha <= 0) particles.splice(i, 1);
+            });
+        }
 
-/* =========================
-   Audio (beeps)
-   ========================= */
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-let audioCtx = null;
-function ensureAudio(){ if(!audioCtx) audioCtx = new AudioCtx(); }
-function beep(freq=440, dur=0.06, vol=0.12){
-  if(state.muted) return;
-  ensureAudio();
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.type = 'sine';
-  o.frequency.value = freq;
-  g.gain.value = vol * CONFIG.audio.sfxVol;
-  o.connect(g); g.connect(audioCtx.destination);
-  o.start();
-  o.stop(audioCtx.currentTime + dur);
-}
+        function handleTap() {
+            if (state !== 'finished') return;
+            crystals += 10;
+            localStorage.setItem('titan_crystals', crystals);
+            document.getElementById('crystal-count').innerText = crystals;
+            playSfx(880, 'sine', 0.2);
+            for(let i=0; i<10; i++) particles.push({
+                x: canvas.width/2, y: canvas.height/3, 
+                vx: Math.random()*10-5, vy: Math.random()*10-5, alpha: 1
+            });
+        }
 
-/* =========================
-   Pools & particles
-   ========================= */
-function createParticle(){ return { x:0,y:0,vx:0,vy:0,life:0,active:false,color:'#ffd700' }; }
-function initPools(){
-  for(let i=0;i<CONFIG.particlesLimit;i++) state.pools.particles.push(createParticle());
-}
-initPools();
+        function endSession() {
+            state = 'finished';
+            streak++;
+            localStorage.setItem('titan_streak', streak);
+            document.getElementById('streak-count').innerText = streak;
+            document.getElementById('tap-btn').disabled = false;
+            document.getElementById('timer-display').innerText = "WIN!";
+            playSfx(523.25, 'triangle', 0.5); // Victory chime
+        }
 
-/* =========================
-   Stars (background)
-   ========================= */
-const stars = [];
-function initStars(){
-  stars.length = 0;
-  for(let i=0;i<140;i++){
-    stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, v: 10 + Math.random()*60, o: 0.2 + Math.random()*0.8, s: Math.random()*2+0.5 });
-  }
-}
-initStars();
+        function toggleMute() {
+            isMuted = !isMuted;
+            document.getElementById('mute-btn').innerText = isMuted ? 'Unmute' : 'Mute';
+        }
 
-/* =========================
-   Helpers
-   ========================= */
-const rand = (a,b)=>Math.random()*(b-a)+a;
-const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
-
-/* =========================
-   View management & initial UI
-   ========================= */
-function setView(v){
-  state.view = v;
-  if(v === 'crawl'){ viewCrawl.style.display = 'flex'; viewGame.style.display = 'none'; }
-  else { viewCrawl.style.display = 'none'; viewGame.style.display = 'flex'; }
-}
-setView('crawl');
-uiPilot.innerText = state.pilot;
-uiCrystals.innerText = state.crystals;
-uiStreak.innerText = state.streak;
-
-/* =========================
-   Crawl controls (buttons fixed)
-   ========================= */
-crawlStart.addEventListener('click', ()=> {
-  const name = prompt('Pilot name (optional):', state.pilot) || state.pilot;
-  state.pilot = name.toUpperCase().slice(0,20);
-  localStorage.setItem('titan_pilot', state.pilot);
-  document.getElementById('uiPilot').innerText = state.pilot;
-  playCrawlThenCountdown();
-});
-crawlSkip.addEventListener('click', ()=> {
-  startNumericCountdown(CONFIG.preCountdown);
-});
-
-function playCrawlThenCountdown(){
-  crawlInner.classList.remove('play');
-  void crawlInner.offsetWidth;
-  crawlInner.classList.add('play');
-  setTimeout(()=> startNumericCountdown(CONFIG.preCountdown), CONFIG.crawlDuration * 1000);
-}
-
-/* numeric countdown overlay */
-function startNumericCountdown(seconds){
-  setView('game');
-  // overlay element
-  const overlay = document.createElement('div');
-  overlay.style.position = 'absolute';
-  overlay.style.inset = '0';
-  overlay.style.display = 'flex';
-  overlay.style.alignItems = 'center';
-  overlay.style.justifyContent = 'center';
-  overlay.style.zIndex = 200;
-  overlay.style.pointerEvents = 'none';
-  const el = document.createElement('div');
-  el.className = 'countdown-big';
-  overlay.appendChild(el);
-  document.querySelector('.canvas-wrap').appendChild(overlay);
-
-  let n = seconds;
-  el.innerText = n;
-  beep(880,0.08,0.12);
-  const t = setInterval(()=>{
-    n--;
-    if(n <= 0){
-      clearInterval(t);
-      overlay.remove();
-      startGame();
-      return;
-    }
-    el.innerText = n;
-    beep(880,0.06,0.12);
-  }, 1000);
-}
-
-/* =========================
-   Start / End game
-   ========================= */
-function startGame(){
-  // disable interactive buttons during the 2:00 brushing period
-  setButtonsEnabled(false);
-
-  state.active = true;
-  state.paused = false;
-  state.time = CONFIG.duration;
-  state.bossHP = CONFIG.bossHP;
-  state.shake = 0; state.flash = 0;
-  lastTime = performance.now();
-  updateHUD();
-  requestAnimationFrame(loop);
-  beep(1200,0.08,0.12);
-}
-
-function endBrushingSuccess(){
-  state.active = false;
-  state.streak += 1;
-  state.best = Math.max(state.best, state.streak);
-  state.crystals += 100;
-  localStorage.setItem('titan_crystals', state.crystals);
-  localStorage.setItem('titan_streak', state.streak);
-  localStorage.setItem('titan_best', state.best);
-  // re-enable buttons now brushing is done
-  setButtonsEnabled(true);
-  showConfetti();
-  // friendly panel (non-blocking)
-  setTimeout(()=> alert(`Mission complete! +100 crystals\nStreak: ${state.streak}`), 120);
-  setView('crawl');
-  updateHUD();
-}
-
-function endBrushingFail(){
-  state.active = false;
-  state.streak = 0;
-  localStorage.setItem('titan_streak', state.streak);
-  setButtonsEnabled(true);
-  setTimeout(()=> alert('Time up! Try again to keep your streak.'), 120);
-  setView('crawl');
-  updateHUD();
-}
-
-/* enable/disable interactive buttons (tap, pause, skip, etc.) */
-function setButtonsEnabled(enabled){
-  // while brushing, disable tap and pause and skip; after brushing re-enable
-  tapBtn.disabled = !enabled;
-  pauseBtn.disabled = !enabled;
-  // allow mute always
-  crawlStart.disabled = !enabled;
-  crawlSkip.disabled = !enabled;
-  skipBtn.disabled = !enabled;
-  // visual: set pointer-events on action row
-  if(enabled) document.querySelector('.action-row').style.pointerEvents = 'auto';
-  else document.querySelector('.action-row').style.pointerEvents = 'none';
-}
-
-/* =========================
-   Pause / mute
-   ========================= */
-muteBtn.addEventListener('click', ()=> {
-  state.muted = !state.muted;
-  muteBtn.innerText = state.muted ? 'UNMUTE' : 'MUTE';
-  muteBtn.setAttribute('aria-pressed', String(state.muted));
-});
-pauseBtn.addEventListener('click', ()=> {
-  if(!state.active) return;
-  state.paused = !state.paused;
-  pauseBtn.innerText = state.paused ? 'RESUME' : 'PAUSE';
-  pauseBtn.setAttribute('aria-pressed', String(state.paused));
-  beep(state.paused ? 220 : 660, 0.06, 0.06);
-});
-
-/* =========================
-   Tap action (disabled during brushing)
-   ========================= */
-tapBtn.addEventListener('click', ()=> {
-  // taps are disabled during brushing; this handler only runs when enabled
-  if(!tapBtn.disabled){
-    // small visual feedback only (no HP change while brushing per requirement)
-    spawnImpact(canvas.width/2, canvas.height*0.35, 8);
-    beep(1400,0.03,0.08);
-  }
-});
-
-/* skip back to intro */
-skipBtn.addEventListener('click', ()=> setView('crawl'));
-
-/* =========================
-   Particles & confetti
-   ========================= */
-function spawnParticle(x,y,vx,vy,life=0.9,color='#ffd700'){
-  const pool = state.pools.particles;
-  for(let i=0;i<pool.length;i++){
-    const p = pool[i];
-    if(!p.active){
-      p.active = true;
-      p.x = x; p.y = y; p.vx = vx; p.vy = vy; p.life = life; p.color = color;
-      state.particles.push(p);
-      return p;
-    }
-  }
-  const p = createParticle();
-  p.active = true; p.x=x; p.y=y; p.vx=vx; p.vy=vy; p.life=life; p.color=color;
-  state.particles.push(p);
-  return p;
-}
-function despawnParticle(p){
-  p.active = false;
-  const idx = state.particles.indexOf(p);
-  if(idx >= 0) state.particles.splice(idx,1);
-}
-function spawnImpact(x,y,amount=6){
-  for(let i=0;i<amount;i++){
-    const vx = rand(-160,160);
-    const vy = rand(-160,160);
-    spawnParticle(x + rand(-6,6), y + rand(-6,6), vx, vy, 0.6 + Math.random()*0.6, ['#ffd700','#00bfff','#ff4fb5'][Math.floor(Math.random()*3)]);
-  }
-}
-
-/* confetti */
-function showConfetti(){
-  confettiEl.innerHTML = '';
-  const count = 36;
-  for(let i=0;i<count;i++){
-    const d = document.createElement('div');
-    d.style.position = 'absolute';
-    d.style.left = (50 + rand(-40,40)) + '%';
-    d.style.top = '-10%';
-    d.style.width = (6 + Math.random()*8) + 'px';
-    d.style.height = (10 + Math.random()*12) + 'px';
-    d.style.background = ['#ffd700','#00bfff','#ff4fb5','#7cff6b'][Math.floor(Math.random()*4)];
-    d.style.opacity = '0.95';
-    d.style.transform = `rotate(${rand(0,360)}deg)`;
-    d.style.borderRadius = '2px';
-    confettiEl.appendChild(d);
-    const fall = () => {
-      const start = performance.now();
-      const dur = 1600 + Math.random()*1200;
-      const sx = parseFloat(d.style.left);
-      const tx = sx + rand(-20,20);
-      function frame(t){
-        const p = (t - start) / dur;
-        if(p >= 1){ d.remove(); return; }
-        d.style.top = (p*120) + '%';
-        d.style.left = (sx + (tx - sx) * p) + '%';
-        requestAnimationFrame(frame);
-      }
-      requestAnimationFrame(frame);
-    };
-    setTimeout(fall, Math.random()*200);
-  }
-  setTimeout(()=> confettiEl.innerHTML = '', 4000);
-}
-
-/* =========================
-   HUD update
-   ========================= */
-function updateHUD(){
-  const m = Math.floor(state.time / 60);
-  const s = Math.floor(state.time % 60);
-  bigTime.innerText = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
-  const pct = clamp(state.time / CONFIG.duration, 0, 1);
-  const circumference = 2 * Math.PI * 40;
-  const dash = circumference * (1 - pct);
-  // progressCircle may be null in some browsers; guard
-  const pc = document.getElementById('progressCircle');
-  if(pc) pc.style.strokeDashoffset = dash;
-  const hpPct = clamp(state.bossHP / CONFIG.bossHP, 0, 1);
-  hpBar.style.width = (hpPct * 100) + '%';
-  uiCrystals.innerText = state.crystals;
-  uiStreak.innerText = state.streak;
-  document.getElementById('uiPilot').innerText = state.pilot;
-}
-
-/* =========================
-   Main loop: boss HP drains exactly over 2 minutes
-   ========================= */
-let lastTime = performance.now();
-function loop(now){
-  const dt = Math.min(0.033, (now - lastTime) / 1000);
-  lastTime = now;
-  if(state.active && !state.paused){
-    // base drain so bossHP reaches 0 exactly at end of duration if no taps
-    const drainPerSec = CONFIG.bossHP / CONFIG.duration;
-    state.bossHP -= drainPerSec * dt;
-
-    // clamp and check victory
-    if(state.bossHP <= 0){
-      state.bossHP = 0;
-      updateHUD();
-      endBrushingSuccess();
-      return;
-    }
-
-    // time decrement
-    state.time -= dt;
-    if(state.time <= 0){
-      state.time = 0;
-      if(state.bossHP > 0){
-        updateHUD();
-        endBrushingFail();
-        return;
-      }
-    }
-
-    // stars movement
-    const starSpeed = 1 + (1 - state.time / CONFIG.duration) * 1.2;
-    for(const s of stars){
-      s.y += s.v * dt * (starSpeed * 0.02);
-      if(s.y > canvas.height) s.y = -2;
-    }
-
-    // particles update
-    for(let i = state.particles.length - 1; i >= 0; i--){
-      const p = state.particles[i];
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.vy += 220 * dt;
-      p.life -= dt;
-      if(p.life <= 0) despawnParticle(p);
-    }
-
-    // shake & flash decay
-    state.shake *= 0.92;
-    state.flash = Math.max(0, state.flash - dt * 1.6);
-
-    updateHUD();
-    render();
-  } else {
-    render();
-  }
-  requestAnimationFrame(loop);
-}
-
-/* =========================
-   Render visuals (simple & cool)
-   ========================= */
-function render(){
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  // speed lines (procedural)
-  drawSpeedLines();
-
-  // stars
-  for(const s of stars){
-    ctx.fillStyle = `rgba(180,220,255,${s.o})`;
-    ctx.fillRect(Math.floor(s.x), Math.floor(s.y), Math.ceil(s.s), Math.ceil(s.s));
-  }
-
-  // boss (center top)
-  const bx = canvas.width / 2;
-  const by = canvas.height * 0.34;
-  const bw = 160;
-  const bh = 160;
-  const hpPct = clamp(state.bossHP / CONFIG.bossHP, 0, 1);
-  const glowAlpha = 0.12 + (1 - hpPct) * 0.6;
-
-  ctx.save();
-  ctx.translate(bx, by);
-  const g = ctx.createRadialGradient(0,0,bw*0.2, 0,0,bw*1.2);
-  g.addColorStop(0, `rgba(255,120,80,${glowAlpha})`);
-  g.addColorStop(0.6, 'rgba(255,120,80,0.06)');
-  g.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.arc(0,0,bw*0.9,0,Math.PI*2); ctx.fill();
-
-  // body with outline
-  ctx.lineWidth = 8;
-  ctx.strokeStyle = '#071827';
-  ctx.fillStyle = '#222';
-  roundRect(ctx, -bw/2, -bh/2, bw, bh, 18);
-  ctx.fill();
-  ctx.stroke();
-
-  // core grows as HP drops
-  ctx.fillStyle = `rgba(255,255,255,${0.9 - hpPct*0.6})`;
-  ctx.beginPath(); ctx.arc(0, 0, 18 + (1 - hpPct) * 18, 0, Math.PI*2); ctx.fill();
-  ctx.restore();
-
-  // particles
-  for(const p of state.particles){
-    ctx.globalAlpha = clamp(p.life, 0, 1);
-    ctx.fillStyle = p.color;
-    ctx.fillRect(Math.round(p.x), Math.round(p.y), 3, 3);
-    ctx.globalAlpha = 1;
-  }
-
-  // CRT scanlines
-  ctx.fillStyle = 'rgba(255,255,255,0.02)';
-  for(let y=0;y<canvas.height;y+=3) ctx.fillRect(0,y,canvas.width,1);
-}
-
-/* draw speed lines */
-function drawSpeedLines(){
-  speedLinesContainer.innerHTML = '';
-  const count = 10;
-  for(let i=0;i<count;i++){
-    const line = document.createElement('div');
-    line.className = 'line';
-    line.style.position = 'absolute';
-    line.style.background = 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0))';
-    line.style.height = (1 + Math.random()*3) + 'px';
-    line.style.opacity = 0.06 + Math.random()*0.12;
-    line.style.transform = 'skewX(-20deg)';
-    line.style.top = (Math.random()*100) + '%';
-    line.style.left = (Math.random()*40 - 20) + '%';
-    line.style.width = (40 + Math.random()*60) + '%';
-    speedLinesContainer.appendChild(line);
-  }
-}
-
-/* helper roundRect */
-function roundRect(ctx,x,y,w,h,r){
-  ctx.beginPath();
-  ctx.moveTo(x+r,y);
-  ctx.arcTo(x+w,y,x+w,y+h,r);
-  ctx.arcTo(x+w,y+h,x,y+h,r);
-  ctx.arcTo(x,y+h,x,y,r);
-  ctx.arcTo(x,y,x+w,y,r);
-  ctx.closePath();
-}
-
-/* helpers for particles */
-function createParticle(){ return { x:0,y:0,vx:0,vy:0,life:0,active:false,color:'#ffd700' }; }
-function despawnParticle(p){ p.active=false; const idx = state.particles.indexOf(p); if(idx>=0) state.particles.splice(idx,1); }
-
-/* init UI */
-document.addEventListener('DOMContentLoaded', ()=>{
-  document.getElementById('uiPilot').innerText = state.pilot;
-  updateHUD();
-  render();
-  resizeCanvas();
-});
-
-/* expose debug helpers (optional) */
-window.__TITAN = { state, startGame, setView };
-
-/* small utilities */
-function rand(a,b){ return Math.random()*(b-a)+a; }
-function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
-
-</script>
+        function animate() {
+            if (state === 'brushing' || state === 'finished') {
+                drawBoss();
+                requestAnimationFrame(animate);
+            }
+        }
+    </script>
 </body>
 </html>
