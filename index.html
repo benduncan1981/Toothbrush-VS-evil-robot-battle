@@ -3,318 +3,172 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>TITAN OMEGA — Toothbrush Mode (Improved HUD & Crawl)</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>TITAN OMEGA — Toothbrush Mode (Kid Friendly)</title>
 <style>
-/* =========================
-   THEME & LAYOUT
-   ========================= */
-:root{
-  --bg:#05050a;
-  --panel:#0b0b10;
-  --accent:#00f0ff;
-  --gold:#ffd700;
-  --pink:#ff6fb5;
-  --danger:#ff5a5a;
-  --glass: rgba(255,255,255,0.03);
-  --ui-radius:14px;
-  --max-width:520px;
-  --crt-opacity:0.06;
-}
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;background:linear-gradient(180deg,#000 0%, #05050a 100%);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#fff}
-a{color:inherit}
-.container{
-  width:100%;
-  max-width:var(--max-width);
-  margin:18px auto;
-  border-radius:16px;
-  overflow:hidden;
-  background:linear-gradient(180deg,var(--panel), #07070a);
-  box-shadow:0 18px 60px rgba(0,0,0,0.6);
-  border:1px solid rgba(255,255,255,0.03);
-  min-height:80vh;
-  display:flex;
-  flex-direction:column;
-}
+  /* ====== Layout & safe area (no scrolling) ====== */
+  :root{
+    --bg:#05050a;
+    --panel:#071827;
+    --sonic-blue:#00bfff;
+    --neon-pink:#ff4fb5;
+    --neon-green:#7cff6b;
+    --gold:#ffd700;
+    --danger:#ff5a5a;
+    --glass: rgba(255,255,255,0.03);
+    --max-width:760px;
+  }
+  html,body{
+    height:100%;
+    margin:0;
+    background:linear-gradient(180deg,#000 0%, #05050a 100%);
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    -webkit-text-size-adjust:100%;
+    color:#fff;
+  }
 
-/* header */
-.header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:14px 18px;
-  gap:12px;
-  border-bottom:1px solid rgba(255,255,255,0.03);
-}
-.brand{display:flex;flex-direction:column}
-.brand .title{font-weight:900;letter-spacing:2px;color:var(--gold);font-size:16px}
-.brand .sub{font-size:12px;color:#9aa0a6}
+  /* container sized to viewport minus safe areas so no scroll */
+  #app{
+    height:calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    width:100%;
+    max-width:var(--max-width);
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    border-radius:12px;
+    overflow:hidden;
+    background:linear-gradient(180deg,var(--panel), #071827);
+    box-shadow:0 18px 60px rgba(0,0,0,0.6);
+    border:1px solid rgba(255,255,255,0.03);
+  }
 
-/* HUD area (big friendly) */
-.hud{
-  display:flex;
-  align-items:center;
-  gap:12px;
-}
-.timer-big{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  min-width:120px;
-}
-.timer-big .time{
-  font-weight:900;
-  font-size:34px;
-  color:var(--accent);
-  text-shadow:0 6px 18px rgba(0,240,255,0.08);
-}
-.timer-big .label{font-size:11px;color:#9aa0a6}
+  /* header */
+  .header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 14px;
+    gap:12px;
+    border-bottom:1px solid rgba(255,255,255,0.03);
+  }
+  .brand{display:flex;flex-direction:column}
+  .brand .title{font-weight:900;color:var(--sonic-blue);letter-spacing:1px;font-size:16px}
+  .brand .sub{font-size:12px;color:#cfeaf6}
 
-/* right controls */
-.controls{display:flex;gap:8px;align-items:center}
-.btn{
-  background:linear-gradient(180deg,var(--accent),#00c7d9);
-  color:#001;
-  border:none;
-  padding:8px 12px;
-  border-radius:10px;
-  font-weight:800;
-  cursor:pointer;
-  box-shadow:0 6px 18px rgba(0,200,255,0.06);
-}
-.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:#fff}
+  /* HUD */
+  .hud{display:flex;align-items:center;gap:12px}
+  .time-big{display:flex;flex-direction:column;align-items:center;min-width:120px}
+  .time-big .time{font-weight:900;font-size:34px;color:var(--neon-pink);letter-spacing:1px}
+  .time-big .label{font-size:11px;color:#9aa0a6}
 
-/* viewport */
-.viewport{
-  position:relative;
-  display:flex;
-  flex:1;
-  min-height:520px;
-  align-items:center;
-  justify-content:center;
-  background:radial-gradient(ellipse at center, rgba(255,255,255,0.02), transparent 30%);
-  overflow:hidden;
-}
+  .ring{width:84px;height:84px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 30%, rgba(0,191,255,0.06), transparent 40%);box-shadow:0 12px 40px rgba(0,191,255,0.06)}
 
-/* canvas wrapper */
-.canvas-wrap{
-  width:100%;
-  max-width:420px;
-  height:calc(100vh - 260px);
-  max-height:720px;
-  margin:18px auto;
-  position:relative;
-  border-radius:12px;
-  overflow:hidden;
-  background:#000;
-  box-shadow: inset 0 0 80px rgba(0,0,0,0.6);
-}
+  .controls{display:flex;gap:8px;align-items:center}
+  .btn{
+    background:linear-gradient(180deg,var(--sonic-blue),#00a3d6);
+    color:#001;padding:8px 12px;border-radius:10px;border:none;font-weight:900;cursor:pointer;
+    box-shadow:0 10px 30px rgba(0,191,255,0.06);
+  }
+  .btn.ghost{background:transparent;border:2px solid rgba(255,255,255,0.04);color:#fff}
+  .btn[disabled]{opacity:0.45;cursor:not-allowed;transform:none;box-shadow:none}
 
-/* pixel canvas */
-canvas{
-  width:100%;
-  height:100%;
-  image-rendering:pixelated;
-  display:block;
-}
+  /* main viewport (no scroll) */
+  .viewport{flex:1;display:flex;align-items:center;justify-content:center;padding:12px;position:relative;overflow:hidden}
 
-/* HUD overlay inside viewport */
-.hud-overlay{
-  position:absolute;
-  inset:auto 18px 18px 18px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  pointer-events:none;
-}
+  /* canvas wrapper sized to fit available space */
+  .canvas-wrap{
+    width:100%;
+    height:100%;
+    max-width:520px;
+    max-height:calc(100vh - 220px);
+    border-radius:12px;
+    overflow:hidden;
+    background:#000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    box-shadow: inset 0 0 80px rgba(0,0,0,0.6);
+  }
 
-/* boss HP bar (big, glowing) */
-.hp-wrap{
-  width:60%;
-  height:22px;
-  background:linear-gradient(90deg,#111,#0b0b0b);
-  border-radius:999px;
-  padding:3px;
-  box-shadow:0 6px 30px rgba(0,0,0,0.6);
-  pointer-events:auto;
-}
-.hp-bar{
-  height:100%;
-  width:100%;
-  background:linear-gradient(90deg,var(--danger),#ffb84d);
-  border-radius:999px;
-  box-shadow:0 6px 30px rgba(255,80,80,0.08), 0 0 18px rgba(255,120,80,0.06);
-  transition:width 0.25s linear;
-}
+  canvas{
+    width:100%;
+    height:100%;
+    image-rendering:pixelated;
+    display:block;
+  }
 
-/* friendly big action area for kids */
-.action-row{
-  display:flex;
-  gap:12px;
-  align-items:center;
-  justify-content:center;
-  margin-top:12px;
-}
-.big-btn{
-  pointer-events:auto;
-  background:linear-gradient(180deg,var(--pink),#ff4f9a);
-  color:#fff;
-  border:none;
-  padding:14px 20px;
-  border-radius:14px;
-  font-weight:900;
-  font-size:16px;
-  box-shadow:0 12px 30px rgba(255,80,160,0.12);
-  cursor:pointer;
-}
+  /* HUD overlay inside canvas */
+  .hud-overlay{position:absolute;inset:auto 14px 14px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;pointer-events:none;z-index:40}
 
-/* footer */
-.footer{
-  padding:12px 18px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  border-top:1px solid rgba(255,255,255,0.03);
-}
+  .hp-wrap{width:62%;height:26px;background:linear-gradient(90deg,#111,#0b0b0b);border-radius:999px;padding:4px;pointer-events:auto}
+  .hp-bar{height:100%;width:100%;background:linear-gradient(90deg,var(--danger),#ffb84d);border-radius:999px;transition:width 0.25s linear;box-shadow:0 12px 40px rgba(255,80,80,0.08)}
 
-/* overlays & panels */
-.panel{
-  background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  border-radius:12px;
-  padding:14px;
-  border:1px solid rgba(255,255,255,0.03);
-  box-shadow:0 12px 40px rgba(0,0,0,0.6);
-}
+  /* simple action row (disabled during active) */
+  .action-row{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:12px;pointer-events:auto}
+  .big-btn{
+    background:linear-gradient(180deg,var(--neon-pink),#ff2f9a);
+    color:#fff;border:none;padding:12px 18px;border-radius:12px;font-weight:900;font-size:15px;
+    box-shadow:0 12px 30px rgba(255,80,160,0.12);cursor:pointer;
+  }
+  .big-btn[disabled]{opacity:0.45;cursor:not-allowed;box-shadow:none}
 
-/* crawl page (separate view) */
-.crawl-page{
-  min-height:80vh;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:18px;
-  padding:28px;
-  text-align:center;
-}
-.crawl-title{font-size:28px;font-weight:900;color:var(--gold);letter-spacing:2px}
-.crawl-sub{font-size:14px;color:#cfd6db;max-width:720px}
+  /* overlays */
+  .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.75));z-index:80;padding:18px}
+  .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 12px 40px rgba(0,0,0,0.6)}
 
-/* star wars crawl box */
-.crawl-box{
-  width:92%;
-  max-width:640px;
-  height:320px;
-  perspective:600px;
-  overflow:hidden;
-  position:relative;
-  border-radius:10px;
-  background:linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,0.95));
-  border:1px solid rgba(255,255,255,0.02);
-}
-.crawl-inner{
-  position:absolute;
-  bottom:-10%;
-  width:100%;
-  transform-origin:50% 100%;
-  color:#ffd;
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:1px;
-  padding:18px;
-  line-height:1.4;
-  font-size:16px;
-  transform:rotateX(20deg) translateY(100%);
-  opacity:0;
-}
-.crawl-inner.play{
-  animation: crawlAnim linear forwards;
-}
-@keyframes crawlAnim{
-  0%{ transform:rotateX(20deg) translateY(100%); opacity:1 }
-  100%{ transform:rotateX(20deg) translateY(-220%); opacity:0.95 }
-}
+  /* crawl page */
+  .crawl-page{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px;text-align:center}
+  .crawl-title{font-size:24px;font-weight:900;color:var(--neon-green)}
+  .crawl-box{width:92%;max-width:640px;height:320px;perspective:600px;overflow:hidden;border-radius:10px;padding:14px;background:linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,0.95));border:1px solid rgba(255,255,255,0.02)}
+  .crawl-inner{transform-origin:50% 100%;color:#ffd;font-weight:700;text-transform:uppercase;letter-spacing:1px;line-height:1.4;font-size:15px;transform:rotateX(20deg) translateY(100%);opacity:0}
+  .crawl-inner.play{animation:crawlAnim linear forwards}
+  @keyframes crawlAnim{0%{transform:rotateX(20deg) translateY(100%);opacity:1}100%{transform:rotateX(20deg) translateY(-220%);opacity:0.95}}
 
-/* countdown big */
-.countdown-big{
-  font-weight:900;
-  font-size:96px;
-  color:var(--gold);
-  text-shadow:0 12px 40px rgba(255,200,80,0.08);
-}
+  /* countdown big */
+  .countdown-big{font-weight:900;font-size:96px;color:var(--gold);text-shadow:0 12px 40px rgba(255,200,80,0.08)}
 
-/* CRT / scanlines overlay */
-.crt{
-  pointer-events:none;
-  position:absolute;
-  inset:0;
-  mix-blend-mode:overlay;
-  opacity:var(--crt-opacity);
-  background-image:
-    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);
-  background-size:100% 3px;
-  z-index:60;
-}
+  /* speed lines & halftone & CRT */
+  .speed-lines{position:absolute;inset:0;pointer-events:none;z-index:30}
+  .halftone{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:0.06;background-image:radial-gradient(circle at 10px 10px, rgba(255,255,255,0.06) 1px, transparent 2px);background-size:12px 12px;z-index:35}
+  .crt{pointer-events:none;position:absolute;inset:0;mix-blend-mode:overlay;opacity:0.06;background-image:linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);background-size:100% 3px;z-index:50}
 
-/* vignette & bloom */
-.vignette{
-  pointer-events:none;
-  position:absolute;
-  inset:0;
-  background:radial-gradient(ellipse at center, rgba(255,255,255,0.02), rgba(0,0,0,0.6));
-  mix-blend-mode:soft-light;
-  z-index:50;
-}
+  /* confetti */
+  .confetti{position:absolute;inset:0;pointer-events:none;z-index:120;overflow:hidden}
 
-/* glowing ring for timer */
-.ring{
-  width:84px;height:84px;border-radius:999px;display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(circle at 30% 30%, rgba(0,240,255,0.08), transparent 40%);
-  box-shadow:0 12px 40px rgba(0,240,255,0.06), inset 0 0 18px rgba(0,240,255,0.03);
-}
+  /* footer */
+  .footer{padding:10px 14px;border-top:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#9aa0a6}
 
-/* confetti (simple) */
-.confetti{
-  position:absolute;inset:0;pointer-events:none;z-index:120;overflow:hidden;
-}
-
-/* small responsive */
-@media (max-width:520px){
-  .timer-big .time{font-size:28px}
-  .countdown-big{font-size:64px}
-  .canvas-wrap{max-width:360px}
-}
+  /* ensure no page scroll on iOS */
+  html,body,#app{touch-action:manipulation;overscroll-behavior:none}
+  @media (max-width:520px){
+    .time-big .time{font-size:28px}
+    .countdown-big{font-size:64px}
+    .canvas-wrap{max-width:420px}
+  }
 </style>
 </head>
 <body>
+<div id="app" role="application" aria-label="Titan Omega Toothbrush Mode">
 
-<!-- =========================
-     TWO-VIEW APP (hash navigation)
-     #crawl  -> intro crawl page
-     #game   -> game page
-   ========================= -->
-
-<div id="app" class="container" role="application" aria-label="Titan Omega Toothbrush Mode">
-
-  <!-- Header (shared) -->
+  <!-- header -->
   <div class="header">
-    <div class="brand" aria-hidden="false">
+    <div class="brand">
       <div class="title">TITAN OMEGA</div>
       <div class="sub">CHRONO SYNC — Toothbrush Mode</div>
     </div>
 
-    <div class="hud" aria-hidden="false">
-      <div class="timer-big" aria-live="polite">
+    <div class="hud">
+      <div class="time-big" aria-live="polite">
         <div id="bigTime" class="time">02:00</div>
         <div class="label">TIME LEFT</div>
       </div>
 
-      <div class="ring" title="Progress ring">
+      <div class="ring" aria-hidden="true">
         <svg id="progressSvg" width="84" height="84" viewBox="0 0 100 100" aria-hidden="true">
-          <defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#00f0ff"/><stop offset="1" stop-color="#ff6fb5"/></linearGradient></defs>
+          <defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#00bfff"/><stop offset="1" stop-color="#ff4fb5"/></linearGradient></defs>
           <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.06)" stroke-width="8" fill="none"></circle>
           <circle id="progressCircle" cx="50" cy="50" r="40" stroke="url(#g1)" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="0" transform="rotate(-90 50 50)"></circle>
         </svg>
@@ -326,20 +180,20 @@ canvas{
       </div>
 
       <div class="controls" style="pointer-events:auto">
-        <button id="muteBtn" class="btn small" aria-pressed="false">MUTE</button>
-        <button id="pauseBtn" class="btn small" aria-pressed="false">PAUSE</button>
+        <button id="muteBtn" class="btn" aria-pressed="false">MUTE</button>
+        <button id="pauseBtn" class="btn ghost" aria-pressed="false" disabled>PAUSE</button>
       </div>
     </div>
   </div>
 
-  <!-- VIEW: CRAWL PAGE -->
-  <section id="view-crawl" class="crawl-page" aria-hidden="true" role="region" aria-label="Intro crawl">
+  <!-- CRAWL VIEW (separate page) -->
+  <section id="view-crawl" class="crawl-page" role="region" aria-label="Intro crawl">
     <div class="crawl-title">TITAN OMEGA: CHRONO SYNC</div>
-    <div class="crawl-sub">A friendly two‑minute brushing mission. Watch the intro, then press START to begin your 2:00 timer.</div>
+    <div style="max-width:720px;color:#cfeaf6">A friendly two‑minute brushing mission. Watch the intro, then press START. During the 2:00 brushing time all buttons are disabled — your hands are busy. After the timer ends, buttons re-enable.</div>
 
     <div class="crawl-box panel" role="article" aria-label="Star crawl">
       <div id="crawlInner" class="crawl-inner" aria-hidden="false">
-        <div style="font-size:20px;color:var(--gold);margin-bottom:10px">TITAN OMEGA</div>
+        <div style="font-size:18px;color:var(--neon-green);margin-bottom:10px">TITAN OMEGA</div>
         <p>CHRONO SYNC INITIATED. PILOT, YOU HAVE TWO MINUTES TO COMPLETE THE ORBITAL BRUSHING PROTOCOL.</p>
         <p>ALIGN THE BRUSH, MAINTAIN RHYTHM, AND SWEEP GENTLY. THIS MISSION IS FOR FUN — AND CLEAN TEETH.</p>
         <p>BRUSH THE TOP TEETH FIRST, THEN THE BOTTOM. KEEP MOVING. STAY WITH THE BEAT.</p>
@@ -351,16 +205,13 @@ canvas{
       <button id="crawlStart" class="big-btn">START MISSION</button>
       <button id="crawlSkip" class="btn ghost">SKIP INTRO</button>
     </div>
-
-    <div style="font-size:12px;color:#9aa0a6">Tip: Press Space to tap the brush for extra sparkle.</div>
   </section>
 
-  <!-- VIEW: GAME PAGE -->
-  <section id="view-game" class="viewport" aria-hidden="true" role="region" aria-label="Game">
+  <!-- GAME VIEW -->
+  <section id="view-game" class="viewport" role="region" aria-label="Game" style="display:none">
     <div class="canvas-wrap panel" role="application" aria-label="Game canvas area">
       <canvas id="gameCanvas" width="430" height="932" aria-label="Game canvas"></canvas>
 
-      <!-- HUD overlay inside canvas area -->
       <div class="hud-overlay" aria-hidden="true">
         <div class="hp-wrap panel" role="progressbar" aria-label="Boss health">
           <div id="hpBar" class="hp-bar" style="width:100%"></div>
@@ -372,65 +223,48 @@ canvas{
         </div>
       </div>
 
-      <!-- CRT & vignette -->
-      <div class="vignette"></div>
+      <div class="speed-lines" aria-hidden="true"></div>
+      <div class="halftone" aria-hidden="true"></div>
       <div class="crt" aria-hidden="true"></div>
-
-      <!-- confetti container -->
       <div id="confetti" class="confetti" aria-hidden="true"></div>
     </div>
 
-    <!-- action row for kids -->
-    <div class="action-row" style="width:100%;justify-content:center;pointer-events:auto">
-      <button id="tapBtn" class="big-btn" aria-label="Tap for extra brush">TAP FOR SPARKLE</button>
-      <button id="skipBtn" class="btn ghost" aria-label="Exit to intro">BACK TO INTRO</button>
+    <div class="action-row">
+      <button id="tapBtn" class="big-btn" disabled>TAP FOR SPARKLE</button>
+      <button id="skipBtn" class="btn ghost">BACK TO INTRO</button>
     </div>
 
-    <!-- small footer inside view -->
-    <div style="position:absolute;bottom:18px;left:18px;color:#9aa0a6;font-size:13px">Space = Tap • P = Pause • M = Mute</div>
+    <div style="position:absolute;bottom:18px;left:18px;color:#9aa0a6;font-size:13px">Space = Tap (disabled while brushing) • P = Pause (disabled while brushing) • M = Mute</div>
   </section>
 
-  <!-- Footer (shared) -->
+  <!-- footer -->
   <div class="footer">
     <div style="display:flex;gap:12px;align-items:center">
-      <div class="panel" style="padding:8px 12px;border-radius:999px">
-        <div style="font-size:12px;color:#9aa0a6">PILOT</div>
-        <div id="uiPilot" style="font-weight:900;color:var(--gold)">---</div>
-      </div>
-      <div style="color:#9aa0a6;font-size:13px">Designed for kids • Friendly feedback • 2:00 brushing</div>
+      <div style="background:var(--glass);padding:8px 12px;border-radius:999px;font-weight:900;color:var(--gold)" id="uiPilot">PILOT</div>
+      <div style="color:#9aa0a6;font-size:13px">Kid friendly • Smart UI • 2:00 brushing</div>
     </div>
-
-    <div style="display:flex;gap:8px;align-items:center">
-      <div style="font-size:12px;color:#9aa0a6">Version</div>
-      <div style="font-weight:900;color:var(--gold)">v4.1</div>
-    </div>
+    <div style="display:flex;gap:8px;align-items:center"><div style="font-size:12px;color:#9aa0a6">v</div><div style="font-weight:900;color:var(--gold)">4.3</div></div>
   </div>
 
 </div>
 
-<!-- =========================
-     SCRIPT: Game logic (modular single-file)
-   ========================= -->
 <script>
 /* =========================
-   CONFIG
+   CONFIG & STATE
    ========================= */
 const CONFIG = {
-  duration: 120,            // 2 minutes total
-  preCountdown: 5,          // numeric countdown after crawl
-  crawlDuration: 5,         // crawl animation length (seconds)
-  bossHP: 1200,             // boss HP (we'll drain it over duration)
-  bonusPerTap: 6,           // extra damage per tap (encourages interaction)
-  limits: { particles: 200, lasers: 40 },
+  duration: 120,            // 2 minutes
+  preCountdown: 5,
+  crawlDuration: 5,
+  bossHP: 1200,
+  bonusPerTap: 0,           // taps disabled during brushing
+  particlesLimit: 220,
   canvas: { w: 430, h: 932 },
   audio: { sfxVol: 0.9 }
 };
 
-/* =========================
-   STATE
-   ========================= */
 const state = {
-  view: 'crawl',            // 'crawl' or 'game'
+  view: 'crawl',
   active: false,
   paused: false,
   time: CONFIG.duration,
@@ -439,7 +273,6 @@ const state = {
   streak: parseInt(localStorage.getItem('titan_streak')) || 0,
   best: parseInt(localStorage.getItem('titan_best')) || 0,
   pilot: localStorage.getItem('titan_pilot') || 'PILOT',
-  lastTap: 0,
   particles: [],
   pools: { particles: [] },
   shake: 0,
@@ -448,7 +281,7 @@ const state = {
 };
 
 /* =========================
-   DOM refs & initial view
+   DOM refs
    ========================= */
 const viewCrawl = document.getElementById('view-crawl');
 const viewGame  = document.getElementById('view-game');
@@ -466,6 +299,7 @@ const uiCrystals = document.getElementById('uiCrystals');
 const uiPilot    = document.getElementById('uiPilot');
 const uiStreak   = document.getElementById('uiStreak');
 const confettiEl = document.getElementById('confetti');
+const speedLinesContainer = document.querySelector('.speed-lines');
 
 /* =========================
    Canvas setup
@@ -485,7 +319,7 @@ window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 /* =========================
-   Audio (simple beeps)
+   Audio (beeps)
    ========================= */
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
@@ -504,11 +338,11 @@ function beep(freq=440, dur=0.06, vol=0.12){
 }
 
 /* =========================
-   Pools: particles
+   Pools & particles
    ========================= */
 function createParticle(){ return { x:0,y:0,vx:0,vy:0,life:0,active:false,color:'#ffd700' }; }
 function initPools(){
-  for(let i=0;i<CONFIG.limits.particles;i++) state.pools.particles.push(createParticle());
+  for(let i=0;i<CONFIG.particlesLimit;i++) state.pools.particles.push(createParticle());
 }
 initPools();
 
@@ -518,30 +352,25 @@ initPools();
 const stars = [];
 function initStars(){
   stars.length = 0;
-  for(let i=0;i<120;i++){
+  for(let i=0;i<140;i++){
     stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, v: 10 + Math.random()*60, o: 0.2 + Math.random()*0.8, s: Math.random()*2+0.5 });
   }
 }
 initStars();
 
 /* =========================
-   Utility helpers
+   Helpers
    ========================= */
 const rand = (a,b)=>Math.random()*(b-a)+a;
 const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 
 /* =========================
-   UI helpers
+   View management & initial UI
    ========================= */
 function setView(v){
   state.view = v;
-  if(v === 'crawl'){
-    viewCrawl.style.display = 'flex';
-    viewGame.style.display = 'none';
-  } else {
-    viewCrawl.style.display = 'none';
-    viewGame.style.display = 'flex';
-  }
+  if(v === 'crawl'){ viewCrawl.style.display = 'flex'; viewGame.style.display = 'none'; }
+  else { viewCrawl.style.display = 'none'; viewGame.style.display = 'flex'; }
 }
 setView('crawl');
 uiPilot.innerText = state.pilot;
@@ -549,32 +378,30 @@ uiCrystals.innerText = state.crystals;
 uiStreak.innerText = state.streak;
 
 /* =========================
-   Crawl controls
+   Crawl controls (buttons fixed)
    ========================= */
 crawlStart.addEventListener('click', ()=> {
-  // play crawl animation then numeric countdown then start game
+  const name = prompt('Pilot name (optional):', state.pilot) || state.pilot;
+  state.pilot = name.toUpperCase().slice(0,20);
+  localStorage.setItem('titan_pilot', state.pilot);
+  document.getElementById('uiPilot').innerText = state.pilot;
   playCrawlThenCountdown();
 });
 crawlSkip.addEventListener('click', ()=> {
-  // skip intro and go straight to numeric countdown
   startNumericCountdown(CONFIG.preCountdown);
 });
 
-/* play crawl animation then numeric countdown */
 function playCrawlThenCountdown(){
-  // ensure crawlInner restarts
   crawlInner.classList.remove('play');
   void crawlInner.offsetWidth;
   crawlInner.classList.add('play');
-  // after crawlDuration seconds, start numeric countdown
   setTimeout(()=> startNumericCountdown(CONFIG.preCountdown), CONFIG.crawlDuration * 1000);
 }
 
-/* numeric countdown overlay (simple modal) */
+/* numeric countdown overlay */
 function startNumericCountdown(seconds){
-  // switch to game view but pause until countdown finishes
   setView('game');
-  // show big numeric overlay in center of viewport
+  // overlay element
   const overlay = document.createElement('div');
   overlay.style.position = 'absolute';
   overlay.style.inset = '0';
@@ -585,7 +412,6 @@ function startNumericCountdown(seconds){
   overlay.style.pointerEvents = 'none';
   const el = document.createElement('div');
   el.className = 'countdown-big';
-  el.style.pointerEvents = 'none';
   overlay.appendChild(el);
   document.querySelector('.canvas-wrap').appendChild(overlay);
 
@@ -606,24 +432,24 @@ function startNumericCountdown(seconds){
 }
 
 /* =========================
-   Game start / end
+   Start / End game
    ========================= */
 function startGame(){
+  // disable interactive buttons during the 2:00 brushing period
+  setButtonsEnabled(false);
+
   state.active = true;
   state.paused = false;
   state.time = CONFIG.duration;
   state.bossHP = CONFIG.bossHP;
-  state.shake = 0;
-  state.flash = 0;
+  state.shake = 0; state.flash = 0;
   lastTime = performance.now();
-  // update UI
   updateHUD();
-  // start loop
   requestAnimationFrame(loop);
   beep(1200,0.08,0.12);
 }
 
-function victory(){
+function endBrushingSuccess(){
   state.active = false;
   state.streak += 1;
   state.best = Math.max(state.best, state.streak);
@@ -631,70 +457,72 @@ function victory(){
   localStorage.setItem('titan_crystals', state.crystals);
   localStorage.setItem('titan_streak', state.streak);
   localStorage.setItem('titan_best', state.best);
-  // show confetti and friendly message
+  // re-enable buttons now brushing is done
+  setButtonsEnabled(true);
   showConfetti();
-  alert(`Mission complete! +100 crystals\nStreak: ${state.streak}`);
-  // return to crawl page for replay
+  // friendly panel (non-blocking)
+  setTimeout(()=> alert(`Mission complete! +100 crystals\nStreak: ${state.streak}`), 120);
   setView('crawl');
   updateHUD();
 }
 
-function fail(){
+function endBrushingFail(){
   state.active = false;
   state.streak = 0;
   localStorage.setItem('titan_streak', state.streak);
-  alert('Time up! Try again to keep your streak.');
+  setButtonsEnabled(true);
+  setTimeout(()=> alert('Time up! Try again to keep your streak.'), 120);
   setView('crawl');
   updateHUD();
 }
 
-/* =========================
-   Tap / input (encourage interaction)
-   ========================= */
-tapBtn.addEventListener('click', ()=> { tapAction(); });
-skipBtn.addEventListener('click', ()=> { setView('crawl'); });
-
-window.addEventListener('keydown', (e)=>{
-  if(e.code === 'Space'){ e.preventDefault(); if(state.active && !state.paused) tapAction(); }
-  if(e.key === 'p' || e.key === 'P'){ togglePause(); }
-  if(e.key === 'm' || e.key === 'M'){ toggleMute(); }
-});
-
-function tapAction(){
-  // small bonus damage and visual feedback
-  if(!state.active) return;
-  const now = performance.now();
-  if(now - state.lastTap < 120) return; // simple debounce so taps feel meaningful
-  state.lastTap = now;
-  // bonus damage applied immediately
-  state.bossHP -= CONFIG.bonusPerTap;
-  spawnImpact(canvas.width/2, canvas.height*0.35, 8);
-  state.shake = Math.min(18, state.shake + 8);
-  beep(1400,0.03,0.08);
-  updateHUD();
+/* enable/disable interactive buttons (tap, pause, skip, etc.) */
+function setButtonsEnabled(enabled){
+  // while brushing, disable tap and pause and skip; after brushing re-enable
+  tapBtn.disabled = !enabled;
+  pauseBtn.disabled = !enabled;
+  // allow mute always
+  crawlStart.disabled = !enabled;
+  crawlSkip.disabled = !enabled;
+  skipBtn.disabled = !enabled;
+  // visual: set pointer-events on action row
+  if(enabled) document.querySelector('.action-row').style.pointerEvents = 'auto';
+  else document.querySelector('.action-row').style.pointerEvents = 'none';
 }
 
 /* =========================
    Pause / mute
    ========================= */
-muteBtn.addEventListener('click', toggleMute);
-pauseBtn.addEventListener('click', togglePause);
-
-function toggleMute(){
+muteBtn.addEventListener('click', ()=> {
   state.muted = !state.muted;
   muteBtn.innerText = state.muted ? 'UNMUTE' : 'MUTE';
   muteBtn.setAttribute('aria-pressed', String(state.muted));
-}
-function togglePause(){
+});
+pauseBtn.addEventListener('click', ()=> {
   if(!state.active) return;
   state.paused = !state.paused;
   pauseBtn.innerText = state.paused ? 'RESUME' : 'PAUSE';
   pauseBtn.setAttribute('aria-pressed', String(state.paused));
   beep(state.paused ? 220 : 660, 0.06, 0.06);
-}
+});
 
 /* =========================
-   Particles (pooling)
+   Tap action (disabled during brushing)
+   ========================= */
+tapBtn.addEventListener('click', ()=> {
+  // taps are disabled during brushing; this handler only runs when enabled
+  if(!tapBtn.disabled){
+    // small visual feedback only (no HP change while brushing per requirement)
+    spawnImpact(canvas.width/2, canvas.height*0.35, 8);
+    beep(1400,0.03,0.08);
+  }
+});
+
+/* skip back to intro */
+skipBtn.addEventListener('click', ()=> setView('crawl'));
+
+/* =========================
+   Particles & confetti
    ========================= */
 function spawnParticle(x,y,vx,vy,life=0.9,color='#ffd700'){
   const pool = state.pools.particles;
@@ -707,7 +535,6 @@ function spawnParticle(x,y,vx,vy,life=0.9,color='#ffd700'){
       return p;
     }
   }
-  // fallback: create new if pool exhausted (rare)
   const p = createParticle();
   p.active = true; p.x=x; p.y=y; p.vx=vx; p.vy=vy; p.life=life; p.color=color;
   state.particles.push(p);
@@ -718,22 +545,18 @@ function despawnParticle(p){
   const idx = state.particles.indexOf(p);
   if(idx >= 0) state.particles.splice(idx,1);
 }
-
-/* spawn impact */
 function spawnImpact(x,y,amount=6){
   for(let i=0;i<amount;i++){
     const vx = rand(-160,160);
     const vy = rand(-160,160);
-    spawnParticle(x + rand(-6,6), y + rand(-6,6), vx, vy, 0.6 + Math.random()*0.6, '#ffd700');
+    spawnParticle(x + rand(-6,6), y + rand(-6,6), vx, vy, 0.6 + Math.random()*0.6, ['#ffd700','#00bfff','#ff4fb5'][Math.floor(Math.random()*3)]);
   }
 }
 
-/* =========================
-   Confetti (simple)
-   ========================= */
+/* confetti */
 function showConfetti(){
   confettiEl.innerHTML = '';
-  const count = 40;
+  const count = 36;
   for(let i=0;i<count;i++){
     const d = document.createElement('div');
     d.style.position = 'absolute';
@@ -741,12 +564,11 @@ function showConfetti(){
     d.style.top = '-10%';
     d.style.width = (6 + Math.random()*8) + 'px';
     d.style.height = (10 + Math.random()*12) + 'px';
-    d.style.background = ['#ffd700','#00f0ff','#ff6fb5','#7cff6b'][Math.floor(Math.random()*4)];
+    d.style.background = ['#ffd700','#00bfff','#ff4fb5','#7cff6b'][Math.floor(Math.random()*4)];
     d.style.opacity = '0.95';
     d.style.transform = `rotate(${rand(0,360)}deg)`;
     d.style.borderRadius = '2px';
     confettiEl.appendChild(d);
-    // animate via JS
     const fall = () => {
       const start = performance.now();
       const dur = 1600 + Math.random()*1200;
@@ -763,52 +585,46 @@ function showConfetti(){
     };
     setTimeout(fall, Math.random()*200);
   }
-  // clear after a while
   setTimeout(()=> confettiEl.innerHTML = '', 4000);
 }
 
 /* =========================
-   HUD update (timer, progress ring, hp bar)
+   HUD update
    ========================= */
 function updateHUD(){
-  // timer text
   const m = Math.floor(state.time / 60);
   const s = Math.floor(state.time % 60);
   bigTime.innerText = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
-
-  // progress ring (time left)
-  const total = CONFIG.duration;
-  const pct = clamp(state.time / total, 0, 1);
-  const circumference = 2 * Math.PI * 40; // r=40
+  const pct = clamp(state.time / CONFIG.duration, 0, 1);
+  const circumference = 2 * Math.PI * 40;
   const dash = circumference * (1 - pct);
-  progressCircle.style.strokeDashoffset = dash;
-
-  // hp bar width (bossHP relative to CONFIG.bossHP)
+  // progressCircle may be null in some browsers; guard
+  const pc = document.getElementById('progressCircle');
+  if(pc) pc.style.strokeDashoffset = dash;
   const hpPct = clamp(state.bossHP / CONFIG.bossHP, 0, 1);
   hpBar.style.width = (hpPct * 100) + '%';
-
-  // crystals & streak
   uiCrystals.innerText = state.crystals;
   uiStreak.innerText = state.streak;
   document.getElementById('uiPilot').innerText = state.pilot;
 }
 
 /* =========================
-   Update loop: boss HP drains over time
+   Main loop: boss HP drains exactly over 2 minutes
    ========================= */
 let lastTime = performance.now();
 function loop(now){
   const dt = Math.min(0.033, (now - lastTime) / 1000);
   lastTime = now;
   if(state.active && !state.paused){
-    // boss HP drains continuously so that full HP is removed over CONFIG.duration
+    // base drain so bossHP reaches 0 exactly at end of duration if no taps
     const drainPerSec = CONFIG.bossHP / CONFIG.duration;
-    state.bossHP -= drainPerSec * dt; // base drain
-    // clamp
+    state.bossHP -= drainPerSec * dt;
+
+    // clamp and check victory
     if(state.bossHP <= 0){
       state.bossHP = 0;
       updateHUD();
-      victory();
+      endBrushingSuccess();
       return;
     }
 
@@ -816,10 +632,9 @@ function loop(now){
     state.time -= dt;
     if(state.time <= 0){
       state.time = 0;
-      // if bossHP > 0 at end, fail; otherwise victory already handled
       if(state.bossHP > 0){
         updateHUD();
-        fail();
+        endBrushingFail();
         return;
       }
     }
@@ -845,29 +660,25 @@ function loop(now){
     state.shake *= 0.92;
     state.flash = Math.max(0, state.flash - dt * 1.6);
 
-    // update HUD
     updateHUD();
-
-    // render
     render();
   } else {
-    // still render paused or idle view so canvas doesn't go blank
     render();
   }
-
   requestAnimationFrame(loop);
 }
 
 /* =========================
-   RENDER: stars, boss, particles, glow, CRT lines
+   Render visuals (simple & cool)
    ========================= */
 function render(){
-  // clear
   ctx.fillStyle = '#000';
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  // apply subtle vignette via global composite (we also have CSS vignette)
-  // starfield
+  // speed lines (procedural)
+  drawSpeedLines();
+
+  // stars
   for(const s of stars){
     ctx.fillStyle = `rgba(180,220,255,${s.o})`;
     ctx.fillRect(Math.floor(s.x), Math.floor(s.y), Math.ceil(s.s), Math.ceil(s.s));
@@ -875,39 +686,35 @@ function render(){
 
   // boss (center top)
   const bx = canvas.width / 2;
-  const by = canvas.height * 0.35;
+  const by = canvas.height * 0.34;
   const bw = 160;
   const bh = 160;
-  // glow
   const hpPct = clamp(state.bossHP / CONFIG.bossHP, 0, 1);
   const glowAlpha = 0.12 + (1 - hpPct) * 0.6;
+
   ctx.save();
   ctx.translate(bx, by);
-  // outer glow
   const g = ctx.createRadialGradient(0,0,bw*0.2, 0,0,bw*1.2);
   g.addColorStop(0, `rgba(255,120,80,${glowAlpha})`);
   g.addColorStop(0.6, 'rgba(255,120,80,0.06)');
   g.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.arc(0,0,bw*0.9,0,Math.PI*2);
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(0,0,bw*0.9,0,Math.PI*2); ctx.fill();
 
-  // boss body (rounded)
+  // body with outline
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = '#071827';
   ctx.fillStyle = '#222';
   roundRect(ctx, -bw/2, -bh/2, bw, bh, 18);
   ctx.fill();
+  ctx.stroke();
 
-  // core that grows as HP drops (encouraging visual)
+  // core grows as HP drops
   ctx.fillStyle = `rgba(255,255,255,${0.9 - hpPct*0.6})`;
-  ctx.beginPath();
-  ctx.arc(0, 0, 18 + (1 - hpPct) * 18, 0, Math.PI*2);
-  ctx.fill();
-
+  ctx.beginPath(); ctx.arc(0, 0, 18 + (1 - hpPct) * 18, 0, Math.PI*2); ctx.fill();
   ctx.restore();
 
-  // lasers (visual streaks when tapping)
-  // draw particles
+  // particles
   for(const p of state.particles){
     ctx.globalAlpha = clamp(p.life, 0, 1);
     ctx.fillStyle = p.color;
@@ -915,16 +722,27 @@ function render(){
     ctx.globalAlpha = 1;
   }
 
-  // screen flash if any
-  if(state.flash > 0){
-    ctx.fillStyle = `rgba(255,255,255,${state.flash * 0.08})`;
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-  }
-
-  // CRT scanlines (drawn on canvas for stronger effect)
+  // CRT scanlines
   ctx.fillStyle = 'rgba(255,255,255,0.02)';
-  for(let y=0;y<canvas.height;y+=3){
-    ctx.fillRect(0,y,canvas.width,1);
+  for(let y=0;y<canvas.height;y+=3) ctx.fillRect(0,y,canvas.width,1);
+}
+
+/* draw speed lines */
+function drawSpeedLines(){
+  speedLinesContainer.innerHTML = '';
+  const count = 10;
+  for(let i=0;i<count;i++){
+    const line = document.createElement('div');
+    line.className = 'line';
+    line.style.position = 'absolute';
+    line.style.background = 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0))';
+    line.style.height = (1 + Math.random()*3) + 'px';
+    line.style.opacity = 0.06 + Math.random()*0.12;
+    line.style.transform = 'skewX(-20deg)';
+    line.style.top = (Math.random()*100) + '%';
+    line.style.left = (Math.random()*40 - 20) + '%';
+    line.style.width = (40 + Math.random()*60) + '%';
+    speedLinesContainer.appendChild(line);
   }
 }
 
@@ -939,62 +757,25 @@ function roundRect(ctx,x,y,w,h,r){
   ctx.closePath();
 }
 
-/* =========================
-   Start loop when user begins game
-   ========================= */
-let started = false;
-let lastTime = performance.now();
+/* helpers for particles */
+function createParticle(){ return { x:0,y:0,vx:0,vy:0,life:0,active:false,color:'#ffd700' }; }
+function despawnParticle(p){ p.active=false; const idx = state.particles.indexOf(p); if(idx>=0) state.particles.splice(idx,1); }
 
-/* =========================
-   Expose small debug helpers
-   ========================= */
-window.__TITAN = {
-  state,
-  spawnImpact,
-  startGame,
-  setView
-};
-
-/* =========================
-   Initialize UI and listeners
-   ========================= */
+/* init UI */
 document.addEventListener('DOMContentLoaded', ()=>{
-  // set pilot name display
   document.getElementById('uiPilot').innerText = state.pilot;
-  // initial view based on hash
-  if(location.hash === '#game') setView('game'); else setView('crawl');
-  // ensure canvas scaled
-  resizeCanvas();
-  // initial render
+  updateHUD();
   render();
+  resizeCanvas();
 });
 
-/* =========================
-   Start the animation loop only when game starts
-   ========================= */
-/* (loop is started by startGame) */
+/* expose debug helpers (optional) */
+window.__TITAN = { state, startGame, setView };
 
-/* =========================
-   Small accessibility: focus outlines
-   ========================= */
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Tab') document.body.classList.add('show-focus');
-});
+/* small utilities */
+function rand(a,b){ return Math.random()*(b-a)+a; }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 
-/* =========================
-   Save pilot name when leaving crawl (optional)
-   ========================= */
-document.getElementById('crawlStart').addEventListener('click', ()=>{
-  // prompt for pilot name (simple)
-  const name = prompt('Pilot name (optional):', state.pilot) || state.pilot;
-  state.pilot = name.toUpperCase().slice(0,20);
-  localStorage.setItem('titan_pilot', state.pilot);
-  document.getElementById('uiPilot').innerText = state.pilot;
-});
-
-/* =========================
-   End of script
-   ========================= */
 </script>
 </body>
 </html>
