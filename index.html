@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>GBA-Max Toothbrushing Battle — Portrait</title>
+<title>GBA‑Max Brush Battle — Portrait</title>
 <style>
   :root{
     --bg:#071026;
@@ -13,59 +13,70 @@
     --safe-top: env(safe-area-inset-top, 0px);
   }
   html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;-webkit-font-smoothing:antialiased;}
-  #app{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:var(--safe-top);gap:8px;overflow:hidden;}
-  /* Portrait-first canvas: tall, fits height */
-  .canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;padding:8px;box-sizing:border-box;}
-  canvas{image-rendering:pixelated;background:transparent;display:block;border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,0.6);max-height:calc(100vh - 180px);height:calc(100vh - 180px);width:auto;}
-  .hud{width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;box-sizing:border-box;pointer-events:none}
-  .left-hud{display:flex;flex-direction:column;gap:8px;align-items:flex-start;pointer-events:auto}
-  .right-hud{display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:auto}
-  .timer{
-    font-weight:900;font-size:48px;line-height:1;color:var(--accent);
-    font-variant-numeric: tabular-nums; -webkit-font-variant-numeric: tabular-nums; font-feature-settings: "tnum";
-    padding:8px 12px;background:linear-gradient(180deg, rgba(0,0,0,0.36), rgba(255,255,255,0.02));border-radius:12px;border:2px solid rgba(255,255,255,0.04);
-    box-shadow:0 4px 14px rgba(0,0,0,0.45);
-  }
-  .countdown{font-size:16px;color:#9ff;background:rgba(0,0,0,0.28);padding:6px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
-  .stat{background:rgba(0,0,0,0.36);padding:8px 12px;border-radius:12px;border:2px solid rgba(255,255,255,0.04);font-weight:800}
-  .center-hint{position:relative;margin-bottom:6px;color:#9ff;background:rgba(0,0,0,0.22);padding:8px 12px;border-radius:12px;font-size:14px;pointer-events:none}
-  #hotspot{position:fixed;right:0;bottom:0;width:64px;height:64px;opacity:0;z-index:60}
-  #pinPanel{position:fixed;right:12px;bottom:12px;background:rgba(0,0,0,0.92);color:#fff;padding:12px;border-radius:12px;display:none;flex-direction:column;gap:8px;min-width:260px;z-index:80}
-  #pinPanel input{font-size:18px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:#071026;color:#fff}
-  #pinPanel button{padding:8px;border-radius:8px;border:none;background:var(--accent);font-weight:800;cursor:pointer}
-  #lootModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.85));z-index:90}
+  #app{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding-top:var(--safe-top);box-sizing:border-box;overflow:hidden;}
+  .hud-row{width:100%;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;box-sizing:border-box;pointer-events:none;z-index:40}
+  .hud-left{display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+  .hud-right{display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:auto}
+  .screen-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;width:100%}
+  canvas{image-rendering:pixelated;border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,0.6);background:transparent;display:block;max-height:calc(100vh - 180px);height:calc(100vh - 180px);width:auto}
+  /* Start overlay */
+  #startOverlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.6));z-index:120;backdrop-filter:blur(3px)}
+  #startCard{background:#071026;padding:18px;border-radius:14px;border:2px solid rgba(255,255,255,0.04);color:#fff;text-align:center;min-width:260px}
+  #startCard button{margin-top:12px;padding:12px 18px;border-radius:12px;border:none;background:var(--accent);color:#001;font-weight:900;cursor:pointer}
+  /* Loot modal */
+  #lootModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.85));z-index:140}
   #lootCard{background:#081226;padding:18px;border-radius:14px;border:2px solid rgba(255,255,255,0.06);min-width:320px;color:#fff;text-align:center}
   #lootCard .big{font-size:28px;font-weight:900;color:var(--accent);margin:8px 0}
   #lootCard button{margin-top:12px;padding:10px 14px;border-radius:10px;border:none;background:var(--hud);color:#001;cursor:pointer;font-weight:900}
-  #startOverlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.6));z-index:100;backdrop-filter: blur(3px)}
-  #startCard{background:#071026;padding:18px;border-radius:14px;border:2px solid rgba(255,255,255,0.04);color:#fff;text-align:center;min-width:260px}
-  #startCard button{margin-top:12px;padding:12px 18px;border-radius:12px;border:none;background:var(--accent);color:#001;font-weight:900;cursor:pointer}
+  /* Parental PIN panel */
+  #pinPanel{position:fixed;right:12px;bottom:12px;background:rgba(0,0,0,0.92);color:#fff;padding:12px;border-radius:12px;display:none;flex-direction:column;gap:8px;min-width:240px;z-index:150}
+  #pinPanel input{font-size:18px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:#071026;color:#fff}
+  #pinPanel button{padding:8px;border-radius:8px;border:none;background:var(--accent);font-weight:800;cursor:pointer}
+  #hotspot{position:fixed;right:0;bottom:0;width:64px;height:64px;opacity:0;z-index:160}
   .sr{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
-  @media (max-width:420px){
-    .timer{font-size:40px}
-    canvas{height:calc(100vh - 160px)}
-  }
+  /* Timer styling for DOM fallback */
+  .timer-dom{font-weight:900;font-size:36px;color:var(--accent);font-variant-numeric:tabular-nums; -webkit-font-variant-numeric:tabular-nums; font-feature-settings:"tnum";padding:6px 10px;border-radius:10px;background:rgba(0,0,0,0.28)}
+  @media (max-width:420px){ .timer-dom{font-size:30px} canvas{height:calc(100vh - 160px)} }
 </style>
 </head>
 <body>
 <div id="app" role="application" aria-label="Toothbrushing battle game">
-  <div class="hud">
-    <div class="left-hud">
-      <div class="timer" id="timer">02:00</div>
-      <div class="countdown" id="countdown">Neural Link: Ready</div>
+  <div class="hud-row" aria-hidden="false">
+    <div class="hud-left">
+      <div class="timer-dom" id="timerDom">02:00</div>
+      <div style="font-size:13px;color:#9ff;background:rgba(0,0,0,0.22);padding:6px 8px;border-radius:8px">Neural Link: Ready</div>
     </div>
-    <div class="right-hud">
-      <div class="stat">Streak: <span id="streak">0</span></div>
-      <div class="stat">Crystals: <span id="crystals">0</span></div>
+    <div class="hud-right">
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="background:rgba(0,0,0,0.28);padding:8px 10px;border-radius:10px;font-weight:800">Crystals <span id="crystalsDom" style="color:var(--accent);margin-left:6px">0</span></div>
+        <div style="background:rgba(0,0,0,0.28);padding:8px 10px;border-radius:10px;font-weight:800">Streak <span id="streakDom" style="color:#9ff;margin-left:6px">0</span></div>
+      </div>
     </div>
   </div>
 
-  <div class="canvas-wrap">
-    <!-- Portrait canvas: logical 540x960 (tall) for pixel art -->
+  <div class="screen-wrap">
     <canvas id="game" width="540" height="960" aria-hidden="false"></canvas>
   </div>
 
-  <div class="center-hint" id="hint">Auto-battle engaged — brush for 2 minutes!</div>
+  <div style="text-align:center;padding:8px 12px"><div style="color:#9ff;background:rgba(0,0,0,0.22);display:inline-block;padding:8px 12px;border-radius:12px">Auto-battle engaged — brush for 2 minutes!</div></div>
+
+  <div id="startOverlay" aria-hidden="false">
+    <div id="startCard">
+      <div style="font-weight:900;font-size:18px">GBA‑Max Neural Link</div>
+      <div style="margin-top:8px;color:#9ff">Tap to start the sync and unlock sound</div>
+      <button id="startButton">Tap to Start</button>
+      <div style="font-size:12px;margin-top:8px;color:#9aa">If sound doesn't start, tap again or open Safari Web Inspector on a Mac.</div>
+    </div>
+  </div>
+
+  <div id="lootModal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div id="lootCard">
+      <div style="font-size:16px;color:#9ff">Loot Box</div>
+      <div class="big" id="lootAmount">+0</div>
+      <div id="lootText">You earned crystals!</div>
+      <button id="claimLoot">Claim</button>
+    </div>
+  </div>
 
   <div id="pinPanel" role="dialog" aria-modal="true" aria-hidden="true">
     <div style="font-weight:900">Parental Control</div>
@@ -86,86 +97,57 @@
     </div>
   </div>
 
-  <div id="lootModal" role="dialog" aria-modal="true" aria-hidden="true">
-    <div id="lootCard">
-      <div style="font-size:16px;color:#9ff;">Loot Box</div>
-      <div class="big" id="lootAmount">+0</div>
-      <div id="lootText">You earned crystals!</div>
-      <button id="claimLoot">Claim</button>
-    </div>
-  </div>
-
   <div id="hotspot" title="Parental Lock" aria-hidden="true"></div>
-
-  <div id="startOverlay" aria-hidden="false">
-    <div id="startCard">
-      <div style="font-weight:900;font-size:18px">GBA-Max Neural Link</div>
-      <div style="margin-top:8px;color:#9ff">Tap to start the sync and unlock sound</div>
-      <button id="startButton">Tap to Start</button>
-      <div style="font-size:12px;margin-top:8px;color:#9aa">If sound doesn't start, tap again or open Safari Web Inspector on a Mac.</div>
-    </div>
-  </div>
-
-  <div class="sr" id="sr">Accessible toothbrushing game. Timer, sounds, and parental controls included.</div>
+  <div class="sr">Accessible toothbrushing game. Timer, sounds, and parental controls included.</div>
 </div>
 
 <script>
-/* Portrait-first, higher-detail 16-bit bitmask engine
-   Upgraded: taller canvas (540x960), higher sprite resolution (48x48),
-   improved dithering/anti-alias palette, smoother particles, and refined audio unlock.
-   Single-file app optimized for iPhone 15 portrait.
+/* Single-file GBA-Max Brush Battle
+   - Portrait-first (540x960 logical)
+   - Bitmask palette sprites (procedural)
+   - 5s intro, 120s main, villain degrades every 30s
+   - Game-like HUD drawn on canvas + DOM counters
+   - WebAudio procedural sounds with robust iOS unlock
+   - LocalStorage for crystals and streaks
+   - Parental PIN hotspot (PIN: 1234)
+   - Smooth 60fps with requestAnimationFrame and defensive try/catch
 */
 
-/* ======= Config ======= */
+/* ===== CONFIG ===== */
 const CONFIG = {
-  WIDTH: 540,            // logical portrait width
-  HEIGHT: 960,           // logical portrait height
-  PIXEL_SCALE: 2,        // upscale factor when drawing to screen
+  WIDTH: 540,
+  HEIGHT: 960,
   TOTAL_TIME: 120,
   COUNTDOWN: 5,
-  VILLAIN_STAGES: 4,
+  FIRE_RATE: 360,
   VILLAIN_STAGE_INTERVAL: 30,
-  FIRE_RATE: 360,        // slightly faster fire rate
+  VILLAIN_STAGES: 4,
   LOCAL_KEYS: { crystals: 'gba_crystals_v1', streak: 'gba_streak_v1' },
   PIN: '1234',
-  MAX_PARTICLES: 1200
+  MAX_PARTICLES: 900
 };
 
-/* ======= Canvas Setup ======= */
+/* ===== Canvas setup ===== */
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d', { alpha: false });
 canvas.width = CONFIG.WIDTH;
 canvas.height = CONFIG.HEIGHT;
 ctx.imageSmoothingEnabled = false;
 
-/* Offscreen high-res buffer for crisp pixel art (use 1:1 logical pixels, then scale via CSS)
-   We'll draw at logical resolution and let CSS scale the canvas to fit the viewport.
-*/
-const offscreen = document.createElement('canvas');
-offscreen.width = CONFIG.WIDTH;
-offscreen.height = CONFIG.HEIGHT;
-const ox = offscreen.getContext('2d');
+/* Offscreen buffer (same logical resolution) */
+const off = document.createElement('canvas');
+off.width = CONFIG.WIDTH;
+off.height = CONFIG.HEIGHT;
+const ox = off.getContext('2d');
 ox.imageSmoothingEnabled = false;
 
-/* Fit canvas visually to portrait viewport while preserving pixel crispness */
-function fitCanvasToViewport(){
-  const wrap = document.querySelector('.canvas-wrap');
-  const maxH = window.innerHeight - 180; // leave room for HUD and controls
-  const scale = Math.min( (maxH) / CONFIG.HEIGHT, (window.innerWidth - 16) / CONFIG.WIDTH );
-  const cssH = Math.floor(CONFIG.HEIGHT * scale);
-  const cssW = Math.floor(CONFIG.WIDTH * scale);
-  canvas.style.width = cssW + 'px';
-  canvas.style.height = cssH + 'px';
-}
-window.addEventListener('resize', fitCanvasToViewport);
-fitCanvasToViewport();
-
-/* UI refs */
-const timerEl = document.getElementById('timer');
-const countdownEl = document.getElementById('countdown');
-const hintEl = document.getElementById('hint');
-const crystalsEl = document.getElementById('crystals');
-const streakEl = document.getElementById('streak');
+/* UI DOM refs */
+const timerDom = document.getElementById('timerDom');
+const countdownDom = document.querySelector('.hud-left div:nth-child(2)');
+const crystalsDom = document.getElementById('crystalsDom');
+const streakDom = document.getElementById('streakDom');
+const startOverlay = document.getElementById('startOverlay');
+const startButton = document.getElementById('startButton');
 const lootModal = document.getElementById('lootModal');
 const lootAmount = document.getElementById('lootAmount');
 const lootText = document.getElementById('lootText');
@@ -180,48 +162,54 @@ const setCrystals = document.getElementById('setCrystals');
 const setStreak = document.getElementById('setStreak');
 const saveAdmin = document.getElementById('saveAdmin');
 const resetData = document.getElementById('resetData');
-const startOverlay = document.getElementById('startOverlay');
-const startButton = document.getElementById('startButton');
 
-/* ======= Local Storage ======= */
+/* Fit canvas visually (CSS scaling) */
+function fitCanvas(){
+  const maxH = window.innerHeight - 160;
+  const scale = Math.min(maxH / CONFIG.HEIGHT, (window.innerWidth - 16) / CONFIG.WIDTH);
+  canvas.style.width = Math.floor(CONFIG.WIDTH * scale) + 'px';
+  canvas.style.height = Math.floor(CONFIG.HEIGHT * scale) + 'px';
+}
+window.addEventListener('resize', fitCanvas);
+fitCanvas();
+
+/* ===== LocalStorage ===== */
 function loadStats(){
   const c = parseInt(localStorage.getItem(CONFIG.LOCAL_KEYS.crystals) || '0',10);
   const s = parseInt(localStorage.getItem(CONFIG.LOCAL_KEYS.streak) || '0',10);
   return { crystals: isNaN(c)?0:c, streak: isNaN(s)?0:s };
 }
-function saveStats(stats){
-  localStorage.setItem(CONFIG.LOCAL_KEYS.crystals, String(stats.crystals));
-  localStorage.setItem(CONFIG.LOCAL_KEYS.streak, String(stats.streak));
+function saveStats(st){
+  localStorage.setItem(CONFIG.LOCAL_KEYS.crystals, String(st.crystals));
+  localStorage.setItem(CONFIG.LOCAL_KEYS.streak, String(st.streak));
 }
 let stats = loadStats();
-crystalsEl.textContent = stats.crystals;
-streakEl.textContent = stats.streak;
+crystalsDom.textContent = stats.crystals;
+streakDom.textContent = stats.streak;
 
-/* ======= Audio (Web Audio API) ======= */
+/* ===== Audio (WebAudio) ===== */
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 const audio = new AudioCtx();
-let masterGain = audio.createGain(); masterGain.gain.value = 0.9; masterGain.connect(audio.destination);
+const master = audio.createGain(); master.gain.value = 0.9; master.connect(audio.destination);
 
-/* Procedural sound functions (compact, efficient) */
-function playBeep(freq=880, time=0.10){
+function playBeep(freq=880, dur=0.10){
   const t = audio.currentTime;
-  const o = audio.createOscillator();
-  const g = audio.createGain();
-  o.type = 'square'; o.frequency.value = freq;
-  o.connect(g); g.connect(masterGain);
+  const o = audio.createOscillator(), g = audio.createGain();
+  o.type='square'; o.frequency.value = freq;
+  o.connect(g); g.connect(master);
   g.gain.setValueAtTime(0.0001,t);
   g.gain.linearRampToValueAtTime(0.12,t+0.005);
-  g.gain.exponentialRampToValueAtTime(0.0001,t+time);
-  o.start(t); o.stop(t+time+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.start(t); o.stop(t+dur+0.02);
 }
 function playLaser(){
   const t = audio.currentTime;
   const o1 = audio.createOscillator(), o2 = audio.createOscillator();
-  const g = audio.createGain(), f = audio.createBiquadFilter();
+  const f = audio.createBiquadFilter(), g = audio.createGain();
   o1.type='sawtooth'; o1.frequency.value=1200;
   o2.type='square'; o2.frequency.value=1800;
-  f.type='lowpass'; f.frequency.value=2600;
-  o1.connect(f); o2.connect(f); f.connect(g); g.connect(masterGain);
+  f.type='lowpass'; f.frequency.value=2400;
+  o1.connect(f); o2.connect(f); f.connect(g); g.connect(master);
   g.gain.setValueAtTime(0.0001,t);
   g.gain.linearRampToValueAtTime(0.18,t+0.008);
   g.gain.exponentialRampToValueAtTime(0.0001,t+0.18);
@@ -232,7 +220,7 @@ function playBoom(){
   const t = audio.currentTime;
   const o = audio.createOscillator(), g = audio.createGain(), comp = audio.createDynamicsCompressor();
   o.type='sine'; o.frequency.value=55;
-  o.connect(g); g.connect(comp); comp.connect(masterGain);
+  o.connect(g); g.connect(comp); comp.connect(master);
   comp.threshold.value = -8;
   g.gain.setValueAtTime(0.0001,t);
   g.gain.linearRampToValueAtTime(1.2,t+0.02);
@@ -247,35 +235,29 @@ function playSmoke(){
   for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * (1 - i/bufferSize);
   const src = audio.createBufferSource(), g = audio.createGain();
   src.buffer = buffer; g.gain.value = 0.16;
-  src.connect(g); g.connect(masterGain); src.start(t);
+  src.connect(g); g.connect(master); src.start(t);
 }
 
-/* Robust iOS unlock: resume on gesture and play tiny confirmation tone */
+/* Robust iOS unlock */
 function tryResumeAudio(){
   if(!audio) return;
   if(audio.state === 'suspended' || audio.state === 'interrupted'){
-    audio.resume().then(()=> {
-      console.log('Audio resumed, state=', audio.state);
-    }).catch((e)=>{
-      console.warn('Audio resume rejected', e);
-    });
-    audio.onstatechange = () => console.log('Audio state changed to', audio.state);
-  } else {
-    console.log('Audio already running:', audio.state);
+    audio.resume().then(()=>console.log('Audio resumed', audio.state)).catch(e=>console.warn('resume failed', e));
+    audio.onstatechange = ()=>console.log('Audio state', audio.state);
   }
 }
-function addAudioUnlockHandlers(){
-  const handler = (ev) => {
+function addAudioUnlock(){
+  const handler = ()=>{
     tryResumeAudio();
     try {
       const o = audio.createOscillator(), g = audio.createGain();
       o.type='square'; o.frequency.value=440;
-      o.connect(g); g.connect(masterGain);
+      o.connect(g); g.connect(master);
       g.gain.setValueAtTime(0.0001, audio.currentTime);
       g.gain.linearRampToValueAtTime(0.06, audio.currentTime + 0.01);
       g.gain.exponentialRampToValueAtTime(0.00001, audio.currentTime + 0.12);
       o.start(audio.currentTime); o.stop(audio.currentTime + 0.14);
-    } catch(e){ console.warn('confirmation tone failed', e); }
+    } catch(e){}
     document.removeEventListener('pointerdown', handler);
     document.removeEventListener('touchstart', handler);
     document.removeEventListener('mousedown', handler);
@@ -284,175 +266,139 @@ function addAudioUnlockHandlers(){
   document.addEventListener('touchstart', handler, {passive:true});
   document.addEventListener('mousedown', handler, {passive:true});
 }
-addAudioUnlockHandlers();
+addAudioUnlock();
 
-/* ======= Game State ======= */
+/* ===== Game State ===== */
 let state = {
   phase: 'idle', // idle, intro, main, outro, ended
-  countdown: CONFIG.COUNTDOWN,
+  introTimer: CONFIG.COUNTDOWN,
+  mainStart: 0,
   timeLeft: CONFIG.TOTAL_TIME,
   lastShot: 0,
-  startTime: null,
   villainStage: 0,
-  heroX: 0.12,
-  heroY: 0.5,
-  recoil: 0,
+  hero: { x: 0.12, y: 0.45, recoil: 0, shots: 0 },
   particles: [],
-  explosionShake: 0,
-  lastFrame: performance.now(),
-  shotsFired: 0
+  shake: 0,
+  lastFrame: performance.now()
 };
 
-/* ======= High-detail sprite system (48x48) ======= */
-/* Palette with intermediate shades for anti-aliased look */
-const PALETTES = {
-  hero: ['#000000','#0ff6ff','#00b3b3','#ffffff','#9ff','#444','#ffd24d','#ffb3b3','#2a2a2a','#6b6b6b','#dfefff','#b3f7ff'],
-  cannon: ['#000','#0ff6ff','#00b3b3','#fff','#9ff','#444','#ffd24d','#ffb3b3'],
-  villain: ['#000','#222','#444','#ffb36b','#ffd24d','#999','#666','#ff6b6b','#111','#2b2b2b','#ffb36b','#ff8b4d']
-};
+/* ===== Sprites (bitmask/palette) =====
+   We'll create compact palette-based sprites (not huge arrays) to keep code readable.
+   Sprites are drawn with small rectangles per pixel but use larger logical sprite sizes (48-72).
+*/
 
-/* Helper: create an empty pixel grid */
-function emptyGrid(w,h,fill=0){
-  return Array.from({length:h}, ()=>Array.from({length:w}, ()=>fill));
+/* Helper: draw pixel grid */
+function drawGrid(ctx2, grid, palette, x, y, scale=1){
+  const h = grid.length, w = grid[0].length;
+  for(let ry=0; ry<h; ry++){
+    for(let rx=0; rx<w; rx++){
+      const idx = grid[ry][rx];
+      if(!idx) continue;
+      ctx2.fillStyle = palette[idx] || '#000';
+      ctx2.fillRect(x + rx*scale, y + ry*scale, scale, scale);
+    }
+  }
 }
 
-/* Hero 48x48: more detail, visor shading, suit panels, subtle AA via palette indices */
+/* Simple procedural hero 48x48 (bitmask) */
 function makeHero48(){
   const w=48,h=48;
-  const px = emptyGrid(w,h,0);
-  // draw a rounded helmet and visor with gradient indices
-  const cx=12, cy=12, r=10;
+  const grid = Array.from({length:h}, ()=>Array.from({length:w}, ()=>0));
+  const pal = ['#000000','#0ff6ff','#00b3b3','#ffffff','#9ff','#444','#ffd24d','#ffb3b3','#2b2b2b','#6b6b6b'];
+  // helmet/visor
+  const cx=14, cy=14, r=10;
   for(let y=0;y<h;y++){
     for(let x=0;x<w;x++){
       const dx=x-cx, dy=y-cy;
       const d=Math.sqrt(dx*dx+dy*dy);
-      if(d<r) px[y][x]=3; // face/visor base
-      // suit body
-      if(y>22 && x>2 && x<34) px[y][x]=6;
+      if(d<r) grid[y][x]=3; // visor base
+      if(d<r-3 && Math.random()<0.06) grid[y][x]=2; // visor cyan speckle
     }
   }
-  // visor cyan shading (overlay)
-  for(let y=4;y<20;y++){
-    for(let x=4;x<20;x++){
-      const dx=x-12, dy=y-12;
-      if(Math.sqrt(dx*dx+dy*dy) < 8){
-        // use palette index 1/2/11 for layered AA
-        px[y][x] = (Math.random()<0.12) ? 11 : 1;
-      }
+  // face pixels
+  grid[14][14]=4; grid[15][14]=4; grid[14][15]=4;
+  // suit body
+  for(let y=24;y<44;y++){
+    for(let x=4;x<36;x++){
+      grid[y][x] = ( (x+y)%6 === 0 ) ? 9 : 6;
     }
   }
-  // face pixels (small)
-  px[12][12]=4; px[13][12]=4; px[12][13]=4;
-  // shoulder plates and joints
-  for(let y=20;y<36;y++){
-    for(let x=0;x<36;x++){
-      if((x>2 && x<34) && (y>20 && y<36)){
-        if((x+y)%7===0) px[y][x]=9; else px[y][x]=6;
-      }
-    }
-  }
-  // cannon mount area
+  // shoulder plates
   for(let y=18;y<28;y++){
-    for(let x=30;x<44;x++){
-      if((x-30)<8) px[y][x]=6;
+    for(let x=0;x<8;x++){
+      if((x+y)%5===0) grid[y][x]=8;
+      else grid[y][x]=6;
     }
   }
-  return {w,h,pixels:px,palette:PALETTES.hero};
+  return {grid,pal,w,h};
 }
 
-/* Cannon 20x12 higher detail */
-function makeCannon20x12(){
+/* Cannon 20x12 */
+function makeCannon(){
   const w=20,h=12;
-  const px = emptyGrid(w,h,0);
-  for(let y=0;y<h;y++){
-    for(let x=0;x<w;x++){
-      if(x>2 && x<18 && y>2 && y<10) px[y][x]=7;
-      if(x>0 && x<4 && y>4 && y<8) px[y][x]=6;
+  const grid = Array.from({length:h}, ()=>Array.from({length:w}, ()=>0));
+  const pal = ['#000','#0ff6ff','#00b3b3','#fff','#9ff','#444','#ffd24d','#ffb3b3'];
+  for(let y=2;y<10;y++){
+    for(let x=2;x<18;x++){
+      grid[y][x]=6;
     }
   }
-  // muzzle darker
-  for(let y=4;y<8;y++) px[y][18]=4;
-  return {w,h,pixels:px,palette:PALETTES.cannon};
+  for(let y=4;y<8;y++) grid[y][18]=4;
+  return {grid,pal,w,h};
 }
 
-/* Villain 72x72 procedural with more detail */
+/* Villain 72x72 procedural */
 function makeVillain72(){
   const w=72,h=72;
-  const px = emptyGrid(w,h,0);
+  const grid = Array.from({length:h}, ()=>Array.from({length:w}, ()=>0));
+  const pal = ['#000','#222','#444','#ffb36b','#ffd24d','#999','#666','#ff6b6b','#111','#2b2b2b'];
   const cx=Math.floor(w/2), cy=Math.floor(h/2);
   for(let y=0;y<h;y++){
     for(let x=0;x<w;x++){
       const dx=x-cx, dy=y-cy;
       const r=Math.sqrt(dx*dx+dy*dy);
-      if(r<12) px[y][x]=3; // core
-      else if(r<26) px[y][x]=4; // inner armor
-      else if(r<34) px[y][x]=5; // outer plating
+      if(r<10) grid[y][x]=4;
+      else if(r<22) grid[y][x]=3;
+      else if(r<30) grid[y][x]=5;
     }
   }
-  // four articulated arms with segments and joints
-  const arms = [
-    {ax:0,ay:10},
-    {ax:w-1,ay:10},
-    {ax:0,ay:h-11},
-    {ax:w-1,ay:h-11}
-  ];
+  // arms
+  const arms = [{ax:0,ay:8},{ax:w-1,ay:8},{ax:0,ay:h-9},{ax:w-1,ay:h-9}];
   arms.forEach(a=>{
     for(let j=0;j<22;j++){
       const t=j/22;
       const x=Math.round(cx + (a.ax-cx)*t);
       const y=Math.round(cy + (a.ay-cy)*t);
       for(let k=-2;k<=2;k++){
-        if(y+k>=0 && y+k<h && x>=0 && x<w) px[y+k][x]=6;
+        if(y+k>=0 && y+k<h && x>=0 && x<w) grid[y+k][x]=6;
       }
     }
   });
-  return {w,h,pixels:px,palette:PALETTES.villain};
+  return {grid,pal,w,h};
 }
 
 /* Create sprites */
-const heroSprite = makeHero48();
-const cannonSprite = makeCannon20x12();
-const villainSprite = makeVillain72();
+const hero = makeHero48();
+const cannon = makeCannon();
+const villain = makeVillain72();
 
-/* drawSprite supports larger sprites and palette AA */
-function drawSprite(ctx2, sprite, x, y, scale=1, flip=false){
-  const w=sprite.w, h=sprite.h;
-  for(let ry=0; ry<h; ry++){
-    for(let rx=0; rx<w; rx++){
-      const idx = sprite.pixels[ry][rx];
-      if(!idx) continue;
-      const col = sprite.palette[idx] || '#000';
-      const px = flip ? (x + (w-1-rx)*scale) : (x + rx*scale);
-      ctx2.fillStyle = col;
-      ctx2.fillRect(px, y + ry*scale, scale, scale);
-    }
-  }
-}
-
-/* ======= Starfield (improved, smoother) ======= */
+/* ===== Starfield (3-layer parallax) ===== */
 const starLayers = [
-  { speed: 0.01, density: 28, color: '#071a2b', stars: [], soft:true }, // nebula blobs
-  { speed: 0.04, density: 140, color: '#9ff', stars: [], soft:false },   // mid stars
-  { speed: 0.12, density: 90, color: '#ffd24d', stars: [], soft:false }   // foreground debris
+  {speed:0.008,density:28,color:'#071a2b',soft:true,stars:[]},
+  {speed:0.04,density:120,color:'#9ff',soft:false,stars:[]},
+  {speed:0.12,density:80,color:'#ffd24d',soft:false,stars:[]}
 ];
 function initStars(){
   starLayers.forEach(layer=>{
     layer.stars = [];
     for(let i=0;i<layer.density;i++){
-      layer.stars.push({
-        x: Math.random()*offscreen.width,
-        y: Math.random()*offscreen.height,
-        s: Math.random()*2 + (layer.soft?3:0),
-        a: Math.random()*0.9 + 0.15,
-        tw: Math.random()*1.2 + 0.2,
-        phase: Math.random()*Math.PI*2
-      });
+      layer.stars.push({x:Math.random()*CONFIG.WIDTH,y:Math.random()*CONFIG.HEIGHT,s:Math.random()*2 + (layer.soft?3:0),a:Math.random()*0.9+0.15,phase:Math.random()*Math.PI*2});
     }
   });
 }
 initStars();
 
-/* ======= Particles (optimized, capped) ======= */
+/* ===== Particles ===== */
 function spawnParticle(x,y,vx,vy,color,life=120,size=2){
   if(state.particles.length > CONFIG.MAX_PARTICLES) return;
   state.particles.push({x,y,vx,vy,color,life,size});
@@ -463,113 +409,97 @@ function updateParticles(dt){
     p.x += p.vx * dt * 0.06;
     p.y += p.vy * dt * 0.06;
     p.life -= dt * 0.06;
-    p.vy += 0.0008 * dt * 0.06;
+    p.vy += 0.0009 * dt * 0.06;
     if(p.life <= 0) state.particles.splice(i,1);
   }
 }
 function drawParticles(ctx2){
   state.particles.forEach(p=>{
-    const alpha = Math.max(0, Math.min(1, p.life/120));
-    ctx2.globalAlpha = alpha;
+    const a = Math.max(0, Math.min(1, p.life/120));
+    ctx2.globalAlpha = a;
     ctx2.fillStyle = p.color;
-    // draw as small rectangles with slight blur via layered pixels for smoother look
     ctx2.fillRect(Math.round(p.x), Math.round(p.y), Math.max(1,p.size), Math.max(1,p.size));
     ctx2.globalAlpha = 1;
   });
 }
 
-/* ======= Visual FX ======= */
-function screenShake(intensity){
-  state.explosionShake = Math.max(state.explosionShake, intensity);
-}
-
-/* ======= Game Logic ======= */
-let lastShotTime = 0;
-function fireShot(){
+/* ===== Game actions ===== */
+function fire(){
   const now = performance.now();
-  if(now - lastShotTime < CONFIG.FIRE_RATE) return;
-  lastShotTime = now;
-  state.shotsFired++;
+  if(now - state.lastShot < CONFIG.FIRE_RATE) return;
+  state.lastShot = now;
+  state.hero.shots++;
   playLaser();
   playSmoke();
-  state.recoil = 8;
-  const hx = Math.floor(state.heroX * offscreen.width) + 28;
-  const hy = Math.floor(state.heroY * offscreen.height) + 18;
+  state.hero.recoil = 8;
+  // projectile and smoke
+  const hx = Math.floor(state.hero.x * CONFIG.WIDTH) + 36;
+  const hy = Math.floor(state.hero.y * CONFIG.HEIGHT) + 24;
   spawnParticle(hx, hy, 6 + Math.random()*2, -1 - Math.random()*0.6, '#9ff', 120, 2);
   for(let i=0;i<8;i++){
     spawnParticle(hx-6, hy+6, (Math.random()-0.5)*2, -Math.random()*1.2, '#ddd', 80 + Math.random()*40, 2 + Math.random()*2);
   }
 }
 
-/* Villain stage calculation */
-function villainStageForElapsed(elapsed){
+/* Villain stage based on elapsed */
+function villainStage(elapsed){
   return Math.min(CONFIG.VILLAIN_STAGES-1, Math.floor(elapsed / CONFIG.VILLAIN_STAGE_INTERVAL));
 }
 
-/* ======= Countdown & Timer ======= */
-let introTimer = CONFIG.COUNTDOWN;
-let mainTimer = CONFIG.TOTAL_TIME;
-let countdownBeepIndex = CONFIG.COUNTDOWN;
-
-/* Start main phase */
+/* ===== Intro / Main / Outro ===== */
+function beginIntro(){
+  state.phase = 'intro';
+  state.introTimer = CONFIG.COUNTDOWN;
+  countdownDom.textContent = 'Neural Link Sync';
+  playBeep(920,0.12);
+}
 function startMain(){
   state.phase = 'main';
-  state.startTime = performance.now();
-  mainTimer = CONFIG.TOTAL_TIME;
-  countdownEl.textContent = 'Battle Engaged';
-  hintEl.textContent = 'Brush! The Hero auto-fires — keep going!';
-  state.villainStage = 0;
-  state.shotsFired = 0;
+  state.mainStart = performance.now();
+  state.hero.shots = 0;
   hotspot.style.pointerEvents = 'auto';
   hotspot.setAttribute('aria-hidden','false');
   startOverlay.style.display = 'none';
   startOverlay.setAttribute('aria-hidden','true');
 }
-
-/* Trigger outro explosion and loot */
 function triggerOutro(){
   if(state.phase === 'outro' || state.phase === 'ended') return;
   state.phase = 'outro';
   playBoom();
-  screenShake(20);
+  state.shake = 20;
   // golden burst
-  for(let i=0;i<600;i++){
-    const angle = Math.random()*Math.PI*2;
-    const speed = Math.random()*8 + 2;
-    spawnParticle(offscreen.width/2, offscreen.height/2, Math.cos(angle)*speed, Math.sin(angle)*speed, '#ffd24d', 220 + Math.random()*200, 2 + Math.random()*3);
+  for(let i=0;i<500;i++){
+    const a = Math.random()*Math.PI*2;
+    const s = Math.random()*8 + 2;
+    spawnParticle(CONFIG.WIDTH/2, CONFIG.HEIGHT/2, Math.cos(a)*s, Math.sin(a)*s, '#ffd24d', 220 + Math.random()*200, 2 + Math.random()*3);
   }
-  setTimeout(()=>showLoot(), 900);
+  setTimeout(showLoot, 900);
 }
-
-/* Loot calculation and display */
 function showLoot(){
-  const base = Math.max(1, Math.floor(state.shotsFired / 6));
+  const base = Math.max(1, Math.floor(state.hero.shots / 6));
   const bonus = Math.floor(stats.streak / 2);
   const gained = base + bonus;
   lootAmount.textContent = `+${gained}`;
-  lootText.textContent = `You fired ${state.shotsFired} shots. Bonus: ${bonus}`;
+  lootText.textContent = `You fired ${state.hero.shots} shots. Bonus: ${bonus}`;
   lootModal.style.display = 'flex';
   lootModal.setAttribute('aria-hidden','false');
   lootModal.dataset.gain = String(gained);
 }
-
-/* Claim loot */
 claimLoot.addEventListener('click', ()=>{
   const gain = parseInt(lootModal.dataset.gain || '0',10);
   stats.crystals += gain;
   stats.streak += 1;
   saveStats(stats);
-  crystalsEl.textContent = stats.crystals;
-  streakEl.textContent = stats.streak;
+  crystalsDom.textContent = stats.crystals;
+  streakDom.textContent = stats.streak;
   lootModal.style.display = 'none';
   lootModal.setAttribute('aria-hidden','true');
   state.phase = 'ended';
-  hintEl.textContent = 'Nice job! Come back tomorrow for another run.';
 });
 
-/* ======= Parental Lock Hotspot ======= */
+/* ===== Parental hotspot & PIN ===== */
 hotspot.style.pointerEvents = 'none';
-hotspot.addEventListener('click', (e)=>{
+hotspot.addEventListener('click', ()=>{
   pinPanel.style.display = 'flex';
   pinPanel.setAttribute('aria-hidden','false');
   pinInput.value = '';
@@ -584,9 +514,7 @@ pinUnlock.addEventListener('click', ()=>{
     adminArea.style.display = 'flex';
     setCrystals.value = stats.crystals;
     setStreak.value = stats.streak;
-  } else {
-    alert('Incorrect PIN');
-  }
+  } else alert('Incorrect PIN');
 });
 saveAdmin.addEventListener('click', ()=>{
   const c = parseInt(setCrystals.value||'0',10);
@@ -594,103 +522,89 @@ saveAdmin.addEventListener('click', ()=>{
   stats.crystals = isNaN(c)?0:c;
   stats.streak = isNaN(s)?0:s;
   saveStats(stats);
-  crystalsEl.textContent = stats.crystals;
-  streakEl.textContent = stats.streak;
+  crystalsDom.textContent = stats.crystals;
+  streakDom.textContent = stats.streak;
   alert('Saved');
 });
 resetData.addEventListener('click', ()=>{
   if(confirm('Reset crystals and streak to zero?')){
     stats.crystals = 0; stats.streak = 0;
     saveStats(stats);
-    crystalsEl.textContent = 0; streakEl.textContent = 0;
+    crystalsDom.textContent = 0; streakDom.textContent = 0;
     alert('Reset');
   }
 });
 
-/* ======= Start overlay handling (ensures trusted gesture on iOS) ======= */
-startButton.addEventListener('click', (ev)=>{
+/* ===== Start overlay handling ===== */
+startButton.addEventListener('click', ()=>{
   tryResumeAudio();
-  // small confirmation tone already played by tryResumeAudio handlers
   startOverlay.style.display = 'none';
   startOverlay.setAttribute('aria-hidden','true');
-  beginIntroSequence();
+  beginIntro();
 });
 canvas.addEventListener('pointerdown', ()=> tryResumeAudio());
 
-/* ======= Intro sequence ======= */
-function beginIntroSequence(){
-  state.phase = 'intro';
-  introTimer = CONFIG.COUNTDOWN;
-  countdownBeepIndex = CONFIG.COUNTDOWN;
-  countdownEl.textContent = 'Neural Link Sync';
-  playBeep(920,0.12);
-}
-
-/* ======= Update & Render Loop ======= */
+/* ===== Update & Render ===== */
 function update(dt){
   if(state.phase === 'intro'){
-    introTimer -= dt/1000;
-    const nextInt = Math.max(0, Math.ceil(introTimer));
-    countdownEl.textContent = `Neural Link Sync ${nextInt}`;
-    if(nextInt < countdownBeepIndex){
-      countdownBeepIndex = nextInt;
-      playBeep(880 - (CONFIG.COUNTDOWN-nextInt)*30, 0.12);
+    state.introTimer -= dt/1000;
+    const next = Math.max(0, Math.ceil(state.introTimer));
+    countdownDom.textContent = `Neural Link Sync ${next}`;
+    if(next < state.lastBeep){
+      state.lastBeep = next;
+      playBeep(880 - (CONFIG.COUNTDOWN-next)*30, 0.12);
     }
-    if(introTimer <= 0){
-      startMain();
-    }
+    if(state.introTimer <= 0) startMain();
   } else if(state.phase === 'main'){
-    const elapsed = (performance.now() - state.startTime)/1000;
+    const elapsed = (performance.now() - state.mainStart)/1000;
     const remaining = Math.max(0, CONFIG.TOTAL_TIME - elapsed);
-    mainTimer = remaining;
+    state.timeLeft = remaining;
     const mm = String(Math.floor(remaining/60)).padStart(2,'0');
     const ss = String(Math.floor(remaining%60)).padStart(2,'0');
-    timerEl.textContent = `${mm}:${ss}`;
-    const stage = villainStageForElapsed(elapsed);
+    timerDom.textContent = `${mm}:${ss}`;
+    // villain stage
+    const stage = villainStage(elapsed);
     if(stage !== state.villainStage){
       state.villainStage = stage;
       // stage-change burst
-      for(let i=0;i<60;i++){
-        spawnParticle(offscreen.width*0.68 + Math.random()*60 - 30, offscreen.height*0.28 + Math.random()*60 - 30, (Math.random()-0.5)*1.2, (Math.random()-0.5)*1.2, '#ff6b6b', 120, 2);
+      for(let i=0;i<40;i++){
+        spawnParticle(CONFIG.WIDTH*0.68 + Math.random()*60 - 30, CONFIG.HEIGHT*0.28 + Math.random()*60 - 30, (Math.random()-0.5)*1.2, (Math.random()-0.5)*1.2, '#ff6b6b', 120, 2);
       }
     }
+    // hero movement (sine)
     const t = elapsed;
-    // smoother sine movement with eased amplitude
-    state.heroX = 0.12 + Math.sin(t*1.05) * 0.06 + Math.sin(t*0.25)*0.01;
-    state.heroY = 0.42 + Math.sin(t*2.1) * 0.08;
+    state.hero.x = 0.12 + Math.sin(t*1.05)*0.06 + Math.sin(t*0.25)*0.01;
+    state.hero.y = 0.42 + Math.sin(t*2.1)*0.08;
+    // auto-fire
     if(performance.now() - state.lastShot > CONFIG.FIRE_RATE){
-      fireShot();
-      state.lastShot = performance.now();
+      fire();
     }
-    state.recoil = Math.max(0, state.recoil - dt*0.02);
+    // recoil decay
+    state.hero.recoil = Math.max(0, state.hero.recoil - dt*0.02);
     updateParticles(dt);
-    if(remaining <= 0){
-      triggerOutro();
-    }
+    if(remaining <= 0) triggerOutro();
   } else if(state.phase === 'outro'){
     updateParticles(dt);
-    state.explosionShake = Math.max(0, state.explosionShake - dt*0.05);
+    state.shake = Math.max(0, state.shake - dt*0.05);
   } else {
     updateParticles(dt);
   }
 }
 
-/* Render to offscreen then copy to visible canvas */
+/* Draw HUD and game on offscreen then copy */
 function render(){
   // clear
   ox.fillStyle = '#071026';
-  ox.fillRect(0,0,offscreen.width,offscreen.height);
+  ox.fillRect(0,0,off.width,off.height);
 
   // starfield
-  starLayers.forEach((layer, idx)=>{
+  starLayers.forEach(layer=>{
     layer.stars.forEach(s=>{
       s.x -= layer.speed;
-      if(s.x < -4) s.x = offscreen.width + 4;
-      // twinkle
+      if(s.x < -6) s.x = off.width + 6;
       const tw = 0.5 + 0.5 * Math.sin((performance.now()/600) + s.phase);
       ox.globalAlpha = s.a * tw;
       if(layer.soft){
-        // soft nebula blob (draw small blurred rectangle via layered pixels)
         ox.fillStyle = layer.color;
         ox.fillRect(Math.floor(s.x)-1, Math.floor(s.y)-1, Math.ceil(s.s*3), Math.ceil(s.s*3));
       } else {
@@ -701,105 +615,84 @@ function render(){
     });
   });
 
-  // villain (center-right) with staged degradation
-  const v = villainSprite;
-  const vScale = 1;
-  const vx = Math.floor(offscreen.width*0.62);
-  const vy = Math.floor(offscreen.height*0.12);
+  // draw villain (center-right)
+  const v = villain;
+  const vx = Math.floor(off.width*0.62);
+  const vy = Math.floor(off.height*0.12);
   for(let y=0;y<v.h;y++){
     for(let x=0;x<v.w;x++){
-      const idx = v.pixels[y][x];
-      if(idx === 0) continue;
-      let color = v.palette[idx] || '#666';
-      // deterministic visual degradation: use position-based noise instead of pure randomness
+      const idx = v.grid[y][x];
+      if(!idx) continue;
+      let color = v.pal[idx] || '#666';
+      // deterministic degradation using position-based noise
       const noise = ((x*13 + y*7) % 17) / 17;
-      if(state.villainStage >= 1){
-        if(noise < 0.08) color = '#222';
-      }
-      if(state.villainStage >= 2){
-        if(noise < 0.06) color = '#000';
-        if(noise > 0.9) color = '#ffd24d';
-      }
+      if(state.villainStage >= 1 && noise < 0.08) color = '#222';
+      if(state.villainStage >= 2 && noise < 0.06) color = '#000';
+      if(state.villainStage >= 2 && noise > 0.9) color = '#ffd24d';
       if(state.villainStage >= 3){
         const cx = Math.floor(v.w/2), cy = Math.floor(v.h/2);
         const dx = x-cx, dy = y-cy;
-        if(Math.sqrt(dx*dx+dy*dy) < 12){
-          color = (noise < 0.5) ? '#ff6b6b' : '#ff8b4d';
-        }
+        if(Math.sqrt(dx*dx+dy*dy) < 12) color = (noise < 0.5) ? '#ff6b6b' : '#ff8b4d';
       }
       ox.fillStyle = color;
-      ox.fillRect(vx + x*vScale, vy + y*vScale, vScale, vScale);
+      ox.fillRect(vx + x, vy + y, 1, 1);
     }
   }
 
-  // hero (left)
-  const hs = heroSprite;
-  const heroXpx = Math.floor(state.heroX * offscreen.width);
-  const heroYpx = Math.floor(state.heroY * offscreen.height);
-  drawSprite(ox, hs, heroXpx, heroYpx, 1, false);
+  // villain health bar (canvas HUD)
+  const barX = Math.floor(off.width*0.62);
+  const barY = Math.floor(off.height*0.08);
+  const barW = 160, barH = 10;
+  const hpPct = 1 - (state.villainStage / (CONFIG.VILLAIN_STAGES-1));
+  ox.fillStyle = 'rgba(0,0,0,0.6)'; ox.fillRect(barX-3, barY-3, barW+6, barH+6);
+  ox.fillStyle = '#222'; ox.fillRect(barX, barY, barW, barH);
+  const grad = ox.createLinearGradient(barX,0,barX+barW,0); grad.addColorStop(0,'#ffd24d'); grad.addColorStop(1,'#ff6b6b');
+  ox.fillStyle = grad; ox.fillRect(barX, barY, Math.max(0, Math.floor(barW*hpPct)), barH);
 
-  // cannon with recoil
+  // draw hero (left)
+  const hs = hero;
+  const heroXpx = Math.floor(state.hero.x * off.width);
+  const heroYpx = Math.floor(state.hero.y * off.height);
+  drawGrid(ox, hs.grid, hs.pal, heroXpx, heroYpx, 1);
+
+  // draw cannon with recoil
   const cannonX = heroXpx + 28;
-  const cannonY = heroYpx + 18 - Math.round(state.recoil);
-  drawSprite(ox, cannonSprite, cannonX, cannonY, 1, false);
+  const cannonY = heroYpx + 18 - Math.round(state.hero.recoil);
+  drawGrid(ox, cannon.grid, cannon.pal, cannonX, cannonY, 1);
 
-  // muzzle flash (soft) when recoil
-  if(state.recoil > 0.5){
-    ox.fillStyle = '#fff';
-    ox.fillRect(cannonX + 18, cannonY + 6, 4, 4);
-    ox.fillStyle = 'rgba(220,220,220,0.6)';
-    ox.fillRect(cannonX + 14, cannonY + 12, 10, 3);
+  // muzzle flash
+  if(state.hero.recoil > 0.5){
+    ox.fillStyle = '#fff'; ox.fillRect(cannonX + 18, cannonY + 6, 4, 4);
+    ox.fillStyle = 'rgba(220,220,220,0.6)'; ox.fillRect(cannonX + 14, cannonY + 12, 10, 3);
   }
 
   // particles
   drawParticles(ox);
 
-  // villain health bar (stylized)
-  const barW = 160, barH = 10;
-  const barX = Math.floor(offscreen.width*0.62);
-  const barY = Math.floor(offscreen.height*0.08);
-  const hpPct = 1 - (state.villainStage / (CONFIG.VILLAIN_STAGES-1));
-  ox.fillStyle = 'rgba(0,0,0,0.6)';
-  ox.fillRect(barX-3, barY-3, barW+6, barH+6);
-  ox.fillStyle = '#222';
-  ox.fillRect(barX, barY, barW, barH);
-  // gradient fill for HP
-  const grad = ox.createLinearGradient(barX,0,barX+barW,0);
-  grad.addColorStop(0, '#ffd24d'); grad.addColorStop(1, '#ff6b6b');
-  ox.fillStyle = grad;
-  ox.fillRect(barX, barY, Math.max(0, Math.floor(barW*hpPct)), barH);
-
-  // copy offscreen to visible canvas with shake
+  // copy offscreen to visible with shake
   ctx.save();
-  const shake = state.explosionShake;
-  const sx = (Math.random()*2-1) * shake;
-  const sy = (Math.random()*2-1) * shake;
+  const s = state.shake;
+  const sx = (Math.random()*2-1) * s;
+  const sy = (Math.random()*2-1) * s;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.translate(sx, sy);
-  ctx.drawImage(offscreen, 0, 0, offscreen.width, offscreen.height, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(off, 0, 0, off.width, off.height, 0, 0, canvas.width, canvas.height);
   ctx.restore();
 }
 
-/* Flash overlay for final explosion (white flash + fade) */
+/* Flash overlay for explosion */
 let flashAlpha = 0;
-function flashUpdate(){
-  if(state.phase === 'outro' && flashAlpha < 1){
-    flashAlpha = Math.min(1, flashAlpha + 0.08);
-  } else {
-    flashAlpha = Math.max(0, flashAlpha - 0.02);
-  }
+function flashLoop(){
+  if(state.phase === 'outro' && flashAlpha < 1) flashAlpha = Math.min(1, flashAlpha + 0.08);
+  else flashAlpha = Math.max(0, flashAlpha - 0.02);
   if(flashAlpha > 0){
-    ctx.save();
-    ctx.globalAlpha = flashAlpha;
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.restore();
+    ctx.save(); ctx.globalAlpha = flashAlpha; ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.restore();
   }
-  requestAnimationFrame(flashUpdate);
+  requestAnimationFrame(flashLoop);
 }
-requestAnimationFrame(flashUpdate);
+requestAnimationFrame(flashLoop);
 
-/* Defensive main loop */
+/* Main loop (defensive) */
 function loop(now){
   try {
     const dt = now - state.lastFrame;
@@ -807,39 +700,27 @@ function loop(now){
     update(dt);
     render();
   } catch (err) {
-    console.error('Game loop error:', err);
+    console.error('Loop error', err);
   }
   requestAnimationFrame(loop);
 }
 state.lastFrame = performance.now();
 requestAnimationFrame(loop);
 
-/* ======= Accessibility & UX tweaks ======= */
-timerEl.style.fontFamily = '"SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-timerEl.style.letterSpacing = '0.5px';
-
-/* Prevent hotspot from blocking first gesture until start */
+/* ===== Small UX & start state ===== */
+timerDom.textContent = '02:00';
+countdownDom.textContent = 'Neural Link: Ready';
 hotspot.style.pointerEvents = 'none';
-
-/* Wake lock best-effort */
-async function requestWakeLock(){
-  try{
-    if('wakeLock' in navigator){
-      await navigator.wakeLock.request('screen');
-    }
-  }catch(e){}
-}
-requestWakeLock();
-
-/* ======= Start initial state ======= */
-startOverlay.style.display = 'flex';
-startOverlay.setAttribute('aria-hidden','false');
+state.lastBeep = CONFIG.COUNTDOWN;
 state.phase = 'idle';
 
-/* ======= Small debug helpers (uncomment during development) ======= */
-/* hotspot.classList.add('debug'); startOverlay.style.display='flex'; */
+/* ===== Wake lock best-effort ===== */
+async function requestWakeLock(){ try{ if('wakeLock' in navigator) await navigator.wakeLock.request('screen'); }catch(e){} }
+requestWakeLock();
 
-/* ======= End of file ======= */
+/* ===== Debug helpers (uncomment during dev) ===== */
+/* hotspot.style.opacity = 0.06; hotspot.classList.add('debug'); startOverlay.style.display='flex'; */
+
 </script>
 </body>
 </html>
