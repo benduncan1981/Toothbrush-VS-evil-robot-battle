@@ -1,815 +1,420 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>GBA-Max Toothbrushing Battle</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GBA-Max Brush Battle</title>
 <style>
-  :root{
-    --bg:#071026;
-    --hud:#0ff6ff;
-    --accent:#ffd24d;
-    --danger:#ff6b6b;
-    --safe-top: env(safe-area-inset-top, 0px);
-  }
-  html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
-  #app{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding-top:var(--safe-top);overflow:hidden;}
-  canvas{image-rendering:pixelated;background:transparent;display:block;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.6);}
-  .ui{position:absolute;left:12px;top:12px;color:var(--hud);text-shadow:0 1px 0 rgba(0,0,0,0.6);display:flex;flex-direction:column;gap:8px;align-items:flex-start;z-index:40}
-  .timer{
-    font-weight:900;font-size:56px;line-height:1;color:var(--accent);
-    font-variant-numeric: tabular-nums; -webkit-font-variant-numeric: tabular-nums; font-feature-settings: "tnum";
-    padding:8px 12px;background:rgba(0,0,0,0.35);border-radius:10px;border:2px solid rgba(255,255,255,0.04);
-    -webkit-font-smoothing:antialiased;
-  }
-  .countdown{
-    font-size:18px;color:#9ff;background:rgba(0,0,0,0.35);padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);
-  }
-  .loot{position:absolute;right:12px;top:12px;color:var(--hud);display:flex;flex-direction:column;gap:8px;align-items:flex-end;z-index:40}
-  .stat{background:rgba(0,0,0,0.35);padding:6px 10px;border-radius:8px;border:2px solid rgba(255,255,255,0.04);font-weight:700}
-  .center-hint{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:#9ff;background:rgba(0,0,0,0.25);padding:8px 12px;border-radius:10px;font-size:14px;z-index:40}
-  #hotspot{position:fixed;right:0;bottom:0;width:64px;height:64px;opacity:0;z-index:60}
-  #hotspot.debug{outline:2px dashed rgba(255,255,255,0.06);opacity:0.06}
-  #pinPanel{position:fixed;right:12px;bottom:12px;background:rgba(0,0,0,0.92);color:#fff;padding:12px;border-radius:12px;display:none;flex-direction:column;gap:8px;min-width:240px;z-index:80}
-  #pinPanel input{font-size:18px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:#071026;color:#fff}
-  #pinPanel button{padding:8px;border-radius:8px;border:none;background:var(--accent);font-weight:800;cursor:pointer}
-  #lootModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.85));z-index:90}
-  #lootCard{background:#081226;padding:18px;border-radius:14px;border:2px solid rgba(255,255,255,0.06);min-width:320px;color:#fff;text-align:center}
-  #lootCard .big{font-size:28px;font-weight:900;color:var(--accent);margin:8px 0}
-  #lootCard button{margin-top:12px;padding:10px 14px;border-radius:10px;border:none;background:var(--hud);color:#001;cursor:pointer;font-weight:900}
-  .sr{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
-  /* Tap to start overlay for iOS fallback */
-  #startOverlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.6));z-index:100;backdrop-filter: blur(2px)}
-  #startCard{background:#071026;padding:18px;border-radius:14px;border:2px solid rgba(255,255,255,0.04);color:#fff;text-align:center;min-width:260px}
-  #startCard button{margin-top:12px;padding:12px 18px;border-radius:12px;border:none;background:var(--accent);color:#001;font-weight:900;cursor:pointer}
-  /* small responsive */
-  @media (max-width:520px){
-    .timer{font-size:44px}
-    canvas{border-radius:8px}
-  }
+:root {
+  --hud-bg: rgba(0,0,0,0.55);
+  --hud-border: rgba(255,255,255,0.2);
+}
+
+html,body {
+  margin:0;
+  padding:0;
+  background:#000;
+  overflow:hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color:#fff;
+}
+
+#gameCanvas {
+  display:block;
+  margin:0 auto;
+  image-rendering: pixelated;
+  background:#000;
+}
+
+#hud {
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  padding-top: env(safe-area-inset-top);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  pointer-events:none;
+}
+
+.hudBox {
+  margin:12px;
+  padding:12px 18px;
+  background:var(--hud-bg);
+  border:1px solid var(--hud-border);
+  border-radius:14px;
+  font-weight:800;
+  font-size:40px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing:2px;
+}
+
+#startOverlay {
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#000;
+  font-size:28px;
+  text-align:center;
+}
+
+#lootModal, #pinPanel {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.8);
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+
+.modalContent {
+  background:#111;
+  padding:24px;
+  border-radius:16px;
+  border:1px solid #333;
+  text-align:center;
+}
+
+button {
+  margin:8px;
+  padding:10px 16px;
+  font-size:16px;
+}
+
+#hotspot {
+  position:fixed;
+  bottom:0;
+  right:0;
+  width:64px;
+  height:64px;
+  opacity:0;
+}
 </style>
 </head>
 <body>
-<div id="app" role="application" aria-label="Toothbrushing battle game">
-  <canvas id="game" width="960" height="540" aria-hidden="false"></canvas>
 
-  <div class="ui" aria-hidden="false">
-    <div class="timer" id="timer">02:00</div>
-    <div class="countdown" id="countdown">Neural Link: Ready</div>
-  </div>
+<canvas id="gameCanvas"></canvas>
 
-  <div class="loot" aria-hidden="false">
-    <div class="stat">Streak: <span id="streak">0</span></div>
-    <div class="stat">Crystals: <span id="crystals">0</span></div>
-  </div>
-
-  <div class="center-hint" id="hint">Auto-battle engaged — brush for 2 minutes!</div>
-
-  <div id="pinPanel" role="dialog" aria-modal="true" aria-hidden="true">
-    <div style="font-weight:900">Parental Control</div>
-    <input id="pinInput" type="password" placeholder="Enter PIN" inputmode="numeric" />
-    <div style="display:flex;gap:8px;">
-      <button id="pinUnlock">Unlock</button>
-      <button id="pinClose" style="background:#444;color:#fff;">Close</button>
-    </div>
-    <div id="adminArea" style="display:none;flex-direction:column;gap:8px;margin-top:8px;">
-      <label style="font-size:13px;text-align:left;">Set Crystals</label>
-      <input id="setCrystals" type="number" />
-      <label style="font-size:13px;text-align:left;">Set Streak</label>
-      <input id="setStreak" type="number" />
-      <div style="display:flex;gap:8px;">
-        <button id="saveAdmin">Save</button>
-        <button id="resetData" style="background:#ff6b6b;">Reset</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="lootModal" role="dialog" aria-modal="true" aria-hidden="true">
-    <div id="lootCard">
-      <div style="font-size:16px;color:#9ff;">Loot Box</div>
-      <div class="big" id="lootAmount">+0</div>
-      <div id="lootText">You earned crystals!</div>
-      <button id="claimLoot">Claim</button>
-    </div>
-  </div>
-
-  <div id="hotspot" title="Parental Lock" aria-hidden="true"></div>
-
-  <div id="startOverlay" aria-hidden="false">
-    <div id="startCard">
-      <div style="font-weight:900;font-size:18px">GBA-Max Neural Link</div>
-      <div style="margin-top:8px;color:#9ff">Tap to start the sync and unlock sound</div>
-      <button id="startButton">Tap to Start</button>
-      <div style="font-size:12px;margin-top:8px;color:#9aa">If sound doesn't start, tap again or open Safari Web Inspector on a Mac.</div>
-    </div>
-  </div>
-
-  <div class="sr" id="sr">Accessible toothbrushing game. Timer, sounds, and parental controls included.</div>
+<div id="hud">
+  <div class="hudBox" id="timer">2:00</div>
+  <div class="hudBox" id="streak">🔥 0</div>
 </div>
 
+<div id="startOverlay">Tap To Start</div>
+
+<div id="lootModal">
+  <div class="modalContent">
+    <h2>Loot Box</h2>
+    <div id="lootText"></div>
+    <button onclick="restart()">Play Again</button>
+  </div>
+</div>
+
+<div id="pinPanel">
+  <div class="modalContent">
+    <h3>Parent PIN</h3>
+    <input type="password" id="pinInput" maxlength="4"><br>
+    <button onclick="checkPin()">Enter</button>
+    <div id="adminControls" style="display:none">
+      <p>Crystals <input type="number" id="editCrystals"></p>
+      <p>Streak <input type="number" id="editStreak"></p>
+      <button onclick="saveAdmin()">Save</button>
+      <button onclick="resetData()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<div id="hotspot"></div>
+
 <script>
-/* Single-file GBA-Max Toothbrushing App
-   - 16-bit bitmask sprites (procedural)
-   - Parallax starfield (3 layers)
-   - Intro countdown, 120s auto-battle, villain degradation every 30s
-   - WebAudio procedural sounds with robust iOS unlock and visible Tap-to-Start fallback
-   - LocalStorage for crystals and streaks
-   - Parental PIN panel (PIN: 1234)
-   - Smooth 60fps with requestAnimationFrame and defensive try/catch
-*/
+/* CONFIG */
+const TOTAL_TIME = 120;
+const COUNTDOWN = 5;
+const FIRE_RATE = 400;
+const PIXEL_SCALE = 2;
+const VILLAIN_STAGE_INTERVAL = 30;
+const STORAGE_CRYSTALS = "gba_crystals_v1";
+const STORAGE_STREAK = "gba_streak_v1";
+const PIN = "1234";
 
-/* ======= Config ======= */
-const CONFIG = {
-  WIDTH: 960,
-  HEIGHT: 540,
-  PIXEL_SCALE: 2,
-  TOTAL_TIME: 120,
-  COUNTDOWN: 5,
-  VILLAIN_STAGES: 4,
-  VILLAIN_STAGE_INTERVAL: 30,
-  FIRE_RATE: 400,
-  LOCAL_KEYS: { crystals: 'gba_crystals_v1', streak: 'gba_streak_v1' },
-  PIN: '1234'
-};
+/* CANVAS SETUP */
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const off = document.createElement("canvas");
+const offCtx = off.getContext("2d");
 
-/* ======= Canvas Setup ======= */
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d', { alpha: false });
-canvas.width = CONFIG.WIDTH;
-canvas.height = CONFIG.HEIGHT;
-ctx.imageSmoothingEnabled = false;
+const WIDTH = 960;
+const HEIGHT = 540;
+off.width = WIDTH/PIXEL_SCALE;
+off.height = HEIGHT/PIXEL_SCALE;
+canvas.width = WIDTH;
+canvas.height = HEIGHT;
 
-/* Offscreen for crisp pixel art */
-const offscreen = document.createElement('canvas');
-offscreen.width = Math.floor(CONFIG.WIDTH / CONFIG.PIXEL_SCALE);
-offscreen.height = Math.floor(CONFIG.HEIGHT / CONFIG.PIXEL_SCALE);
-const ox = offscreen.getContext('2d');
-ox.imageSmoothingEnabled = false;
+/* STATE */
+let state="idle";
+let startTime=0;
+let countdownStart=0;
+let shotsFired=0;
+let streak = parseInt(localStorage.getItem(STORAGE_STREAK))||0;
+let crystals = parseInt(localStorage.getItem(STORAGE_CRYSTALS))||0;
+let lastFire=0;
+let particles=[];
+let villainStage=0;
 
-/* UI refs */
-const timerEl = document.getElementById('timer');
-const countdownEl = document.getElementById('countdown');
-const hintEl = document.getElementById('hint');
-const crystalsEl = document.getElementById('crystals');
-const streakEl = document.getElementById('streak');
-const lootModal = document.getElementById('lootModal');
-const lootAmount = document.getElementById('lootAmount');
-const lootText = document.getElementById('lootText');
-const claimLoot = document.getElementById('claimLoot');
-const hotspot = document.getElementById('hotspot');
-const pinPanel = document.getElementById('pinPanel');
-const pinInput = document.getElementById('pinInput');
-const pinUnlock = document.getElementById('pinUnlock');
-const pinClose = document.getElementById('pinClose');
-const adminArea = document.getElementById('adminArea');
-const setCrystals = document.getElementById('setCrystals');
-const setStreak = document.getElementById('setStreak');
-const saveAdmin = document.getElementById('saveAdmin');
-const resetData = document.getElementById('resetData');
-const startOverlay = document.getElementById('startOverlay');
-const startButton = document.getElementById('startButton');
+/* AUDIO */
+let audioCtx;
+let masterGain;
 
-/* ======= Local Storage ======= */
-function loadStats(){
-  const c = parseInt(localStorage.getItem(CONFIG.LOCAL_KEYS.crystals) || '0',10);
-  const s = parseInt(localStorage.getItem(CONFIG.LOCAL_KEYS.streak) || '0',10);
-  return { crystals: isNaN(c)?0:c, streak: isNaN(s)?0:s };
-}
-function saveStats(stats){
-  localStorage.setItem(CONFIG.LOCAL_KEYS.crystals, String(stats.crystals));
-  localStorage.setItem(CONFIG.LOCAL_KEYS.streak, String(stats.streak));
-}
-let stats = loadStats();
-crystalsEl.textContent = stats.crystals;
-streakEl.textContent = stats.streak;
-
-/* ======= Audio Setup (Web Audio API) ======= */
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-const audio = new AudioCtx();
-let masterGain = audio.createGain(); masterGain.gain.value = 0.9; masterGain.connect(audio.destination);
-
-/* Procedural sounds */
-function playBeep(freq=880, time=0.10){
-  const t = audio.currentTime;
-  const o = audio.createOscillator();
-  const g = audio.createGain();
-  o.type = 'square'; o.frequency.value = freq;
-  g.gain.value = 0;
-  o.connect(g); g.connect(masterGain);
-  o.start(t);
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.linearRampToValueAtTime(0.12, t+0.005);
-  g.gain.exponentialRampToValueAtTime(0.0001, t+time);
-  o.stop(t+time+0.02);
+function initAudio(){
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value=0.4;
+  masterGain.connect(audioCtx.destination);
+  audioCtx.onstatechange=()=>console.log("Audio state:",audioCtx.state);
 }
 
-function playLaser(){
-  const t = audio.currentTime;
-  const o1 = audio.createOscillator();
-  const o2 = audio.createOscillator();
-  const g = audio.createGain();
-  const f = audio.createBiquadFilter();
-  o1.type = 'sawtooth'; o1.frequency.value = 1200;
-  o2.type = 'square'; o2.frequency.value = 1800;
-  f.type = 'lowpass'; f.frequency.value = 2400;
-  g.gain.value = 0;
-  o1.connect(f); o2.connect(f); f.connect(g); g.connect(masterGain);
-  o1.start(t); o2.start(t);
-  g.gain.setValueAtTime(0.0001,t);
-  g.gain.linearRampToValueAtTime(0.18,t+0.01);
-  g.gain.exponentialRampToValueAtTime(0.0001,t+0.18);
-  o1.frequency.exponentialRampToValueAtTime(600,t+0.18);
-  o1.stop(t+0.22); o2.stop(t+0.22);
-}
-
-function playBoom(){
-  const t = audio.currentTime;
-  const o = audio.createOscillator();
-  const g = audio.createGain();
-  const comp = audio.createDynamicsCompressor();
-  o.type = 'sine'; o.frequency.value = 60;
-  g.gain.value = 0;
-  o.connect(g); g.connect(comp); comp.connect(masterGain);
-  comp.threshold.value = -10;
-  o.start(t);
-  g.gain.setValueAtTime(0.0001,t);
-  g.gain.linearRampToValueAtTime(1.2,t+0.02);
-  g.gain.exponentialRampToValueAtTime(0.0001,t+1.2);
-  o.stop(t+1.3);
-}
-
-function playSmoke(){
-  const t = audio.currentTime;
-  const bufferSize = audio.sampleRate * 0.25;
-  const buffer = audio.createBuffer(1, bufferSize, audio.sampleRate);
-  const data = buffer.getChannelData(0);
-  for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * (1 - i/bufferSize);
-  const src = audio.createBufferSource();
-  const g = audio.createGain();
-  src.buffer = buffer;
-  g.gain.value = 0.18;
-  src.connect(g); g.connect(masterGain);
-  src.start(t);
-}
-
-/* Robust iOS unlock: resume on gesture and play tiny confirmation tone */
-function tryResumeAudio(){
-  if(!audio) return;
-  if(audio.state === 'suspended' || audio.state === 'interrupted'){
-    audio.resume().then(()=> {
-      console.log('Audio resumed, state=', audio.state);
-    }).catch((e)=>{
-      console.warn('Audio resume rejected', e);
-    });
-    audio.onstatechange = () => console.log('Audio state changed to', audio.state);
-  } else {
-    console.log('Audio already running:', audio.state);
-  }
-}
-function addAudioUnlockHandlers(){
-  const handler = (ev) => {
-    tryResumeAudio();
-    // tiny confirmation tone
-    try {
-      const o = audio.createOscillator();
-      const g = audio.createGain();
-      o.type = 'square'; o.frequency.value = 440;
-      g.gain.value = 0.0001;
-      o.connect(g); g.connect(masterGain);
-      o.start();
-      g.gain.linearRampToValueAtTime(0.06, audio.currentTime + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.00001, audio.currentTime + 0.12);
-      o.stop(audio.currentTime + 0.14);
-    } catch(e){ console.warn('confirmation tone failed', e); }
-    document.removeEventListener('pointerdown', handler);
-    document.removeEventListener('touchstart', handler);
-    document.removeEventListener('mousedown', handler);
-  };
-  document.addEventListener('pointerdown', handler, {passive:true});
-  document.addEventListener('touchstart', handler, {passive:true});
-  document.addEventListener('mousedown', handler, {passive:true});
-}
-addAudioUnlockHandlers();
-
-/* ======= Game State ======= */
-let state = {
-  phase: 'intro',
-  countdown: CONFIG.COUNTDOWN,
-  timeLeft: CONFIG.TOTAL_TIME,
-  lastShot: 0,
-  startTime: null,
-  villainStage: 0,
-  heroX: 0.12,
-  heroY: 0.5,
-  recoil: 0,
-  particles: [],
-  explosionShake: 0,
-  lastFrame: performance.now(),
-  shotsFired: 0
-};
-
-/* ======= Sprite System (bitmask/palette) ======= */
-/* drawSprite: pixels[][] with palette indices; 0 = transparent */
-function drawSprite(ctx2, sprite, palette, x, y, scale=1, flip=false){
-  const w = sprite.w, h = sprite.h;
-  for(let ry=0; ry<h; ry++){
-    for(let rx=0; rx<w; rx++){
-      const idx = sprite.pixels[ry][rx];
-      if(!idx) continue;
-      const col = palette[idx] || '#000';
-      const px = flip ? (x + (w-1-rx)*scale) : (x + rx*scale);
-      ctx2.fillStyle = col;
-      ctx2.fillRect(px, y + ry*scale, scale, scale);
-    }
+function resumeAudio(){
+  if(audioCtx && audioCtx.state==="suspended"){
+    audioCtx.resume();
   }
 }
 
-/* Hero 24x24 (kid pilot in exo-suit) - palette indices */
-function makeHeroSprite(){
-  const palette = ['#000000','#0ff6ff','#00b3b3','#ffffff','#9ff','#444','#ffd24d','#ffb3b3','#222','#666'];
-  const px = [
-    [0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,2,3,3,3,3,3,3,3,3,3,2,0,0,0,0,0,0,0],
-    [0,0,0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0,0,0],
-    [0,0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0,0],
-    [0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0],
-    [0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0],
-    [0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0],
-    [2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0],
-    [2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0],
-    [2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0],
-    [2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0],
-    [2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0],
-    [0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0],
-    [0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0],
-    [0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0,0],
-    [0,0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0,0,0],
-    [0,0,0,0,0,2,3,3,3,3,3,3,3,3,3,3,2,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,6,6,6,6,6,6,6,6,6,6,6,0,0,0,0,0,0,0],
-    [0,0,0,0,0,6,6,6,6,6,6,6,6,6,6,6,6,6,0,0,0,0,0,0],
-    [0,0,0,0,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,0,0,0,0,0],
-    [0,0,0,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,0,0,0,0],
-    [0,0,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,0,0,0]
-  ];
-  return { w:24, h:24, pixels: px, palette };
+function beep(){
+  const o=audioCtx.createOscillator();
+  o.frequency.value=880;
+  o.type="square";
+  o.connect(masterGain);
+  o.start();
+  o.stop(audioCtx.currentTime+0.1);
 }
 
-/* Cannon 12x8 */
-function makeCannonSprite(){
-  const palette = ['#000','#0ff6ff','#00b3b3','#fff','#9ff','#444','#ffd24d','#ffb3b3'];
-  const px = [
-    [0,0,0,7,7,7,7,7,0,0,0,0],
-    [0,0,7,7,7,7,7,7,7,0,0,0],
-    [0,7,7,7,7,7,7,7,7,7,0,0],
-    [7,7,7,7,7,7,7,7,7,7,7,0],
-    [7,7,7,7,7,7,7,7,7,7,7,7],
-    [7,7,7,7,7,7,7,7,7,7,7,7],
-    [0,7,7,7,7,7,7,7,7,7,7,0],
-    [0,0,7,7,7,7,7,7,7,7,0,0]
-  ];
-  return { w:12, h:8, pixels:px, palette };
+function laser(){
+  const o=audioCtx.createOscillator();
+  const f=audioCtx.createBiquadFilter();
+  o.type="sawtooth";
+  o.frequency.value=600;
+  f.type="lowpass";
+  f.frequency.value=1200;
+  o.connect(f);
+  f.connect(masterGain);
+  o.start();
+  o.stop(audioCtx.currentTime+0.18);
 }
 
-/* Villain base 48x48 procedural */
-function makeVillainBase(){
-  const w = 48, h = 48;
-  const pixels = Array.from({length:h}, ()=>Array.from({length:w}, ()=>0));
-  const palette = ['#000','#222','#444','#ffb36b','#ffd24d','#999','#666','#ff6b6b'];
-  const cx = Math.floor(w/2), cy = Math.floor(h/2);
-  for(let y=0;y<h;y++){
-    for(let x=0;x<w;x++){
-      const dx = x-cx, dy = y-cy;
-      const r = Math.sqrt(dx*dx+dy*dy);
-      if(r < 8) pixels[y][x] = 3;
-      else if(r < 16) pixels[y][x] = 4;
-      else if((Math.abs(dx) < 3 && Math.abs(dy) < 18) || (Math.abs(dy) < 3 && Math.abs(dx) < 18)) pixels[y][x] = 5;
-      else pixels[y][x] = 0;
-    }
-  }
-  // four arms
-  for(let i=0;i<4;i++){
-    const ax = [0, w-1, 0, w-1][i];
-    const ay = [0, 0, h-1, h-1][i];
-    for(let j=0;j<12;j++){
-      const x = Math.round(cx + (ax-cx) * (j/12));
-      const y = Math.round(cy + (ay-cy) * (j/12));
-      for(let k=-2;k<=2;k++){
-        if(y+k>=0 && y+k<h && x>=0 && x<w) pixels[y+k][x] = 6;
+function boom(){
+  const o=audioCtx.createOscillator();
+  o.type="sine";
+  o.frequency.value=60;
+  o.connect(masterGain);
+  o.start();
+  o.stop(audioCtx.currentTime+1);
+}
+
+/* SPRITE SYSTEM */
+function drawBitmaskSprite(x,y,mask,palette){
+  for(let j=0;j<mask.length;j++){
+    for(let i=0;i<mask[j].length;i++){
+      const idx=mask[j][i];
+      if(idx>=0){
+        offCtx.fillStyle=palette[idx];
+        offCtx.fillRect(x+i,y+j,1,1);
       }
     }
   }
-  return { w,h,pixels,palette };
 }
 
-/* Create sprites */
-const heroSprite = makeHeroSprite();
-const cannonSprite = makeCannonSprite();
-const villainSpriteBase = makeVillainBase();
-
-/* ======= Starfield (3-layer parallax) ======= */
-const starLayers = [
-  { speed: 0.02, density: 36, color: '#0b1f3a', stars: [] }, // nebula blobs
-  { speed: 0.06, density: 120, color: '#9ff', stars: [] }, // mid stars
-  { speed: 0.12, density: 64, color: '#ffd24d', stars: [] } // foreground debris
+/* HERO SPRITE */
+const heroMask=[
+[ -1,1,1,1,1,-1],
+[ 1,2,2,2,2,1],
+[ 1,2,3,3,2,1],
+[ 1,2,2,2,2,1],
+[ -1,4,4,4,4,-1]
 ];
 
-function initStars(){
-  starLayers.forEach(layer=>{
-    layer.stars = [];
-    for(let i=0;i<layer.density;i++){
-      layer.stars.push({
-        x: Math.random()*offscreen.width,
-        y: Math.random()*offscreen.height,
-        s: Math.random()*2 + (layer.speed*6),
-        a: Math.random()*0.8 + 0.2,
-        tw: Math.random()*1.2 + 0.2
-      });
+const heroPalette=["#000","#666","#0ff","#fff","#444"];
+
+/* VILLAIN BASE */
+const villainMask=[
+[1,1,1,1,1,1],
+[1,2,2,2,2,1],
+[1,2,3,3,2,1],
+[1,2,2,2,2,1],
+[1,1,1,1,1,1]
+];
+
+function getVillainPalette(){
+  if(villainStage===0) return ["#000","#555","#999","#0ff"];
+  if(villainStage===1) return ["#000","#444","#888","#f00"];
+  if(villainStage===2) return ["#000","#333","#777","#ff0"];
+  return ["#000","#222","#f00","#ff6600"];
+}
+
+/* PARTICLES */
+function addParticle(x,y,color){
+  particles.push({
+    x,y,
+    vx:(Math.random()-0.5)*2,
+    vy:(Math.random()-0.5)*2,
+    life:60,
+    color
+  });
+}
+
+function updateParticles(){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.vx;
+    p.y+=p.vy;
+    p.life--;
+    offCtx.fillStyle=p.color;
+    offCtx.fillRect(p.x,p.y,1,1);
+    if(p.life<=0) particles.splice(i,1);
+  }
+}
+
+/* BACKGROUND */
+const stars=[];
+for(let i=0;i<120;i++){
+  stars.push({x:Math.random()*off.width,y:Math.random()*off.height,s:Math.random()*3});
+}
+
+function drawBackground(){
+  offCtx.fillStyle="#000";
+  offCtx.fillRect(0,0,off.width,off.height);
+  stars.forEach(st=>{
+    offCtx.fillStyle="white";
+    offCtx.fillRect(st.x,st.y,1,1);
+    st.y+=st.s*0.2;
+    if(st.y>off.height) st.y=0;
+  });
+}
+
+/* LOOP */
+function loop(ts){
+  try{
+    requestAnimationFrame(loop);
+    drawBackground();
+    if(state==="countdown"){
+      const elapsed=Math.floor((performance.now()-countdownStart)/1000);
+      const remain=COUNTDOWN-elapsed;
+      document.getElementById("timer").textContent=remain>0?remain:"GO";
+      if(remain<=0){
+        state="main";
+        startTime=performance.now();
+      }
     }
-  });
-}
-initStars();
+    else if(state==="main"){
+      const elapsed=Math.floor((performance.now()-startTime)/1000);
+      const remain=TOTAL_TIME-elapsed;
+      villainStage=Math.min(3,Math.floor(elapsed/VILLAIN_STAGE_INTERVAL));
+      document.getElementById("timer").textContent=
+        `${Math.floor(remain/60)}:${String(remain%60).padStart(2,"0")}`;
+      if(performance.now()-lastFire>FIRE_RATE){
+        laser();
+        shotsFired++;
+        lastFire=performance.now();
+        addParticle(80,off.height/2,"#ff0");
+      }
+      if(remain<=0){
+        state="end";
+        boom();
+        triggerExplosion();
+      }
+    }
 
-/* ======= Particles ======= */
-function spawnParticle(x,y,vx,vy,color,life=120,size=2){
-  state.particles.push({x,y,vx,vy,color,life,size});
-}
-function updateParticles(dt){
-  for(let i=state.particles.length-1;i>=0;i--){
-    const p = state.particles[i];
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-    p.life -= dt;
-    p.vy += 0.0005 * dt;
-    if(p.life <= 0) state.particles.splice(i,1);
-  }
-}
-function drawParticles(ctx2, scale){
-  state.particles.forEach(p=>{
-    ctx2.globalAlpha = Math.max(0, p.life/160);
-    ctx2.fillStyle = p.color;
-    ctx2.fillRect(Math.round(p.x)*scale, Math.round(p.y)*scale, Math.max(1,p.size)*scale, Math.max(1,p.size)*scale);
-    ctx2.globalAlpha = 1;
-  });
-}
+    /* HERO */
+    const t=performance.now()/500;
+    const hx=40+Math.sin(t)*5;
+    const hy=off.height/2+Math.cos(t)*10;
+    drawBitmaskSprite(hx|0,hy|0,heroMask,heroPalette);
 
-/* ======= Visual Effects ======= */
-function screenShake(intensity){
-  state.explosionShake = Math.max(state.explosionShake, intensity);
-}
+    /* VILLAIN */
+    drawBitmaskSprite(off.width-60,off.height/2,villainMask,getVillainPalette());
 
-/* ======= Game Logic ======= */
-let lastShotTime = 0;
-function fireShot(){
-  const now = performance.now();
-  if(now - lastShotTime < CONFIG.FIRE_RATE) return;
-  lastShotTime = now;
-  state.shotsFired++;
-  playLaser();
-  playSmoke();
-  state.recoil = 6;
-  const hx = (state.heroX * offscreen.width) + 18;
-  const hy = state.heroY * offscreen.height + 6;
-  spawnParticle(hx, hy, 0.6, -0.02, '#9ff', 120, 2);
-  for(let i=0;i<6;i++){
-    spawnParticle(hx-4, hy+2, (Math.random()-0.5)*0.2, -0.05 - Math.random()*0.1, '#ccc', 80 + Math.random()*40, 2 + Math.random()*2);
+    updateParticles();
+    ctx.drawImage(off,0,0,canvas.width,canvas.height);
+
+  }catch(e){
+    console.error(e);
   }
 }
 
-/* Villain stage calculation */
-function villainStageForElapsed(elapsed){
-  return Math.min(CONFIG.VILLAIN_STAGES-1, Math.floor(elapsed / CONFIG.VILLAIN_STAGE_INTERVAL));
-}
-
-/* ======= Countdown & Timer ======= */
-let introTimer = CONFIG.COUNTDOWN;
-let mainTimer = CONFIG.TOTAL_TIME;
-let countdownBeepIndex = CONFIG.COUNTDOWN;
-
-/* Start main phase */
-function startMain(){
-  state.phase = 'main';
-  state.startTime = performance.now();
-  mainTimer = CONFIG.TOTAL_TIME;
-  countdownEl.textContent = 'Battle Engaged';
-  hintEl.textContent = 'Brush! The Hero auto-fires — keep going!';
-  state.villainStage = 0;
-  state.shotsFired = 0;
-  // enable parental hotspot after start
-  hotspot.style.pointerEvents = 'auto';
-  hotspot.setAttribute('aria-hidden','false');
-  // hide start overlay
-  startOverlay.style.display = 'none';
-  startOverlay.setAttribute('aria-hidden','true');
-}
-
-/* Trigger outro explosion and loot */
-function triggerOutro(){
-  if(state.phase === 'outro' || state.phase === 'ended') return;
-  state.phase = 'outro';
-  playBoom();
-  screenShake(18);
-  for(let i=0;i<400;i++){
-    const angle = Math.random()*Math.PI*2;
-    const speed = Math.random()*6 + 1;
-    spawnParticle(offscreen.width/2, offscreen.height/2, Math.cos(angle)*speed, Math.sin(angle)*speed, '#ffd24d', 200 + Math.random()*200, 2 + Math.random()*3);
+/* EXPLOSION */
+function triggerExplosion(){
+  for(let i=0;i<200;i++){
+    addParticle(off.width/2,off.height/2,"#ffcc00");
   }
-  setTimeout(()=>showLoot(), 800);
+  setTimeout(showLoot,1200);
 }
 
-/* Loot calculation and display */
+/* LOOT */
 function showLoot(){
-  const base = Math.max(1, Math.floor(state.shotsFired / 6));
-  const bonus = Math.floor(stats.streak / 2);
-  const gained = base + bonus;
-  lootAmount.textContent = `+${gained}`;
-  lootText.textContent = `You fired ${state.shotsFired} shots. Bonus: ${bonus}`;
-  lootModal.style.display = 'flex';
-  lootModal.setAttribute('aria-hidden','false');
-  lootModal.dataset.gain = String(gained);
+  streak++;
+  const gained=Math.floor(shotsFired/6)+Math.floor(streak/2);
+  crystals+=gained;
+  localStorage.setItem(STORAGE_CRYSTALS,crystals);
+  localStorage.setItem(STORAGE_STREAK,streak);
+  document.getElementById("lootText").textContent=
+    `+${gained} Crystals\nTotal: ${crystals}`;
+  document.getElementById("lootModal").style.display="flex";
 }
 
-/* Claim loot */
-claimLoot.addEventListener('click', ()=>{
-  const gain = parseInt(lootModal.dataset.gain || '0',10);
-  stats.crystals += gain;
-  stats.streak += 1;
-  saveStats(stats);
-  crystalsEl.textContent = stats.crystals;
-  streakEl.textContent = stats.streak;
-  lootModal.style.display = 'none';
-  lootModal.setAttribute('aria-hidden','true');
-  state.phase = 'ended';
-  hintEl.textContent = 'Nice job! Come back tomorrow for another run.';
-});
-
-/* ======= Parental Lock Hotspot ======= */
-/* Hotspot initially non-blocking until start; becomes active after startMain() */
-hotspot.style.pointerEvents = 'none';
-hotspot.addEventListener('click', (e)=>{
-  pinPanel.style.display = 'flex';
-  pinPanel.setAttribute('aria-hidden','false');
-  pinInput.value = '';
-  pinInput.focus();
-});
-pinClose.addEventListener('click', ()=>{
-  pinPanel.style.display = 'none';
-  pinPanel.setAttribute('aria-hidden','true');
-});
-pinUnlock.addEventListener('click', ()=>{
-  if(pinInput.value === CONFIG.PIN){
-    adminArea.style.display = 'flex';
-    setCrystals.value = stats.crystals;
-    setStreak.value = stats.streak;
-  } else {
-    alert('Incorrect PIN');
-  }
-});
-saveAdmin.addEventListener('click', ()=>{
-  const c = parseInt(setCrystals.value||'0',10);
-  const s = parseInt(setStreak.value||'0',10);
-  stats.crystals = isNaN(c)?0:c;
-  stats.streak = isNaN(s)?0:s;
-  saveStats(stats);
-  crystalsEl.textContent = stats.crystals;
-  streakEl.textContent = stats.streak;
-  alert('Saved');
-});
-resetData.addEventListener('click', ()=>{
-  if(confirm('Reset crystals and streak to zero?')){
-    stats.crystals = 0; stats.streak = 0;
-    saveStats(stats);
-    crystalsEl.textContent = 0; streakEl.textContent = 0;
-    alert('Reset');
-  }
-});
-
-/* ======= Start overlay handling (ensures trusted gesture on iOS) ======= */
-startButton.addEventListener('click', (ev)=>{
-  // resume audio and start intro countdown
-  tryResumeAudio();
-  // small confirmation tone already played by tryResumeAudio handlers
-  startOverlay.style.display = 'none';
-  startOverlay.setAttribute('aria-hidden','true');
-  beginIntroSequence();
-});
-
-/* Also allow tapping canvas to start if overlay hidden */
-canvas.addEventListener('pointerdown', ()=>{
-  tryResumeAudio();
-});
-
-/* ======= Intro sequence ======= */
-function beginIntroSequence(){
-  state.phase = 'intro';
-  introTimer = CONFIG.COUNTDOWN;
-  countdownBeepIndex = CONFIG.COUNTDOWN;
-  countdownEl.textContent = 'Neural Link Sync';
-  // immediate beep
-  playBeep(880,0.12);
-  // schedule beeps via update loop (no separate interval)
+function restart(){
+  document.getElementById("lootModal").style.display="none";
+  shotsFired=0;
+  state="countdown";
+  countdownStart=performance.now();
 }
 
-/* ======= Update & Render Loop ======= */
-function update(dt){
-  if(state.phase === 'intro'){
-    introTimer -= dt/1000;
-    const nextInt = Math.max(0, Math.ceil(introTimer));
-    countdownEl.textContent = `Neural Link Sync ${nextInt}`;
-    if(nextInt < countdownBeepIndex){
-      countdownBeepIndex = nextInt;
-      playBeep(880 - (CONFIG.COUNTDOWN-nextInt)*40, 0.12);
-    }
-    if(introTimer <= 0){
-      startMain();
-    }
-  } else if(state.phase === 'main'){
-    const elapsed = (performance.now() - state.startTime)/1000;
-    const remaining = Math.max(0, CONFIG.TOTAL_TIME - elapsed);
-    mainTimer = remaining;
-    const mm = String(Math.floor(remaining/60)).padStart(2,'0');
-    const ss = String(Math.floor(remaining%60)).padStart(2,'0');
-    timerEl.textContent = `${mm}:${ss}`;
-    const stage = villainStageForElapsed(elapsed);
-    if(stage !== state.villainStage){
-      state.villainStage = stage;
-      for(let i=0;i<40;i++){
-        spawnParticle(offscreen.width*0.7 + Math.random()*40 - 20, offscreen.height*0.3 + Math.random()*40 - 20, (Math.random()-0.5)*0.6, (Math.random()-0.5)*0.6, '#ff6b6b', 120, 2);
-      }
-    }
-    const t = elapsed;
-    state.heroX = 0.12 + (Math.sin(t*1.2)*0.06);
-    state.heroY = 0.45 + Math.sin(t*2.1)*0.08;
-    if(performance.now() - state.lastShot > CONFIG.FIRE_RATE){
-      fireShot();
-      state.lastShot = performance.now();
-    }
-    state.recoil = Math.max(0, state.recoil - dt*0.02);
-    updateParticles(dt);
-    if(remaining <= 0){
-      triggerOutro();
-    }
-  } else if(state.phase === 'outro'){
-    updateParticles(dt);
-    state.explosionShake = Math.max(0, state.explosionShake - dt*0.05);
-  } else {
-    updateParticles(dt);
-  }
+/* START */
+function startGame(){
+  resumeAudio();
+  document.getElementById("startOverlay").style.display="none";
+  state="countdown";
+  countdownStart=performance.now();
 }
 
-/* Render to offscreen then scale to main canvas */
-function render(){
-  // clear offscreen
-  ox.fillStyle = '#071026';
-  ox.fillRect(0,0,offscreen.width,offscreen.height);
+document.getElementById("startOverlay")
+.addEventListener("pointerdown",()=>{
+  initAudio();
+  startGame();
+});
 
-  // parallax starfield
-  starLayers.forEach((layer, idx)=>{
-    layer.stars.forEach(s=>{
-      s.x -= layer.speed;
-      if(s.x < -2) s.x = offscreen.width + 2;
-      ox.globalAlpha = s.a;
-      if(idx === 0){
-        ox.fillStyle = layer.color;
-        ox.fillRect(Math.floor(s.x), Math.floor(s.y), Math.ceil(s.s*2), Math.ceil(s.s*2));
-      } else {
-        ox.fillStyle = layer.color;
-        ox.fillRect(Math.floor(s.x), Math.floor(s.y), Math.ceil(s.s), Math.ceil(s.s));
-      }
-      ox.globalAlpha = 1;
-    });
-  });
-
-  // villain (center-right)
-  const v = villainSpriteBase;
-  const vScale = 1;
-  const vx = Math.floor(offscreen.width*0.62);
-  const vy = Math.floor(offscreen.height*0.18);
-  for(let y=0;y<v.h;y++){
-    for(let x=0;x<v.w;x++){
-      const idx = v.pixels[y][x];
-      if(idx === 0) continue;
-      let color = v.palette[idx] || '#666';
-      if(state.villainStage >= 1){
-        if(((x+y) % 17) === 0) color = '#222';
-      }
-      if(state.villainStage >= 2){
-        if(Math.random() < 0.01) color = '#000';
-        if(Math.random() < 0.01) color = '#ffd24d';
-      }
-      if(state.villainStage >= 3){
-        const cx = Math.floor(v.w/2), cy = Math.floor(v.h/2);
-        const dx = x-cx, dy = y-cy;
-        if(Math.sqrt(dx*dx+dy*dy) < 8){
-          color = (Math.random()<0.6) ? '#ff6b6b' : '#ffb36b';
-        }
-      }
-      ox.fillStyle = color;
-      ox.fillRect(vx + x*vScale, vy + y*vScale, vScale, vScale);
-    }
-  }
-
-  // hero
-  const hs = heroSprite;
-  const heroXpx = Math.floor(state.heroX * offscreen.width);
-  const heroYpx = Math.floor(state.heroY * offscreen.height);
-  drawSprite(ox, hs, hs.palette, heroXpx, heroYpx, 1, false);
-
-  // cannon with recoil
-  const cannonX = heroXpx + 18;
-  const cannonY = heroYpx + 8 - Math.round(state.recoil);
-  drawSprite(ox, cannonSprite, cannonSprite.palette, cannonX, cannonY, 1, false);
-
-  if(state.recoil > 0.5){
-    ox.fillStyle = '#fff';
-    ox.fillRect(cannonX + 10, cannonY + 2, 3, 3);
-    ox.fillStyle = 'rgba(200,200,200,0.6)';
-    ox.fillRect(cannonX + 8, cannonY + 6, 6, 2);
-  }
-
-  // particles
-  drawParticles(ox, 1);
-
-  // villain health bar
-  const barW = 120, barH = 8;
-  const barX = Math.floor(offscreen.width*0.62);
-  const barY = Math.floor(offscreen.height*0.12);
-  const hpPct = 1 - (state.villainStage / (CONFIG.VILLAIN_STAGES-1));
-  ox.fillStyle = '#000';
-  ox.fillRect(barX-2, barY-2, barW+4, barH+4);
-  ox.fillStyle = '#333';
-  ox.fillRect(barX, barY, barW, barH);
-  ox.fillStyle = '#ff6b6b';
-  ox.fillRect(barX, barY, Math.max(0, Math.floor(barW*hpPct)), barH);
-
-  // copy to main canvas with shake
-  ctx.save();
-  const shake = state.explosionShake;
-  const sx = (Math.random()*2-1) * shake;
-  const sy = (Math.random()*2-1) * shake;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.translate(sx, sy);
-  ctx.drawImage(offscreen, 0, 0, offscreen.width, offscreen.height, 0, 0, canvas.width, canvas.height);
-  ctx.restore();
-}
-
-/* Flash overlay for final explosion */
-let flashAlpha = 0;
-function flashUpdate(){
-  if(state.phase === 'outro' && flashAlpha < 1){
-    flashAlpha = Math.min(1, flashAlpha + 0.08);
-  } else {
-    flashAlpha = Math.max(0, flashAlpha - 0.02);
-  }
-  if(flashAlpha > 0){
-    ctx.save();
-    ctx.globalAlpha = flashAlpha;
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.restore();
-  }
-  requestAnimationFrame(flashUpdate);
-}
-requestAnimationFrame(flashUpdate);
-
-/* Defensive main loop */
-function loop(now){
-  try {
-    const dt = now - state.lastFrame;
-    state.lastFrame = now;
-    update(dt);
-    render();
-  } catch (err) {
-    console.error('Game loop error:', err);
-  }
-  requestAnimationFrame(loop);
-}
-state.lastFrame = performance.now();
 requestAnimationFrame(loop);
 
-/* ======= Accessibility & UX tweaks ======= */
-/* Ensure timer uses tabular numbers */
-timerEl.style.fontFamily = '"SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-timerEl.style.letterSpacing = '0.5px';
+/* PIN */
+document.getElementById("hotspot")
+.addEventListener("click",()=>{
+  document.getElementById("pinPanel").style.display="flex";
+});
 
-/* Prevent hotspot from blocking first gesture until start */
-hotspot.style.pointerEvents = 'none';
-
-/* ======= Wake Lock (best-effort) ======= */
-async function requestWakeLock(){
-  try{
-    if('wakeLock' in navigator){
-      await navigator.wakeLock.request('screen');
-    }
-  }catch(e){}
+function checkPin(){
+  if(document.getElementById("pinInput").value===PIN){
+    document.getElementById("adminControls").style.display="block";
+    document.getElementById("editCrystals").value=crystals;
+    document.getElementById("editStreak").value=streak;
+  }
 }
-requestWakeLock();
 
-/* ======= Debug helpers (uncomment for development) ======= */
-/* hotspot.classList.add('debug'); startOverlay.style.display='flex'; */
+function saveAdmin(){
+  crystals=parseInt(document.getElementById("editCrystals").value)||0;
+  streak=parseInt(document.getElementById("editStreak").value)||0;
+  localStorage.setItem(STORAGE_CRYSTALS,crystals);
+  localStorage.setItem(STORAGE_STREAK,streak);
+  document.getElementById("pinPanel").style.display="none";
+}
 
-/* ======= End of script ======= */
+function resetData(){
+  crystals=0;
+  streak=0;
+  localStorage.removeItem(STORAGE_CRYSTALS);
+  localStorage.removeItem(STORAGE_STREAK);
+  document.getElementById("pinPanel").style.display="none";
+}
 </script>
 </body>
 </html>
