@@ -3,297 +3,264 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TITAN SCRUB: GBA EDITION</title>
+    <title>TITAN SCRUB EX</title>
     <style>
         :root {
-            --bg: #050505;
-            --hud-gold: #ffd24d;
-            --hud-cyan: #0ff6ff;
-            --font: 'Courier New', Courier, monospace;
+            --c-0: transparent; --c-1: #000000; --c-2: #0ff6ff; --c-3: #00b3b3;
+            --c-4: #bfefff; --c-5: #ffd24d; --c-6: #ffb36b; --c-7: #ff6b6b;
+            --c-8: #444444; --c-9: #999999; --c-10: #222222; --c-11: #ffffff;
         }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            background: var(--bg); overflow: hidden; 
-            display: flex; justify-content: center; align-items: center;
-            font-family: var(--font);
+            background: #08080a; overflow: hidden; 
+            font-family: 'Courier New', monospace;
         }
-        #game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            max-width: 430px; /* iPhone 15 width approx */
-            aspect-ratio: 9/19.5;
-            background: #111;
-            image-rendering: pixelated;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        #stage {
+            position: relative; width: 100vw; height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
         }
-        canvas {
-            width: 100%;
-            height: 100%;
-            touch-action: none;
+        canvas { 
+            width: 100%; height: 100%; image-rendering: pixelated; 
+            background: radial-gradient(circle, #1a1a2e 0%, #08080a 100%);
         }
-        #hud {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            padding: 20px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+        
+        /* UI OVERLAY */
+        #hud-top {
+            position: absolute; top: 40px; width: 85%;
+            display: flex; flex-direction: column; gap: 10px;
         }
-        .hud-bar {
-            height: 12px;
-            background: #222;
-            border: 2px solid #444;
-            position: relative;
-            overflow: hidden;
+        .bar-container {
+            height: 24px; background: rgba(0,0,0,0.5); border: 2px solid var(--c-8);
+            position: relative; box-shadow: 0 0 15px rgba(0,0,0,0.5);
         }
-        #progress-fill {
-            width: 100%;
-            height: 100%;
-            background: var(--hud-cyan);
-            transition: width 0.3s linear;
-            box-shadow: 0 0 10px var(--hud-cyan);
+        #hp-bar {
+            width: 100%; height: 100%; background: linear-gradient(90deg, var(--c-7), #a00);
+            transition: width 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67);
         }
-        .label {
-            color: var(--hud-gold);
-            font-size: 14px;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-            text-shadow: 2px 2px #000;
+        #sector-dots {
+            display: flex; gap: 5px; margin-top: 5px;
         }
-        #start-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.85);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            text-align: center;
-            color: white;
+        .dot { width: 15px; height: 6px; background: var(--c-10); border: 1px solid var(--c-8); }
+        .dot.active { background: var(--c-2); box-shadow: 0 0 8px var(--c-2); }
+
+        #prompt-box {
+            position: absolute; bottom: 15%; width: 100%; text-align: center;
+            color: var(--c-11); font-weight: bold; text-shadow: 2px 2px var(--c-1);
+            letter-spacing: 2px; pointer-events: none;
         }
-        button {
-            background: var(--hud-gold);
-            border: none;
-            padding: 15px 40px;
-            font-family: var(--font);
-            font-weight: bold;
-            font-size: 20px;
-            cursor: pointer;
+        .glitch { animation: flash 0.5s infinite; font-size: 24px; }
+        
+        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        #start-screen {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.9);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100;
+        }
+        .btn-ready {
+            background: var(--c-5); border: none; padding: 20px 50px;
+            font-size: 24px; font-weight: 900; color: #000;
             clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+            cursor: pointer; transform: scale(1); transition: 0.2s;
         }
+        .btn-ready:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <canvas id="gameCanvas"></canvas>
-    <div id="hud">
-        <div>
-            <div class="label">Sectors Remaining</div>
-            <div class="hud-bar"><div id="progress-fill"></div></div>
+<div id="stage">
+    <canvas id="game"></canvas>
+    
+    <div id="hud-top">
+        <div style="display: flex; justify-content: space-between; color: var(--c-5); font-size: 12px; font-weight: bold;">
+            <span>TITAN_CORRUPTION</span>
+            <span id="percent-txt">100%</span>
         </div>
-        <div style="text-align: center;">
-            <div id="zone-text" class="label" style="font-size: 18px; color: #fff;">BRUSHING ZONE: LOWER LEFT</div>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-            <div>
-                <div class="label">Plaque HP</div>
-                <div id="boss-hp" style="color: #ff6b6b; font-size: 24px; font-weight: 900;">100%</div>
-            </div>
-            <div style="text-align: right;">
-                <div class="label">Combo</div>
-                <div id="score-text" style="color: var(--hud-cyan); font-size: 24px;">0000</div>
-            </div>
+        <div class="bar-container"><div id="hp-bar"></div></div>
+        <div id="sector-dots">
+            <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
         </div>
     </div>
 
-    <div id="start-overlay">
-        <h1 style="color: var(--hud-cyan); margin-bottom: 5px;">TITAN SCRUB</h1>
-        <p style="margin-bottom: 30px; font-size: 12px; color: #999;">CLEAN THE TITAN • SAVE THE GALAXY</p>
-        <button onclick="startGame()">ENGAGE</button>
+    <div id="prompt-box">
+        <div id="zone-label" class="glitch" style="color: var(--c-2);">FRONT CANINES</div>
+        <div style="font-size: 10px; color: var(--c-9); margin-top: 5px;">MANUAL SCRUB IN PROGRESS...</div>
+    </div>
+
+    <div id="start-screen">
+        <div style="color: var(--c-2); font-size: 40px; font-weight: 900; margin-bottom: 5px;">TITAN SCRUB</div>
+        <div style="color: var(--c-5); font-size: 14px; margin-bottom: 40px;">MISSION: 120 SECONDS TO DECONTAMINATE</div>
+        <button class="btn-ready" onclick="startEngine()">INITIATE</button>
     </div>
 </div>
 
 <script>
 /** 
- * GBA-MAX BITMASK ENGINE
- * 12-Color Master Palette
+ * BITMASK DATA
+ * 0:trans, 1:black, 2:cyan, 5:gold, 8:metal, 9:plate, 10:shadow, 11:white
  */
-const PALETTE = [
-    null,      // 0: Transparent
-    '#000000', // 1: Black
-    '#0ff6ff', // 2: Cyan Visor
-    '#00b3b3', // 3: Dark Cyan
-    '#bfefff', // 4: Visor Highlight
-    '#ffd24d', // 5: Gold
-    '#ffb36b', // 6: Warm Metal
-    '#ff6b6b', // 7: Core Red
-    '#444444', // 8: Dark Gray
-    '#999999', // 9: Plate Gray
-    '#222222', // 10: Shadow
-    '#ffffff'  // 11: Flash
-];
-
-// HERO BITMASK (72x72 logical) - Simplified representation for demo
-// 0=trans, 9=plate, 2=visor, 5=gold
-const HERO_DATA = [
-    [0,0,9,9,9,0,0],
-    [0,9,2,2,9,9,0],
-    [9,9,2,2,2,9,9],
-    [9,9,9,9,9,9,9],
-    [0,8,8,0,8,8,0]
-];
-
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const dpr = window.devicePixelRatio || 1;
-let width, height;
-
-let state = {
-    running: false,
-    timer: 120, // 2 minutes
-    timeLeft: 120,
-    bossHP: 100,
-    score: 0,
-    frame: 0,
-    particles: [],
-    zones: ["LOWER LEFT", "LOWER RIGHT", "UPPER LEFT", "UPPER RIGHT", "FRONT"],
-    currentZone: 0
+const SPRITES = {
+    hero: [
+        [0,0,0,9,9,9,0,0,0],
+        [0,0,9,11,11,9,9,0,0],
+        [0,9,9,2,2,2,9,9,0], // Visor layer
+        [9,9,9,2,2,2,9,9,9],
+        [8,8,9,9,9,9,9,8,8],
+        [0,8,8,5,5,5,8,8,0],
+        [0,0,8,8,8,8,8,0,0]
+    ],
+    boss: [
+        [0,1,1,1,1,1,1,0],
+        [1,9,9,9,9,9,9,1],
+        [1,9,7,7,7,7,9,1], // Core
+        [1,9,7,11,11,7,9,1],
+        [1,9,7,7,7,7,9,1],
+        [1,9,9,9,9,9,9,1],
+        [0,1,1,1,1,1,1,0]
+    ]
 };
 
-function init() {
-    width = canvas.width = canvas.offsetWidth * dpr;
-    height = canvas.height = canvas.offsetHeight * dpr;
-    ctx.scale(dpr, dpr);
+const PALETTE = ["", "#000000", "#0ff6ff", "#00b3b3", "#bfefff", "#ffd24d", "#ffb36b", "#ff6b6b", "#444444", "#999999", "#222222", "#ffffff"];
+const ZONES = ["LOWER LEFT", "LOWER RIGHT", "UPPER LEFT", "UPPER RIGHT", "FRONT TEETH"];
+
+let canvas = document.getElementById('game');
+let ctx = canvas.getContext('2d');
+let audioCtx;
+let state = {
+    active: false,
+    time: 120,
+    maxTime: 120,
+    frame: 0,
+    shake: 0,
+    particles: [],
+    zoneIdx: 0
+};
+
+function setupCanvas() {
+    canvas.width = window.innerWidth * window.devicePixelRatio;
+    canvas.height = window.innerHeight * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     ctx.imageSmoothingEnabled = false;
 }
 
-function drawSprite(data, ox, oy, scale, flip = false) {
-    const s = scale;
-    for(let y = 0; y < data.length; y++) {
-        for(let x = 0; x < data[y].length; x++) {
-            const idx = data[y][x];
-            if(idx === 0) continue;
-            ctx.fillStyle = PALETTE[idx];
-            const px = flip ? ox + (data[y].length - x) * s : ox + x * s;
-            ctx.fillRect(px, oy + y * s, s, s);
-        }
-    }
+function beep(freq, dur) {
+    if(!audioCtx) return;
+    let osc = audioCtx.createOscillator();
+    let gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + dur);
 }
 
-function spawnParticle() {
-    state.particles.push({
-        x: 150 + Math.random() * 100,
-        y: 200 + Math.random() * 150,
-        vx: (Math.random() - 0.5) * 10,
-        vy: -Math.random() * 15,
-        life: 1.0,
-        color: Math.random() > 0.5 ? 2 : 11
+function drawMask(data, x, y, size) {
+    data.forEach((row, ri) => {
+        row.forEach((pixel, pi) => {
+            if(pixel === 0) return;
+            ctx.fillStyle = PALETTE[pixel];
+            ctx.fillRect(x + (pi * size), y + (ri * size), size, size);
+        });
     });
 }
 
 function update() {
-    if(!state.running) return;
+    if(!state.active) return;
     
     state.frame++;
-    state.timeLeft -= 1/60;
+    state.time -= 1/60;
     
-    // Deterministic Progression Logic
-    const progress = state.timeLeft / state.timer;
-    state.bossHP = Math.max(0, Math.floor(progress * 100));
-    document.getElementById('progress-fill').style.width = (progress * 100) + "%";
-    document.getElementById('boss-hp').innerText = state.bossHP + "%";
-    document.getElementById('score-text').innerText = Math.floor((120 - state.timeLeft) * 100).toString().padStart(4, '0');
-
-    // Zone rotation every 24 seconds
-    const zoneIdx = Math.floor((120 - state.timeLeft) / 24);
-    if(zoneIdx !== state.currentZone && zoneIdx < 5) {
-        state.currentZone = zoneIdx;
-        document.getElementById('zone-text').innerText = "BRUSHING ZONE: " + state.zones[zoneIdx];
-        // Flash effect
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0,0,width,height);
+    // Logic: Progression
+    const progress = state.time / state.maxTime;
+    const hpPercent = Math.ceil(progress * 100);
+    document.getElementById('hp-bar').style.width = hpPercent + "%";
+    document.getElementById('percent-txt').innerText = hpPercent + "%";
+    
+    // Zone Switching
+    let newZone = Math.floor((1 - progress) * 5);
+    if(newZone !== state.zoneIdx && newZone < 5) {
+        state.zoneIdx = newZone;
+        document.getElementById('zone-label').innerText = ZONES[state.zoneIdx];
+        const dots = document.querySelectorAll('.dot');
+        dots.forEach((d, i) => d.classList.toggle('active', i === state.zoneIdx));
+        state.shake = 20;
+        beep(440, 0.2); beep(880, 0.2);
     }
 
-    // Particle physics
-    state.particles.forEach((p, i) => {
-        p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.life -= 0.02;
-        if(p.life <= 0) state.particles.splice(i, 1);
-    });
-
-    if(state.frame % 3 === 0) spawnParticle();
-    if(state.timeLeft <= 0) state.running = false;
+    // Particle Burst
+    if(state.frame % 2 === 0) {
+        state.particles.push({
+            x: window.innerWidth/2, y: 250, 
+            vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, 
+            l: 1.0, c: Math.random() > 0.5 ? 2 : 11
+        });
+    }
 
     render();
     requestAnimationFrame(update);
 }
 
 function render() {
-    const w = canvas.offsetWidth;
-    const h = canvas.offsetHeight;
-    
-    // Background: Parallax Stars
-    ctx.fillStyle = '#050505';
-    ctx.fillRect(0, 0, w, h);
-    
-    // "Titan" Villain (Procedural Sine Float)
-    const float = Math.sin(state.frame * 0.05) * 10;
-    ctx.fillStyle = '#222';
-    ctx.fillRect(w/2 - 80, 150 + float, 160, 200); // Base Plate
-    
-    // Core Pulse
-    const pulse = Math.abs(Math.sin(state.frame * 0.1));
-    ctx.shadowBlur = 20 * pulse;
-    ctx.shadowColor = PALETTE[7];
-    ctx.fillStyle = PALETTE[7];
-    ctx.beginPath();
-    ctx.arc(w/2, 250 + float, 30, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    ctx.clearRect(0, 0, w, h);
 
-    // Plaque Overlay (Green grime that disappears)
-    ctx.fillStyle = `rgba(100, 255, 100, ${state.bossHP/100 * 0.5})`;
-    ctx.fillRect(w/2 - 70, 160 + float, 140, 180);
+    // Juice: Screen Shake
+    if(state.shake > 0) {
+        ctx.translate((Math.random()-0.5)*state.shake, (Math.random()-0.5)*state.shake);
+        state.shake *= 0.9;
+    }
 
-    // Hero: Exo-Pilot
-    const heroY = h - 220 + Math.sin(state.frame * 0.08) * 5;
-    drawSprite(HERO_DATA, w/2 - 35, heroY, 10);
+    // Draw Boss (The Plaque Titan)
+    const bSize = 25;
+    const bX = w/2 - (SPRITES.boss[0].length * bSize)/2;
+    const bY = 150 + Math.sin(state.frame * 0.05) * 10;
     
-    // Laser Beam (Visual feedback for "brushing")
-    ctx.strokeStyle = PALETTE[2];
-    ctx.lineWidth = 4;
+    // Ghosting effect
+    ctx.globalAlpha = 0.3;
+    drawMask(SPRITES.boss, bX + Math.sin(state.frame*0.1)*5, bY, bSize);
+    ctx.globalAlpha = 1.0;
+    drawMask(SPRITES.boss, bX, bY, bSize);
+
+    // Draw Hero (The Exo-Scrubber)
+    const hSize = 12;
+    const hX = w/2 - (SPRITES.hero[0].length * hSize)/2;
+    const hY = h - 250 + Math.sin(state.frame * 0.1) * 5;
+    
+    // Beam
+    ctx.strokeStyle = state.frame % 2 === 0 ? PALETTE[2] : PALETTE[11];
+    ctx.lineWidth = 8;
     ctx.beginPath();
-    ctx.moveTo(w/2, heroY);
-    ctx.lineTo(w/2 + (Math.sin(state.frame * 0.2) * 50), 250 + float);
+    ctx.moveTo(w/2, hY);
+    ctx.lineTo(w/2 + Math.sin(state.frame*0.3)*30, bY + 100);
     ctx.stroke();
 
-    // Draw Particles
-    state.particles.forEach(p => {
-        ctx.fillStyle = PALETTE[p.color];
-        ctx.globalAlpha = p.life;
+    drawMask(SPRITES.hero, hX, hY, hSize);
+
+    // Particles
+    state.particles.forEach((p, i) => {
+        ctx.fillStyle = PALETTE[p.c];
         ctx.fillRect(p.x, p.y, 4, 4);
+        p.x += p.vx; p.y += p.vy; p.l -= 0.02;
+        if(p.l <= 0) state.particles.splice(i, 1);
     });
-    ctx.globalAlpha = 1;
+
+    ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
 }
 
-function startGame() {
-    document.getElementById('start-overlay').style.display = 'none';
-    state.running = true;
-    init();
+function startEngine() {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    state.active = true;
+    document.getElementById('start-screen').style.display = 'none';
+    beep(600, 0.1);
+    setTimeout(() => beep(800, 0.1), 100);
     update();
-    
-    // Haptic Feedback Simulation (if mobile)
-    if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
 }
 
-window.addEventListener('resize', init);
-init();
-render();
+window.addEventListener('resize', setupCanvas);
+setupCanvas();
 </script>
 </body>
 </html>
