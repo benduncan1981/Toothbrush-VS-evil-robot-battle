@@ -1,220 +1,580 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EXO-BRUSH: TITAN OMEGA</title>
-    <style>
-        :root { --p1: #0d1117; --p2: #21262d; --p3: #306230; --p4: #9bbc0f; --accent: #ff4500; --gold: #ffd700; }
-        body, html { margin: 0; padding: 0; background: #000; overflow: hidden; height: 100vh; font-family: 'Courier New', monospace; }
-        #game-wrap { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); }
-        canvas { background: var(--p1); image-rendering: pixelated; width: 100%; height: 100%; max-width: 430px; aspect-ratio: 9/19.5; box-shadow: 0 0 50px rgba(0,0,0,1); }
-        
-        /* Premium CRT & Scanline FX */
-        .crt::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); z-index: 15; background-size: 100% 2px, 3px 100%; pointer-events: none; }
-        .crt::after { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: rgba(18, 16, 16, 0.1); opacity: 0; z-index: 16; pointer-events: none; animation: flicker 0.15s infinite; }
-        @keyframes flicker { 0% { opacity: 0.1; } 50% { opacity: 0.05; } 100% { opacity: 0.1; } }
-
-        #ui { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20; background: rgba(0,0,0,0.9); color: var(--p4); transition: 0.5s; }
-        .btn { background: var(--p3); border: 4px solid var(--p4); color: #fff; padding: 20px 40px; font-size: 24px; font-weight: bold; text-transform: uppercase; cursor: pointer; transform: skewX(-10deg); }
-        .btn:active { transform: skewX(-10deg) scale(0.95); }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
+<title>EXO-BRUSH: TITAN OMEGA — Polished</title>
+<style>
+  :root{
+    --bg-0:#05060a; --bg-1:#0d1117; --panel:#0f1720;
+    --visor:#0ff6ff; --visor-mid:#00b3b3; --gold:#ffd24d; --core:#ff6b6b;
+    --accent:#ff4500; --muted:#9aa3b2; --safe-top:env(safe-area-inset-top,12px);
+    --ui-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg-0),#000);font-family:Inter, "Courier New", monospace;-webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;}
+  #stage{position:fixed;inset:0;padding-top:var(--safe-top);display:flex;align-items:center;justify-content:center;box-sizing:border-box;overflow:hidden}
+  /* Canvas container keeps portrait aspect and pixel crispness */
+  .screen{width:100%;max-width:460px;aspect-ratio:9/19.5;position:relative;box-shadow:var(--ui-shadow);border-radius:12px;overflow:hidden;background:radial-gradient(circle,#10121a 0%, #000 100%)}
+  canvas{width:100%;height:100%;display:block;image-rendering:pixelated;background:transparent}
+  /* CRT overlay (subtle) */
+  .crt::before{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,0.02), rgba(255,255,255,0.00));mix-blend-mode:overlay}
+  /* HUD overlay drawn on canvas, but we keep small DOM for accessibility & parental controls */
+  .overlay{position:absolute;inset:0;pointer-events:none}
+  /* Start overlay (visible until first tap) */
+  #startOverlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(0,0,0,0.6),rgba(0,0,0,0.85));z-index:60}
+  #startCard{background:linear-gradient(180deg,#071026,#0b1220);padding:18px;border-radius:12px;border:2px solid rgba(255,255,255,0.04);text-align:center;pointer-events:auto}
+  #startCard h1{margin:0;color:var(--visor);font-size:28px;letter-spacing:1px}
+  #startCard p{margin:8px 0 14px;color:var(--gold);font-weight:700}
+  .btn{background:var(--gold);border:none;padding:12px 22px;border-radius:10px;font-weight:900;cursor:pointer}
+  .btn:active{transform:scale(0.98)}
+  /* Parental hotspot (invisible) */
+  #hotspot{position:absolute;right:0;bottom:0;width:64px;height:64px;opacity:0;z-index:80;pointer-events:none}
+  /* PIN panel */
+  #pinPanel{position:absolute;right:12px;bottom:12px;background:rgba(6,8,12,0.96);color:#fff;padding:12px;border-radius:12px;display:none;flex-direction:column;gap:8px;min-width:240px;z-index:120;pointer-events:auto}
+  #pinPanel input{font-size:16px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#071026;color:#fff}
+  #pinPanel button{padding:8px;border-radius:8px;border:none;background:var(--visor);color:#001;font-weight:800;cursor:pointer}
+  /* Small accessibility text */
+  .sr{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+</style>
 </head>
 <body>
-
-<div id="game-wrap" class="crt">
-    <canvas id="c"></canvas>
-    <div id="ui">
-        <div style="font-size: 14px; letter-spacing: 5px; margin-bottom: 20px;">SYSTEMS INITIALIZING...</div>
-        <div id="big-timer" style="font-size: 100px; font-weight: 900; color: #fff;">READY</div>
-        <button class="btn" onclick="bootSequence()">Ignite Link</button>
+<div id="stage">
+  <div class="screen crt" role="application" aria-label="EXO-BRUSH Titan Omega">
+    <canvas id="game" width="540" height="960" aria-hidden="false"></canvas>
+    <div class="overlay" aria-hidden="true">
+      <!-- Canvas HUD is drawn in JS; overlay used for start and modals -->
     </div>
+
+    <div id="startOverlay" role="dialog" aria-modal="true">
+      <div id="startCard">
+        <h1>EXO-BRUSH: TITAN OMEGA</h1>
+        <p>Tap to Ignite Neural Link — Brush to Win (120s)</p>
+        <button id="startBtn" class="btn">INITIATE</button>
+        <div style="margin-top:8px;color:var(--muted);font-size:12px">Tap anywhere if sound doesn't start. Parental PIN hidden bottom-right.</div>
+      </div>
+    </div>
+
+    <div id="pinPanel" role="dialog" aria-modal="true" aria-hidden="true">
+      <div style="font-weight:900">Parental Control</div>
+      <input id="pinInput" type="password" placeholder="Enter PIN" inputmode="numeric" />
+      <div style="display:flex;gap:8px;">
+        <button id="pinUnlock">Unlock</button>
+        <button id="pinClose" style="background:#444;color:#fff;">Close</button>
+      </div>
+      <div id="adminArea" style="display:none;margin-top:8px;">
+        <label style="font-size:13px">Crystals</label>
+        <input id="setCrystals" type="number" />
+        <label style="font-size:13px">Streak</label>
+        <input id="setStreak" type="number" />
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button id="saveAdmin">Save</button>
+          <button id="resetData" style="background:#ff6b6b;">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="hotspot" title="Parental Lock" aria-hidden="true"></div>
+  </div>
+  <div class="sr" id="sr">EXO-BRUSH toothbrushing game. Tap to start. Parental PIN available.</div>
 </div>
 
 <script>
-/** 
- * OMEGA ENGINE v2.0
- * Pixel-Perfect Sprite Renderer + Physics-based Juicing
- */
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-const ui = document.getElementById('ui');
-const timerText = document.getElementById('big-timer');
+/* EXO-BRUSH: TITAN OMEGA — Upgraded single-file implementation
+   - Portrait-first 540x960 logical canvas
+   - Bitmask/palette sprite rendering (procedural)
+   - 5s intro, 120s main, deterministic villain degradation every 30s
+   - WebAudio procedural SFX with robust iOS unlock
+   - Particle pooling, performance throttling, localStorage for crystals/streak
+   - Parental PIN hotspot (PIN: 1234) bottom-right (non-blocking until start)
+   - All tuning constants at top for easy edits
+*/
 
-let state = {
-    active: false, time: 120, frame: 0, shake: 0, shots: 0,
-    crystals: parseInt(localStorage.getItem('gba_crystals_v1')) || 0,
-    streak: parseInt(localStorage.getItem('gba_streak_v1')) || 0,
-    combo: 0, comboScale: 0, particles: []
+/* ===== CONFIG ===== */
+const CONFIG = {
+  WIDTH: 540, HEIGHT: 960,
+  COUNTDOWN: 5, TOTAL_TIME: 120,
+  FIRE_RATE: 360, STAGE_INTERVAL: 30, STAGES: 4,
+  LOCAL_KEYS: { crystals: 'gba_crystals_v1', streak: 'gba_streak_v1' },
+  PIN: '1234', MAX_PARTICLES: 900,
+  DEBUG: false
 };
 
-// 16-bit Bitmask for Hero
-const HERO_MASK = [
-    "00033300", "00344430", "03466443", "346666443", "361111643", "346666443", "03466443", "00333330"
-];
-const P_GBA = ['transparent', '#0d1117', '#21262d', '#306230', '#8bac0f', '#9bbc0f', '#00ffff'];
+/* ===== Canvas setup ===== */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d', { alpha: false });
+ctx.imageSmoothingEnabled = false;
 
-let audio;
-const playBeep = (f, t, d, v=0.1) => {
-    if(!audio) return;
-    const o = audio.createOscillator();
-    const g = audio.createGain();
-    o.type = t; o.frequency.setValueAtTime(f, audio.currentTime);
-    g.gain.setValueAtTime(v, audio.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + d);
-    o.connect(g); g.connect(audio.destination);
-    o.start(); o.stop(audio.currentTime + d);
-};
+/* Fit CSS scaling for portrait */
+function fitCanvas(){
+  const container = canvas.parentElement;
+  const maxH = window.innerHeight - 40;
+  const scale = Math.min(maxH / CONFIG.HEIGHT, (window.innerWidth - 24) / CONFIG.WIDTH);
+  canvas.style.width = Math.floor(CONFIG.WIDTH * scale) + 'px';
+  canvas.style.height = Math.floor(CONFIG.HEIGHT * scale) + 'px';
+}
+window.addEventListener('resize', fitCanvas);
+fitCanvas();
 
-function bootSequence() {
-    audio = new (window.AudioContext || window.webkitAudioContext)();
-    document.querySelector('.btn').style.display = 'none';
-    let c = 3;
-    const itv = setInterval(() => {
-        timerText.innerText = c;
-        playBeep(300 + (3-c)*100, 'square', 0.2);
-        c--;
-        if(c < 0) {
-            clearInterval(itv);
-            ui.style.opacity = '0';
-            setTimeout(() => ui.style.display = 'none', 500);
-            state.active = true;
-            canvas.width = 430; canvas.height = 932;
-            requestAnimationFrame(loop);
-        }
-    }, 1000);
+/* ===== UI refs ===== */
+const startOverlay = document.getElementById('startOverlay');
+const startBtn = document.getElementById('startBtn');
+const hotspot = document.getElementById('hotspot');
+const pinPanel = document.getElementById('pinPanel');
+const pinInput = document.getElementById('pinInput');
+const pinUnlock = document.getElementById('pinUnlock');
+const pinClose = document.getElementById('pinClose');
+const adminArea = document.getElementById('adminArea');
+const setCrystals = document.getElementById('setCrystals');
+const setStreak = document.getElementById('setStreak');
+const saveAdmin = document.getElementById('saveAdmin');
+const resetData = document.getElementById('resetData');
+
+/* ===== Storage ===== */
+function loadStats(){
+  const c = parseInt(localStorage.getItem(CONFIG.LOCAL_KEYS.crystals) || '0',10);
+  const s = parseInt(localStorage.getItem(CONFIG.LOCAL_KEYS.streak) || '0',10);
+  return { crystals: isNaN(c)?0:c, streak: isNaN(s)?0:s };
+}
+function saveStats(st){
+  localStorage.setItem(CONFIG.LOCAL_KEYS.crystals, String(st.crystals));
+  localStorage.setItem(CONFIG.LOCAL_KEYS.streak, String(st.streak));
+}
+let stats = loadStats();
+
+/* ===== Audio (WebAudio procedural) ===== */
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audio = null;
+let masterGain = null;
+function initAudio(){
+  if(audio) return;
+  audio = new AudioCtx();
+  masterGain = audio.createGain(); masterGain.gain.value = 0.9; masterGain.connect(audio.destination);
+}
+function tryResumeAudio(){
+  initAudio();
+  if(audio.state === 'suspended' || audio.state === 'interrupted'){
+    audio.resume().then(()=>console.log('Audio resumed', audio.state)).catch(e=>console.warn('resume failed', e));
+    audio.onstatechange = ()=>console.log('Audio state', audio.state);
+  }
+}
+function beep(freq=880, type='square', dur=0.1, vol=0.12){
+  if(!audio) return;
+  const t = audio.currentTime;
+  const o = audio.createOscillator(), g = audio.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t+0.005); g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+  o.connect(g); g.connect(masterGain);
+  o.start(t); o.stop(t+dur+0.02);
+}
+function laser(){
+  if(!audio) return;
+  const t = audio.currentTime;
+  const o1 = audio.createOscillator(), o2 = audio.createOscillator();
+  const f = audio.createBiquadFilter(), g = audio.createGain();
+  o1.type='sawtooth'; o1.frequency.value=1200; o2.type='square'; o2.frequency.value=1800;
+  f.type='lowpass'; f.frequency.value=2600;
+  o1.connect(f); o2.connect(f); f.connect(g); g.connect(masterGain);
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.18,t+0.008); g.gain.exponentialRampToValueAtTime(0.0001,t+0.18);
+  o1.frequency.exponentialRampToValueAtTime(700,t+0.18);
+  o1.start(t); o2.start(t); o1.stop(t+0.22); o2.stop(t+0.22);
+}
+function boom(){
+  if(!audio) return;
+  const t = audio.currentTime;
+  const o = audio.createOscillator(), g = audio.createGain(), comp = audio.createDynamicsCompressor();
+  o.type='sine'; o.frequency.value=55;
+  o.connect(g); g.connect(comp); comp.connect(masterGain);
+  comp.threshold.value = -8;
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(1.2,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+1.2);
+  o.start(t); o.stop(t+1.3);
+}
+function smoke(){
+  if(!audio) return;
+  const t = audio.currentTime;
+  const bufferSize = Math.floor(audio.sampleRate * 0.22);
+  const buffer = audio.createBuffer(1, bufferSize, audio.sampleRate);
+  const data = buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * (1 - i/bufferSize);
+  const src = audio.createBufferSource(), g = audio.createGain();
+  src.buffer = buffer; g.gain.value = 0.16; src.connect(g); g.connect(masterGain); src.start(t);
 }
 
-const spawn = (x, y, color, speed, num) => {
-    for(let i=0; i<num; i++) state.particles.push({
-        x, y, vx: (Math.random()-0.5)*speed, vy: (Math.random()-0.5)*speed,
-        l: 1, c: color, s: Math.random()*5+2
-    });
-};
+/* ===== Deterministic noise for overlays ===== */
+function hash2(i,j,seed=1337){
+  let v = (i*374761393 + j*668265263) ^ seed;
+  v = (v ^ (v >> 13)) * 1274126177;
+  return ((v ^ (v >> 16)) >>> 0) / 4294967295;
+}
 
-function drawHero() {
-    const x = 215, y = 700;
-    const bob = Math.sin(state.frame * 0.1) * 10;
-    const recoil = state.shake * 0.8;
-    
-    // Smooth Bitmask Render
-    HERO_MASK.forEach((row, ri) => {
-        [...row].forEach((px, pi) => {
-            const color = P_GBA[parseInt(px)];
-            if(color !== 'transparent') {
-                ctx.fillStyle = color;
-                ctx.fillRect(x - 40 + pi*10, y + bob + ri*10 + recoil, 10, 10);
-            }
-        });
-    });
+/* ===== Particle pool ===== */
+const pool = [];
+for(let i=0;i<CONFIG.MAX_PARTICLES;i++) pool.push({alive:false,x:0,y:0,vx:0,vy:0,color:'#fff',life:0,size:1});
+function spawnParticle(x,y,vx,vy,color,life=120,size=2){
+  for(let i=0;i<pool.length;i++){
+    const p = pool[i];
+    if(!p.alive){ p.alive=true; p.x=x; p.y=y; p.vx=vx; p.vy=vy; p.color=color; p.life=life; p.size=size; return p; }
+  }
+}
+function updateParticles(dt){
+  for(let i=0;i<pool.length;i++){
+    const p = pool[i];
+    if(!p.alive) continue;
+    p.x += p.vx * dt * 0.06;
+    p.y += p.vy * dt * 0.06;
+    p.life -= dt * 0.06;
+    p.vy += 0.0009 * dt * 0.06;
+    if(p.life <= 0) p.alive = false;
+  }
+}
+function drawParticles(ctx2){
+  for(let i=0;i<pool.length;i++){
+    const p = pool[i];
+    if(!p.alive) continue;
+    const a = Math.max(0, Math.min(1, p.life/120));
+    ctx2.globalAlpha = a;
+    ctx2.fillStyle = p.color;
+    ctx2.fillRect(Math.round(p.x), Math.round(p.y), Math.max(1,p.size), Math.max(1,p.size));
+    ctx2.globalAlpha = 1;
+  }
+}
 
-    if(state.frame % 15 === 0) { // Auto-fire logic
-        state.shots++;
-        state.shake = 15;
-        state.combo++;
-        state.comboScale = 2.0;
-        playBeep(150, 'sawtooth', 0.1, 0.03);
-        spawn(x, y + bob - 20, '#fff', 8, 4);
+/* ===== Bitmask sprite helpers (small, efficient) ===== */
+/* Example hero mask (72x72 logical generator) */
+function heroAt(rx, ry){
+  // simple stylized helmet + body using math; returns palette index
+  const cx = 18, cy = 18, r = 14;
+  const dx = rx - cx, dy = ry - cy, d = Math.sqrt(dx*dx + dy*dy);
+  if(d < r-3) return 4; // visor highlight
+  if(d < r) return 3; // visor mid
+  if(ry > 36 && rx > 6 && rx < 48) return ((rx+ry)%6===0) ? 9 : 8;
+  if(ry > 28 && rx < 12) return 10;
+  return 0;
+}
+
+/* Villain base generator (96x96) */
+function villainBaseAt(rx, ry){
+  const cx = 48, cy = 48;
+  const dx = rx - cx, dy = ry - cy, r = Math.sqrt(dx*dx + dy*dy);
+  if(r < 14) return 5;
+  if(r < 34) return 9;
+  if(r < 46) return 8;
+  return 0;
+}
+function villainOverlayAt(stage, rx, ry){
+  const n = hash2(rx, ry, 1000 + stage*97);
+  if(stage === 1){
+    if(n < 0.035 && ((rx+ry)%5===0)) return 10; // crack
+  } else if(stage === 2){
+    if(n < 0.03 && (rx%3===0)) return 0; // oil (draw black)
+    if(n > 0.995) return 11; // spark
+  } else if(stage === 3){
+    const cx=48, cy=48; const d=Math.sqrt((rx-cx)*(rx-cx)+(ry-cy)*(ry-cy));
+    if(d < 18 && n < 0.6) return 7; // core glow
+    if(n > 0.98) return 11; // spark
+  }
+  return null;
+}
+
+/* Palette (index -> color) */
+const PALETTE = [null, '#000000', '#0ff6ff', '#00b3b3', '#bfefff', '#ffd24d', '#ffb36b', '#ff6b6b', '#444444', '#999999', '#222222', '#ffffff'];
+
+/* draw generator grid */
+function drawGen(ctx2, w, h, genFn, palette, x, y, scale=1){
+  for(let ry=0; ry<h; ry++){
+    for(let rx=0; rx<w; rx++){
+      const idx = genFn(rx, ry);
+      if(!idx) continue;
+      ctx2.fillStyle = palette[idx] || '#000';
+      ctx2.fillRect(x + rx*scale, y + ry*scale, scale, scale);
     }
+  }
 }
 
-function drawTitan() {
-    const stage = Math.min(3, Math.floor((120 - state.time) / 30));
-    const centerX = 215 + Math.sin(state.frame * 0.03) * 30;
-    const centerY = 280 + Math.cos(state.frame * 0.02) * 10;
-    
-    // Main Body Squash/Stretch
-    const ss = 1 + Math.sin(state.frame * 0.05) * 0.05;
-    ctx.fillStyle = stage === 0 ? '#306230' : (stage === 1 ? '#8bac0f' : '#ff4500');
-    
+/* ===== Game state ===== */
+let game = {
+  phase: 'idle', // idle, intro, main, outro, ended
+  introTimer: CONFIG.COUNTDOWN,
+  mainStart: 0,
+  timeLeft: CONFIG.TOTAL_TIME,
+  lastShot: 0,
+  villainStage: 0,
+  hero: { x: 0.12, y: 0.45, recoil: 0, shots: 0 },
+  frame: 0,
+  shake: 0,
+  lastBeep: CONFIG.COUNTDOWN
+};
+
+/* ===== Gameplay actions ===== */
+function fireShot(){
+  const now = performance.now();
+  if(now - game.lastShot < CONFIG.FIRE_RATE) return;
+  game.lastShot = now;
+  game.hero.shots++;
+  laser(); smoke();
+  game.hero.recoil = 10;
+  const hx = Math.floor(game.hero.x * CONFIG.WIDTH) + 44;
+  const hy = Math.floor(game.hero.y * CONFIG.HEIGHT) + 28;
+  spawnParticle(hx, hy, 6 + Math.random()*2, -1 - Math.random()*0.6, PALETTE[2], 120, 2);
+  for(let i=0;i<8;i++) spawnParticle(hx-6, hy+6, (Math.random()-0.5)*2, -Math.random()*1.2, '#ddd', 80 + Math.random()*40, 2 + Math.random()*2);
+}
+
+/* Villain stage calculation */
+function stageForElapsed(elapsed){
+  return Math.min(CONFIG.STAGES-1, Math.floor(elapsed / CONFIG.STAGE_INTERVAL));
+}
+
+/* ===== Intro / Main / Outro flow ===== */
+function beginIntro(){
+  game.phase = 'intro';
+  game.introTimer = CONFIG.COUNTDOWN;
+  game.lastBeep = CONFIG.COUNTDOWN;
+  // visible countdown handled in overlay
+}
+function startMain(){
+  game.phase = 'main';
+  game.mainStart = performance.now();
+  game.hero.shots = 0;
+  hotspot.style.pointerEvents = 'auto';
+  hotspot.setAttribute('aria-hidden','false');
+  startOverlay.style.display = 'none';
+  startOverlay.setAttribute('aria-hidden','true');
+}
+function triggerOutro(){
+  if(game.phase === 'outro' || game.phase === 'ended') return;
+  game.phase = 'outro';
+  boom();
+  game.shake = 20;
+  for(let i=0;i<500;i++){
+    const a = Math.random()*Math.PI*2, s = Math.random()*8+2;
+    spawnParticle(CONFIG.WIDTH/2, CONFIG.HEIGHT/2, Math.cos(a)*s, Math.sin(a)*s, PALETTE[5], 220 + Math.random()*200, 2 + Math.random()*3);
+  }
+  setTimeout(showLoot, 900);
+}
+function showLoot(){
+  const base = Math.max(1, Math.floor(game.hero.shots / 6));
+  const bonus = Math.floor(stats.streak / 2);
+  const gained = base + bonus;
+  // update storage after claim
+  lootPending = gained;
+  // show simple modal via startOverlay reuse
+  startOverlay.style.display = 'flex';
+  startOverlay.setAttribute('aria-hidden','false');
+  startOverlay.querySelector('h1').textContent = 'LOOT ACQUIRED';
+  startOverlay.querySelector('p').textContent = `+${gained} Crystals — Claim to sync`;
+  const btn = startOverlay.querySelector('.btn');
+  btn.textContent = 'CLAIM';
+  btn.style.display = 'inline-block';
+  btn.onclick = () => {
+    stats.crystals += gained; stats.streak += 1; saveStats(stats);
+    startOverlay.style.display = 'none';
+    startOverlay.setAttribute('aria-hidden','true');
+    // reset UI title
+    startOverlay.querySelector('h1').textContent = 'EXO-BRUSH: TITAN OMEGA';
+    startOverlay.querySelector('p').textContent = 'Tap to Ignite Neural Link — Brush to Win (120s)';
+    btn.textContent = 'INITIATE';
+    btn.onclick = startHandler;
+  };
+}
+let lootPending = 0;
+
+/* ===== Render & Update loop ===== */
+function update(dt){
+  game.frame++;
+  if(game.phase === 'intro'){
+    game.introTimer -= dt/1000;
+    const next = Math.max(0, Math.ceil(game.introTimer));
+    // show countdown on overlay
+    startOverlay.querySelector('p').textContent = `Neural Link Sync ${next}`;
+    if(next < game.lastBeep){
+      game.lastBeep = next;
+      beep(880 - (CONFIG.COUNTDOWN-next)*30, 'square', 0.12);
+    }
+    if(game.introTimer <= 0) startMain();
+  } else if(game.phase === 'main'){
+    const elapsed = (performance.now() - game.mainStart)/1000;
+    const remaining = Math.max(0, CONFIG.TOTAL_TIME - elapsed);
+    game.timeLeft = remaining;
+    const mm = String(Math.floor(remaining/60)).padStart(2,'0'), ss = String(Math.floor(remaining%60)).padStart(2,'0');
+    // update top HUD drawn on canvas
+    const stage = stageForElapsed(elapsed);
+    if(stage !== game.villainStage){
+      game.villainStage = stage;
+      // stage change feedback
+      game.shake = 18;
+      beep(720, 'sine', 0.08); beep(920, 'sine', 0.08);
+      for(let i=0;i<40;i++) spawnParticle(CONFIG.WIDTH*0.68 + Math.random()*60 - 30, CONFIG.HEIGHT*0.28 + Math.random()*60 - 30, (Math.random()-0.5)*0.6, (Math.random()-0.5)*0.6, PALETTE[7], 120, 2);
+    }
+    // hero movement
+    const t = elapsed;
+    game.hero.x = 0.12 + Math.sin(t*1.05)*0.06 + Math.sin(t*0.25)*0.01;
+    game.hero.y = 0.42 + Math.sin(t*2.1)*0.08;
+    // auto-fire
+    if(performance.now() - game.lastShot > CONFIG.FIRE_RATE) fireShot();
+    // recoil decay
+    game.hero.recoil = Math.max(0, game.hero.recoil - dt*0.02);
+    updateParticles(dt);
+    // update HUD values (we draw them in render)
+    if(remaining <= 0) triggerOutro();
+  } else if(game.phase === 'outro'){
+    updateParticles(dt);
+    game.shake = Math.max(0, game.shake - dt*0.05);
+  } else {
+    updateParticles(dt);
+  }
+}
+
+function render(){
+  // clear
+  ctx.fillStyle = '#05060a';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // apply shake
+  if(game.shake > 1){
     ctx.save();
-    ctx.translate(centerX, centerY);
-    ctx.scale(ss, 2-ss);
-    ctx.beginPath();
-    ctx.arc(0, 0, 100 - (stage*10), 0, Math.PI*2);
-    ctx.fill();
-    
-    // Core Cracks
-    if(stage > 0) {
-        ctx.strokeStyle = '#000'; ctx.lineWidth = 5;
-        ctx.beginPath(); ctx.moveTo(-50, -20); ctx.lineTo(50, 20); ctx.stroke();
-    }
-    ctx.restore();
+    ctx.translate((Math.random()-0.5)*game.shake, (Math.random()-0.5)*game.shake);
+  }
 
-    if(stage >= 2 && state.frame % 10 === 0) spawn(centerX, centerY, '#ff0', 5, 2);
+  // starfield / parallax simple
+  for(let layer=0; layer<3; layer++){
+    ctx.fillStyle = `rgba(255,255,255,${0.02*(layer+1)})`;
+    for(let i=0;i<12;i++){
+      const x = (i*73 + game.frame*(layer+1)*0.2) % canvas.width;
+      const y = (i*97 + layer*40 + (game.frame*(layer+1)*0.1)) % canvas.height;
+      ctx.fillRect(x, y, layer===0?2:1, layer===0?2:1);
+    }
+  }
+
+  // draw villain (center-right) 96x96
+  const vW = 96, vH = 96;
+  const vx = Math.floor(canvas.width*0.62), vy = Math.floor(canvas.height*0.12);
+  // base
+  for(let y=0;y<vH;y++){
+    for(let x=0;x<vW;x++){
+      const idx = villainBaseAt(x,y);
+      if(!idx) continue;
+      ctx.fillStyle = PALETTE[idx]; ctx.fillRect(vx + x, vy + y, 1, 1);
+    }
+  }
+  // overlays
+  for(let y=0;y<vH;y++){
+    for(let x=0;x<vW;x++){
+      const ov = villainOverlayAt(game.villainStage, x, y);
+      if(ov === null) continue;
+      if(ov === 0){ ctx.fillStyle = '#000'; ctx.fillRect(vx+x, vy+y, 1,1); }
+      else { ctx.fillStyle = PALETTE[ov]; ctx.fillRect(vx+x, vy+y, 1,1); }
+    }
+  }
+
+  // draw hero (72x72) left-bottom
+  const hW = 72, hH = 72;
+  const hx = Math.floor(canvas.width*0.12 + game.hero.x*40);
+  const hy = Math.floor(canvas.height - 260 + game.hero.y*20);
+  for(let y=0;y<hH;y++){
+    for(let x=0;x<hW;x++){
+      const idx = heroAt(x,y);
+      if(!idx) continue;
+      ctx.fillStyle = PALETTE[idx]; ctx.fillRect(hx + x, hy + y, 1, 1);
+    }
+  }
+
+  // muzzle flash when recoil
+  if(game.hero.recoil > 0.5){
+    ctx.fillStyle = '#fff'; ctx.fillRect(hx + 44 + 18, hy + 28 + 6, 4, 4);
+    ctx.fillStyle = 'rgba(220,220,220,0.6)'; ctx.fillRect(hx + 44 + 14, hy + 28 + 12, 10, 3);
+  }
+
+  // beam
+  ctx.globalAlpha = 0.95;
+  ctx.strokeStyle = (game.frame % 2 === 0) ? PALETTE[2] : PALETTE[11];
+  ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(hx + 36, hy + 24); ctx.lineTo(vx + 48 + Math.sin(game.frame*0.03)*6, vy + 48); ctx.stroke();
+
+  // particles
+  drawParticles(ctx);
+
+  // restore after shake
+  if(game.shake > 1) ctx.restore();
+
+  // HUD (top-left) — timer, crystals, streak
+  ctx.fillStyle = '#fff'; ctx.font = "700 20px Inter, monospace";
+  const timeLeft = Math.max(0, Math.ceil(game.timeLeft || CONFIG.TOTAL_TIME));
+  const mm = String(Math.floor(timeLeft/60)).padStart(2,'0'), ss = String(timeLeft%60).padStart(2,'0');
+  ctx.fillText(`BRUSH METER ${mm}:${ss}`, 18, 36);
+  ctx.fillStyle = PALETTE[5]; ctx.fillText(`CRYSTALS: ${stats.crystals}`, 18, 64);
+  ctx.fillStyle = PALETTE[2]; ctx.fillText(`STREAK: ${stats.streak}`, 18, 92);
+
+  // enemy bar (top-right)
+  const barW = 160, barH = 12;
+  const barX = canvas.width - barW - 18, barY = 28;
+  const pct = Math.max(0, Math.min(1, (game.timeLeft || CONFIG.TOTAL_TIME) / CONFIG.TOTAL_TIME));
+  ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(barX-3, barY-3, barW+6, barH+6);
+  ctx.fillStyle = '#222'; ctx.fillRect(barX, barY, barW, barH);
+  const grad = ctx.createLinearGradient(barX,0,barX+barW,0); grad.addColorStop(0, PALETTE[5]); grad.addColorStop(1, PALETTE[7]);
+  ctx.fillStyle = grad; ctx.fillRect(barX, barY, Math.floor(barW * pct), barH);
+
+  // small debug
+  if(CONFIG.DEBUG){
+    ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(0, canvas.height-20, canvas.width, 20);
+    ctx.fillStyle = '#fff'; ctx.fillText(`FPS debug`, 10, canvas.height-6);
+  }
 }
 
-function loop() {
-    if(!state.active) return;
-    state.frame++;
-    if(state.frame % 60 === 0) state.time--;
-    if(state.shake > 0) state.shake *= 0.85;
-    if(state.comboScale > 1.0) state.comboScale -= 0.05;
-
-    ctx.fillStyle = '#0d1117';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Parallax
-    for(let i=0; i<3; i++) {
-        ctx.fillStyle = `rgba(48, 98, 48, ${0.2 * (i+1)})`;
-        for(let j=0; j<10; j++) {
-            let py = (j * 150 + state.frame * (i+1)) % canvas.height;
-            ctx.fillRect((j * 90 + i * 30) % canvas.width, py, 4, 4);
-        }
-    }
-
-    ctx.save();
-    if(state.shake > 1) ctx.translate((Math.random()-0.5)*state.shake, (Math.random()-0.5)*state.shake);
-    
-    drawTitan();
-    drawHero();
-
-    // Particles
-    state.particles.forEach((p, i) => {
-        p.x += p.vx; p.y += p.vy; p.l -= 0.02;
-        ctx.globalAlpha = p.l; ctx.fillStyle = p.c;
-        ctx.fillRect(p.x, p.y, p.s, p.s);
-        if(p.l <= 0) state.particles.splice(i, 1);
-    });
-    ctx.restore();
-    ctx.globalAlpha = 1.0;
-
-    // Premium HUD
-    ctx.fillStyle = '#fff'; ctx.font = "900 24px 'Courier New'";
-    ctx.fillText(`BIO-SYNC: ${Math.max(0, state.time)}s`, 30, 60);
-    ctx.fillStyle = '#ffd700';
-    ctx.fillText(`CRYSTALS: ${state.crystals}`, 30, 95);
-    
-    // Combo Text (Juicy)
-    if(state.combo > 5) {
-        ctx.save();
-        ctx.translate(300, 150); ctx.scale(state.comboScale, state.comboScale);
-        ctx.fillStyle = '#ff4500'; ctx.font = "900 40px 'Courier New'";
-        ctx.fillText(`${state.combo}x`, 0, 0);
-        ctx.restore();
-    }
-
-    if(state.time <= 0) finish();
-    else requestAnimationFrame(loop);
+/* RAF loop */
+let last = performance.now();
+function loop(now){
+  const dt = now - last; last = now;
+  update(dt);
+  render();
+  if(game.phase !== 'ended') requestAnimationFrame(loop);
 }
 
-function finish() {
-    state.active = false;
-    playBeep(60, 'sawtooth', 3, 0.4);
-    spawn(215, 300, '#fff', 50, 400);
-    
-    setTimeout(() => {
-        const earned = Math.floor(state.shots / 5) + (state.streak * 5);
-        state.crystals += earned; state.streak++;
-        localStorage.setItem('gba_crystals_v1', state.crystals);
-        localStorage.setItem('gba_streak_v1', state.streak);
-        
-        ui.style.display = 'flex'; ui.style.opacity = '1';
-        timerText.innerText = "TITAN OVERTHROWN";
-        timerText.style.fontSize = "30px";
-        document.querySelector('div[style*="letter-spacing"]').innerText = `+${earned} CRYSTALS SYNCED`;
-    }, 1000);
+/* ===== Start handler & audio unlock ===== */
+function startHandler(){
+  initAudio(); tryResumeAudio();
+  // hide start overlay after a short countdown (5s)
+  startOverlay.querySelector('p').textContent = 'Neural Link Sync 5';
+  let c = CONFIG.COUNTDOWN;
+  const iv = setInterval(()=>{
+    c--; if(c >= 0){ startOverlay.querySelector('p').textContent = `Neural Link Sync ${c}`; beep(880 - (CONFIG.COUNTDOWN-c)*30, 'square', 0.12); }
+    if(c < 0){ clearInterval(iv); startMain(); requestAnimationFrame(loop); }
+  }, 1000);
 }
+startBtn.addEventListener('click', startHandler);
+document.addEventListener('pointerdown', ()=>{ tryResumeAudio(); }, {passive:true});
+
+/* ===== Parental PIN handlers ===== */
+hotspot.style.pointerEvents = 'none'; // non-blocking until start
+hotspot.addEventListener('click', ()=>{
+  pinPanel.style.display = 'flex'; pinPanel.setAttribute('aria-hidden','false'); pinInput.value=''; pinInput.focus();
+});
+pinClose.addEventListener('click', ()=>{ pinPanel.style.display='none'; pinPanel.setAttribute('aria-hidden','true'); });
+pinUnlock.addEventListener('click', ()=>{
+  if(pinInput.value === CONFIG.PIN){
+    adminArea.style.display = 'block';
+    setCrystals.value = stats.crystals; setStreak.value = stats.streak;
+  } else alert('Incorrect PIN');
+});
+saveAdmin.addEventListener('click', ()=>{
+  const c = parseInt(setCrystals.value||'0',10), s = parseInt(setStreak.value||'0',10);
+  stats.crystals = isNaN(c)?0:c; stats.streak = isNaN(s)?0:s; saveStats(stats); alert('Saved');
+});
+resetData.addEventListener('click', ()=>{
+  if(confirm('Reset crystals and streak to zero?')){ stats.crystals=0; stats.streak=0; saveStats(stats); alert('Reset'); }
+});
+
+/* ===== Initialize minimal UI values ===== */
+(function initUI(){
+  // ensure start overlay visible
+  startOverlay.style.display = 'flex';
+  startOverlay.setAttribute('aria-hidden','false');
+  // show stored crystals/streak in console for debugging
+  if(CONFIG.DEBUG) console.log('Loaded stats', stats);
+})();
+
+/* Expose debug toggles if needed */
+window._EXOBRUSH = { game, stats, pool };
+
+/* End of file */
 </script>
 </body>
 </html>
