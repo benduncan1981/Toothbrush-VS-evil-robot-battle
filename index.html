@@ -1,777 +1,252 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
-<title>Toothbrush Mission — Chrono Sync (Kid Mode, Cockpit POV)</title>
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<style>
-  /* =========================
-     THEME & LAYOUT
-     ========================= */
-  :root{
-    --bg-deep:#020617;
-    --bg-mid:#041026;
-    --film-yellow:#FFE08A;
-    --rim-cyan:#00F0FF;
-    --core-pink:#FF3FB5;
-    --accent:#7afcff;
-    --glass: rgba(255,255,255,0.04);
-    --safe-radius:14px;
-    --ui-pad:12px;
-  }
-  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg-deep),var(--bg-mid));font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#fff;-webkit-font-smoothing:antialiased;}
-  body{display:flex;align-items:center;justify-content:center;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);overflow:hidden}
-  #app{width:100%;max-width:520px;height:100%;max-height:980px;border-radius:var(--safe-radius);overflow:hidden;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.6)}
-  /* Screen stack */
-  #screen{position:relative;width:100%;height:100%;background:linear-gradient(180deg,#020617,#041026);display:block}
-  canvas.layer{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
-  canvas#bg{z-index:10}
-  canvas#battle{z-index:20}
-  canvas#bloom{z-index:25;pointer-events:none}
-  canvas#hud{z-index:40;pointer-events:none}
-  canvas#cockpit{z-index:50;pointer-events:none}
-  canvas#halftone{z-index:79;pointer-events:none;opacity:0.18}
-  canvas#grain{z-index:80;pointer-events:none;opacity:0.06}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Starship Brush Pilot</title>
+    <style>
+        :root {
+            --glow: #00f2ff;
+            --bg: #05050a;
+            --panel: rgba(20, 25, 40, 0.9);
+            --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
 
-  /* Letterbox for cinematic feel (subtle) */
-  .letterbox{position:absolute;left:0;right:0;height:10%;background:#000;z-index:90;pointer-events:none;opacity:0;transition:opacity 260ms}
-  .letterbox.top{top:0}
-  .letterbox.bottom{bottom:0}
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: var(--bg); color: white;
+            font-family: var(--font-main); overflow: hidden;
+            user-select: none; -webkit-user-select: none;
+        }
 
-  /* Holo crawl (shown on cockpit console) */
-  .holo{position:absolute;left:50%;transform:translateX(-50%);bottom:16%;width:86%;max-width:460px;z-index:60;color:var(--film-yellow);font-weight:900;line-height:1.6;text-align:center;pointer-events:none;opacity:1}
+        /* Space Background */
+        #space-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+        }
 
-  /* HUD HTML overlay (for big readable controls) */
-  .ui{position:absolute;left:0;right:0;top:0;padding:var(--ui-pad);display:flex;flex-direction:column;align-items:center;z-index:95;pointer-events:none}
-  .topRow{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;pointer-events:auto}
-  .statBox{background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);display:flex;gap:8px;align-items:center;font-weight:800;color:#fff}
-  .bigTimer{font-size:48px;font-weight:900;letter-spacing:1px;display:flex;align-items:center;gap:10px}
-  .timerSubtitle{font-size:12px;opacity:0.95;margin-top:-6px;text-align:center}
-  .segmentRow{display:flex;gap:8px;align-items:center}
-  .segment{width:20px;height:20px;border-radius:6px;background:rgba(255,255,255,0.06);box-shadow:inset 0 -2px 0 rgba(0,0,0,0.4)}
-  .segment.on{background:linear-gradient(180deg,var(--rim-cyan),#00b8d9);box-shadow:0 8px 22px rgba(0,240,255,0.08)}
-  .controls{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:10px;pointer-events:auto;z-index:96}
-  .btn{background:linear-gradient(180deg,#0ff 0%, #7afcff 100%);border-radius:12px;padding:12px 16px;font-weight:900;color:#041026;border:2px solid rgba(0,0,0,0.35);font-size:15px;min-width:120px;text-align:center;user-select:none;touch-action:manipulation}
-  .btn.secondary{background:linear-gradient(180deg,var(--core-pink) 0%, #ff8fc9 100%);color:#041026}
-  .btn.ghost{background:transparent;border:2px dashed rgba(255,255,255,0.06);color:#fff}
-  .btn.small{min-width:84px;padding:8px 10px;font-size:13px}
-  .btn[aria-disabled="true"],.btn.disabled{opacity:0.35;pointer-events:none}
+        /* Cockpit HUD Overlay */
+        #hud {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: space-between; height: 100vh; padding: 20px;
+            box-sizing: border-box;
+            background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.4) 100%);
+        }
 
-  /* Settings icon */
-  #settings{position:absolute;top:12px;left:12px;z-index:97;pointer-events:auto;background:rgba(255,255,255,0.03);padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);font-weight:800}
-  #settings:active{transform:scale(0.98)}
+        /* Top Bar: Progress Segments */
+        .progress-container {
+            display: flex; gap: 10px; width: 90%; max-width: 500px; margin-top: 20px;
+        }
+        .segment {
+            flex: 1; height: 12px; background: rgba(255,255,255,0.1);
+            border: 1px solid var(--glow); border-radius: 4px; overflow: hidden;
+        }
+        .segment-fill {
+            height: 100%; width: 0%; background: var(--glow);
+            box-shadow: 0 0 10px var(--glow); transition: width 0.3s linear;
+        }
 
-  /* Parent settings modal */
-  .modal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:92%;max-width:460px;background:linear-gradient(180deg,#071a2a,#041026);border-radius:14px;padding:16px;z-index:999;box-shadow:0 20px 60px rgba(0,0,0,0.6);pointer-events:auto}
-  .modal h3{margin:0 0 8px 0;font-size:18px}
-  .row{display:flex;gap:8px;align-items:center;margin:8px 0}
-  label{font-size:13px}
-  input[type="range"]{width:100%}
-  .muted{opacity:0.6;font-size:13px}
+        /* Center: The Big Timer */
+        #timer-display {
+            font-size: 5rem; font-weight: bold; font-family: monospace;
+            text-shadow: 0 0 20px var(--glow); letter-spacing: 5px;
+        }
 
-  /* small footer */
-  .footer{position:absolute;right:12px;bottom:12px;font-size:12px;opacity:0.9;z-index:96}
+        /* Bottom: Action Zone */
+        .controls { margin-bottom: 40px; text-align: center; }
+        button {
+            background: var(--panel); color: var(--glow);
+            border: 2px solid var(--glow); padding: 20px 40px;
+            font-size: 1.5rem; border-radius: 50px; cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+        button:active { transform: scale(0.95); background: var(--glow); color: var(--bg); }
 
-  /* accessibility */
-  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+        /* Stats */
+        .stats { position: absolute; bottom: 20px; left: 20px; font-size: 0.9rem; opacity: 0.7; }
+        
+        /* Hidden UI for Settings */
+        #parent-gate { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; opacity: 0.2; }
 
-  @media (max-width:420px){
-    .bigTimer{font-size:40px}
-    .btn{min-width:92px;padding:10px 12px;font-size:14px}
-  }
-</style>
+        /* Victory Screen */
+        #victory {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 10;
+            flex-direction: column; align-items: center; justify-content: center;
+            text-align: center;
+        }
+        .crystal-icon { font-size: 4rem; margin-bottom: 10px; }
+
+        .hidden { display: none !important; }
+    </style>
 </head>
 <body>
-<div id="app" role="application" aria-label="Toothbrush Mission Chrono Sync">
-  <div id="screen">
-    <!-- canvases -->
-    <canvas id="bg" class="layer" width="860" height="1840"></canvas>
-    <canvas id="battle" class="layer" width="860" height="1840"></canvas>
-    <canvas id="bloom" class="layer" width="860" height="1840"></canvas>
-    <canvas id="hud" class="layer" width="860" height="1840"></canvas>
-    <canvas id="cockpit" class="layer" width="860" height="1840"></canvas>
-    <canvas id="halftone" class="layer" width="860" height="1840"></canvas>
-    <canvas id="grain" class="layer" width="860" height="1840"></canvas>
 
-    <div class="letterbox top" id="letterboxTop" aria-hidden="true"></div>
-    <div class="letterbox bottom" id="letterboxBottom" aria-hidden="true"></div>
+<canvas id="space-canvas"></canvas>
 
-    <div class="holo" id="holoCrawl" aria-hidden="false">
-      <div style="font-size:20px;margin-bottom:8px">PROLOGUE</div>
-      <div id="crawlText" style="font-size:15px;opacity:0.95;line-height:1.6">
-        THE ORBITING TITAN OMEGA HAS RUPTURED THE CHRONO GRID.<br>
-        A LONE PILOT MUST SYNC THE CHRONO CORE BEFORE THE ORBIT COLLAPSES.<br>
-        SUIT UP. FOUR MICRO-GOALS WILL KEEP YOU FOCUSED. EACH 30 SECONDS EARNS A CRYSTAL.<br>
-        THIS IS YOUR MISSION. THIS IS YOUR MOMENT.
-      </div>
+<div id="hud">
+    <div id="parent-gate" oncontextmenu="return false;"></div>
+    
+    <div class="progress-container">
+        <div class="segment"><div id="seg-1" class="segment-fill"></div></div>
+        <div class="segment"><div id="seg-2" class="segment-fill"></div></div>
+        <div class="segment"><div id="seg-3" class="segment-fill"></div></div>
+        <div class="segment"><div id="seg-4" class="segment-fill"></div></div>
     </div>
-  </div>
 
-  <!-- HUD HTML overlay -->
-  <div class="ui" aria-hidden="false">
-    <div class="topRow">
-      <div style="display:flex;gap:8px;align-items:center">
-        <div class="statBox" aria-live="polite"><div style="font-size:20px">💎</div><div><div style="font-size:12px;opacity:0.9">CRYSTALS</div><div id="crystals" style="font-size:18px">0</div></div></div>
-        <div class="statBox"><div style="font-size:12px;opacity:0.9">CALLSIGN</div><div id="pilotName" style="font-weight:900">—</div></div>
-      </div>
+    <div id="timer-display">02:00</div>
 
-      <div style="display:flex;flex-direction:column;align-items:center">
-        <div class="bigTimer" role="timer" aria-live="assertive" aria-atomic="true">
-          <div id="timerText">02:00</div>
-        </div>
-        <div class="timerSubtitle">CHRONO SYNC</div>
-      </div>
-
-      <div style="display:flex;flex-direction:column;align-items:flex-end">
-        <div class="segmentRow" id="segments" aria-hidden="false">
-          <div class="segment" id="seg1"></div>
-          <div class="segment" id="seg2"></div>
-          <div class="segment" id="seg3"></div>
-          <div class="segment" id="seg4"></div>
-        </div>
-        <div style="height:6px"></div>
-        <div class="statBox" id="streakBox" aria-live="polite"><div style="font-size:12px;opacity:0.9">STREAK</div><div id="streak" style="font-weight:900">0</div></div>
-      </div>
+    <div class="controls">
+        <button id="start-btn">Launch Mission</button>
     </div>
-  </div>
 
-  <!-- Controls -->
-  <div id="settings" title="Parent settings (long press)">⚙️</div>
-
-  <div class="controls" aria-hidden="false">
-    <button id="startBtn" class="btn" aria-label="Launch mission">LAUNCH MISSION</button>
-    <button id="pauseBtn" class="btn secondary" aria-label="Hold" aria-disabled="true">HOLD</button>
-    <button id="muteBtn" class="btn ghost small" aria-label="Silence">SILENCE</button>
-  </div>
-
-  <div class="footer">CALLSIGN: <span id="pilotFooter">—</span></div>
-
-  <!-- Parent modal (hidden by default) -->
-  <div id="modal" class="modal" style="display:none" role="dialog" aria-modal="true" aria-hidden="true">
-    <h3>Parent Settings</h3>
-    <div class="row"><label>Session length</label>
-      <select id="durationSelect" style="margin-left:auto;padding:6px;border-radius:8px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.06)">
-        <option value="60">60s (short)</option>
-        <option value="90">90s</option>
-        <option value="120" selected>120s (default)</option>
-      </select>
+    <div class="stats">
+        STREAK: <span id="streak-count">0</span> | CRYSTALS: <span id="crystal-count">0</span>
     </div>
-    <div class="row"><label>Reduced motion</label><input id="reducedMotion" type="checkbox" style="margin-left:auto" /></div>
-    <div class="row"><label>Mute audio</label><input id="muteSetting" type="checkbox" style="margin-left:auto" /></div>
-    <div class="row"><label>Skip countdown (parent)</label><button id="skipParent" class="btn ghost small" style="margin-left:auto">SKIP</button></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-      <button id="closeModal" class="btn small">CLOSE</button>
-    </div>
-  </div>
+</div>
 
-  <div class="sr-only" id="ariaStatus" aria-live="polite"></div>
+<div id="victory">
+    <div class="crystal-icon">💎</div>
+    <h1 style="color: var(--glow);">MISSION COMPLETE!</h1>
+    <p>+4 Crystals Awarded</p>
+    <button onclick="location.reload()">Return to Hangar</button>
 </div>
 
 <script>
-/* ============================================================
-   Toothbrush Mission — Chrono Sync (Kid Mode, Cockpit POV)
-   Single-file, self-contained, no external assets.
-   Features:
-   - Title card + slow holo crawl
-   - 5s countdown -> session (default 120s) split into 4 micro-goals (30s each)
-   - Micro rewards (crystals) at each 25% milestone
-   - Reduced-motion and parent settings (long-press)
-   - Procedural audio (WebAudio) with mute
-   - Grain, halftone, bloom, cockpit HUD, object-pooled particles
-   - Accessibility: aria-live timer and announcements
-   - Persistence via localStorage: crystals, streak, best, pilot, mute, duration
-   ============================================================ */
+    // --- APP STATE ---
+    let totalSeconds = 120;
+    let timeLeft = totalSeconds;
+    let isRunning = false;
+    let timerInterval;
+    let crystals = parseInt(localStorage.getItem('crystals')) || 0;
+    let streak = parseInt(localStorage.getItem('streak')) || 0;
 
-/* -------------------------
-   Configuration and State
-   ------------------------- */
-const CONFIG = {
-  logicalW: 860, logicalH: 1840,          // high-res logical canvas (scaled by CSS)
-  titleHold: 1.2,
-  crawlDuration: 18,
-  countdown: 5,
-  defaultDuration: 120,
-  microSegments: 4,
-  grainHz: 10,
-  particleCap: 220,
-  debrisCap: 160,
-  starCount: 220
-};
+    const display = document.getElementById('timer-display');
+    const startBtn = document.getElementById('start-btn');
+    const crystalEl = document.getElementById('crystal-count');
+    const streakEl = document.getElementById('streak-count');
 
-const STATE = {
-  running: false,
-  brushing: false,
-  paused: false,
-  countdown: CONFIG.countdown,
-  duration: CONFIG.defaultDuration,
-  mainStart: 0,
-  crystals: 0,
-  streak: 0,
-  best: 0,
-  pilot: '',
-  mute: false,
-  reducedMotion: false,
-  segmentsHit: 0,
-  crawlPlaying: false,
-  lastFrame: performance.now(),
-  particles: [],
-  debris: [],
-  sparkles: []
-};
+    crystalEl.innerText = crystals;
+    streakEl.innerText = streak;
 
-/* -------------------------
-   DOM & Canvas references
-   ------------------------- */
-const $ = id => document.getElementById(id);
-
-// Canvas elements
-const bg = $('bg'), battle = $('battle'), bloom = $('bloom'), hud = $('hud'), cockpit = $('cockpit'), halftone = $('halftone'), grain = $('grain');
-const bgCtx = bg.getContext('2d'), battleCtx = battle.getContext('2d'), bloomCtx = bloom.getContext('2d');
-const hudCtx = hud.getContext('2d'), cockpitCtx = cockpit.getContext('2d'), halftoneCtx = halftone.getContext('2d'), grainCtx = grain.getContext('2d');
-
-// UI elements
-const timerText = $('timerText'), crystalsEl = $('crystals'), streakEl = $('streak'), pilotNameEl = $('pilotName'), pilotFooterEl = $('pilotFooter');
-const startBtn = $('startBtn'), pauseBtn = $('pauseBtn'), muteBtn = $('muteBtn'), settingsBtn = $('settings');
-const modal = $('modal'), closeModal = $('closeModal'), durationSelect = $('durationSelect'), reducedMotionCheckbox = $('reducedMotion'), muteSetting = $('muteSetting'), skipParent = $('skipParent');
-const segEls = [ $('seg1'), $('seg2'), $('seg3'), $('seg4') ];
-const holoCrawl = $('holoCrawl'), letterboxTop = $('letterboxTop'), letterboxBottom = $('letterboxBottom');
-const ariaStatus = $('ariaStatus');
-
-/* -------------------------
-   Canvas sizing and scaling
-   ------------------------- */
-function setCanvasSizes(){
-  // Use logical resolution for crispness; CSS scales to container
-  [bg,battle,bloom,hud,cockpit,halftone,grain].forEach(c => {
-    c.width = CONFIG.logicalW;
-    c.height = CONFIG.logicalH;
-  });
-}
-setCanvasSizes();
-
-/* -------------------------
-   Starfield & visual state
-   ------------------------- */
-const stars = [];
-function initStars(){
-  stars.length = 0;
-  for(let i=0;i<CONFIG.starCount;i++){
-    stars.push({ x: Math.random()*CONFIG.logicalW, y: Math.random()*CONFIG.logicalH, z: Math.random(), size: Math.random()*2+0.5, speed: 10 + Math.random()*120 });
-  }
-}
-initStars();
-
-/* -------------------------
-   Audio (procedural WebAudio)
-   ------------------------- */
-let audioCtx = null, masterGain = null;
-function ensureAudio(){
-  if(audioCtx) return;
-  try{
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    masterGain = audioCtx.createGain();
-    masterGain.gain.value = STATE.mute ? 0 : 1;
-    masterGain.connect(audioCtx.destination);
-  }catch(e){
-    audioCtx = null;
-  }
-}
-function playTone(freq=880, dur=0.08, type='sine', vol=0.08, when=0){
-  if(!audioCtx || STATE.mute) return;
-  const t = audioCtx.currentTime + when;
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.type = type; o.frequency.value = freq;
-  g.gain.value = 0.0001;
-  o.connect(g); g.connect(masterGain);
-  o.start(t);
-  g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.stop(t + dur + 0.02);
-}
-function playChime(){ playTone(1200,0.12,'sine',0.12); playTone(1600,0.08,'triangle',0.06,0.06); }
-function playVictory(){ if(!audioCtx || STATE.mute) return; const t = audioCtx.currentTime; const sub = audioCtx.createOscillator(); sub.type='sine'; sub.frequency.value=60; const sg = audioCtx.createGain(); sg.gain.value=0.0001; sub.connect(sg); sg.connect(masterGain); sub.start(t); sg.gain.exponentialRampToValueAtTime(0.28,t+0.12); sg.gain.exponentialRampToValueAtTime(0.0001,t+2.2); sub.stop(t+2.3); playChime(); }
-
-/* -------------------------
-   Persistence (localStorage)
-   ------------------------- */
-function loadState(){
-  STATE.crystals = parseInt(localStorage.getItem('tb_crystals')||'0',10);
-  STATE.streak = parseInt(localStorage.getItem('tb_streak')||'0',10);
-  STATE.best = parseInt(localStorage.getItem('tb_best')||'0',10);
-  STATE.pilot = localStorage.getItem('tb_pilot') || '';
-  STATE.mute = JSON.parse(localStorage.getItem('tb_mute') || 'false');
-  STATE.reducedMotion = JSON.parse(localStorage.getItem('tb_reduced') || 'false');
-  STATE.duration = parseInt(localStorage.getItem('tb_duration') || CONFIG.defaultDuration,10);
-  // UI reflect
-  $('pilotInput') && ($('pilotInput').value = STATE.pilot);
-  pilotNameEl.textContent = STATE.pilot || '—';
-  pilotFooterEl.textContent = STATE.pilot || '—';
-  crystalsEl.textContent = STATE.crystals;
-  streakEl.textContent = STATE.streak;
-  muteSetting.checked = STATE.mute;
-  reducedMotionCheckbox.checked = STATE.reducedMotion;
-  durationSelect.value = String(STATE.duration);
-}
-function saveState(){
-  localStorage.setItem('tb_crystals', String(STATE.crystals));
-  localStorage.setItem('tb_streak', String(STATE.streak));
-  localStorage.setItem('tb_best', String(STATE.best));
-  localStorage.setItem('tb_pilot', STATE.pilot);
-  localStorage.setItem('tb_mute', JSON.stringify(STATE.mute));
-  localStorage.setItem('tb_reduced', JSON.stringify(STATE.reducedMotion));
-  localStorage.setItem('tb_duration', String(STATE.duration));
-}
-
-/* -------------------------
-   UI wiring & parent settings
-   ------------------------- */
-startBtn.addEventListener('click', ()=> {
-  if(!STATE.running) startIntroFlow();
-});
-pauseBtn.addEventListener('click', ()=> {
-  if(!STATE.running) return;
-  STATE.paused = !STATE.paused;
-  pauseBtn.textContent = STATE.paused ? 'REENGAGE' : 'HOLD';
-  ariaAnnounce(STATE.paused ? 'Paused' : 'Resumed');
-});
-muteBtn.addEventListener('click', ()=> {
-  STATE.mute = !STATE.mute;
-  if(masterGain) masterGain.gain.value = STATE.mute ? 0 : 1;
-  muteBtn.textContent = STATE.mute ? 'SOUND ON' : 'SILENCE';
-  saveState();
-});
-$('pilotInput') && $('pilotInput').addEventListener('input', (e)=> {
-  STATE.pilot = e.target.value.trim().slice(0,20);
-  pilotNameEl.textContent = STATE.pilot || '—';
-  pilotFooterEl.textContent = STATE.pilot || '—';
-  saveState();
-});
-
-/* Parent settings: long-press to open modal */
-let settingsPressTimer = null;
-function startSettingsPress(e){ e.preventDefault(); settingsPressTimer = setTimeout(()=> openModal(), 700); }
-function cancelSettingsPress(e){ if(settingsPressTimer){ clearTimeout(settingsPressTimer); settingsPressTimer = null; } }
-settingsBtn.addEventListener('touchstart', startSettingsPress); settingsBtn.addEventListener('mousedown', startSettingsPress);
-settingsBtn.addEventListener('touchend', cancelSettingsPress); settingsBtn.addEventListener('mouseup', cancelSettingsPress); settingsBtn.addEventListener('mouseleave', cancelSettingsPress);
-
-function openModal(){ modal.style.display = 'block'; modal.setAttribute('aria-hidden','false'); }
-closeModal.addEventListener('click', ()=> { modal.style.display = 'none'; modal.setAttribute('aria-hidden','true'); });
-
-durationSelect.addEventListener('change', ()=> { STATE.duration = parseInt(durationSelect.value,10); saveState(); });
-reducedMotionCheckbox.addEventListener('change', ()=> { STATE.reducedMotion = reducedMotionCheckbox.checked; saveState(); });
-muteSetting.addEventListener('change', ()=> { STATE.mute = muteSetting.checked; if(masterGain) masterGain.gain.value = STATE.mute ? 0 : 1; muteBtn.textContent = STATE.mute ? 'SOUND ON' : 'SILENCE'; saveState(); });
-skipParent.addEventListener('click', ()=> { if(STATE.crawlPlaying){ STATE.crawlPlaying = false; holoCrawl.style.transition = 'none'; holoCrawl.style.transform = 'translateY(-260%)'; letterboxTop.style.opacity = '0'; letterboxBottom.style.opacity = '0'; startCountdown(); } });
-
-/* -------------------------
-   Accessibility announcer
-   ------------------------- */
-function ariaAnnounce(text){
-  ariaStatus.textContent = text;
-}
-
-/* -------------------------
-   Flow: Intro -> Countdown -> Main -> Finish
-   ------------------------- */
-function startIntroFlow(){
-  ensureAudio();
-  // show letterbox and title briefly
-  letterboxTop.style.opacity = '1'; letterboxBottom.style.opacity = '1';
-  holoCrawl.style.transition = 'none';
-  holoCrawl.style.transform = 'translateY(0%)';
-  STATE.crawlPlaying = true;
-  setTimeout(()=> {
-    holoCrawl.style.transition = `transform ${CONFIG.crawlDuration}s cubic-bezier(.2,.8,.2,1), opacity 300ms`;
-    holoCrawl.style.transform = 'translateY(-260%)';
-    if(audioCtx && !STATE.mute) playTone(1200,0.12,'sawtooth',0.08);
-    setTimeout(()=> {
-      STATE.crawlPlaying = false;
-      letterboxTop.style.opacity = '0'; letterboxBottom.style.opacity = '0';
-      startCountdown();
-    }, CONFIG.crawlDuration * 1000);
-  }, CONFIG.titleHold * 1000);
-}
-
-let countdownInterval = null;
-function startCountdown(){
-  STATE.countdown = CONFIG.countdown;
-  ariaAnnounce('Countdown starting');
-  if(audioCtx && !STATE.mute) playTone(880,0.12,'sine');
-  clearInterval(countdownInterval);
-  countdownInterval = setInterval(()=> {
-    STATE.countdown--;
-    if(STATE.countdown > 0){
-      if(audioCtx && !STATE.mute) playTone(880 - (STATE.countdown*40), 0.12, 'square');
-      timerText.textContent = formatTime(STATE.duration + STATE.countdown);
-    } else {
-      clearInterval(countdownInterval);
-      if(audioCtx && !STATE.mute) playTone(1200,0.18,'sawtooth');
-      startMainSession();
+    // --- AUDIO ENGINE (Web Audio API - Safe & Local) ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playTone(freq, type, duration) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
     }
-  }, 1000);
-}
 
-function startMainSession(){
-  STATE.running = true;
-  STATE.brushing = true;
-  STATE.paused = false;
-  STATE.mainStart = now();
-  STATE.drainPerSecond = 100 / STATE.duration; // percent per second
-  STATE.segmentsHit = 0;
-  updateSegments(0);
-  pauseBtn.setAttribute('aria-disabled','false');
-  ariaAnnounce('Go! Brush for ' + STATE.duration + ' seconds');
-}
+    // --- STARFIELD ANIMATION ---
+    const canvas = document.getElementById('space-canvas');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
 
-/* -------------------------
-   Timer & micro-goals logic
-   ------------------------- */
-function now(){ return performance.now()/1000; }
-function formatTime(s){ s = Math.max(0, Math.ceil(s)); const mm = String(Math.floor(s/60)).padStart(2,'0'); const ss = String(s%60).padStart(2,'0'); return `${mm}:${ss}`; }
-
-function awardMicroReward(segmentIndex){
-  if(segmentIndex <= 0) return;
-  // +1 crystal per segment
-  STATE.crystals += 1;
-  crystalsEl.textContent = STATE.crystals;
-  localStorage.setItem('tb_crystals', String(STATE.crystals));
-  // small sparkle animation
-  for(let i=0;i<12;i++){
-    spawnParticle(CONFIG.logicalW*0.5 + (Math.random()-0.5)*200, CONFIG.logicalH*0.45 + (Math.random()-0.5)*120, (Math.random()-0.5)*200, (Math.random()-0.5)*-200, 0.6 + Math.random()*0.8, 2 + Math.random()*4, Math.random()<0.5 ? '#7afcff' : '#ff3fb5');
-  }
-  // chime
-  ensureAudio();
-  if(audioCtx && !STATE.mute) playChime();
-  // update segments visually
-  updateSegments(segmentIndex);
-  ariaAnnounce(`Great! ${segmentIndex} of ${CONFIG.microSegments} milestones reached`);
-}
-
-function completeSession(){
-  // reward bonus crystals and streak
-  STATE.crystals += 2; // bonus
-  STATE.streak += 1;
-  STATE.best = Math.max(STATE.best, STATE.streak);
-  localStorage.setItem('tb_crystals', String(STATE.crystals));
-  localStorage.setItem('tb_streak', String(STATE.streak));
-  localStorage.setItem('tb_best', String(STATE.best));
-  crystalsEl.textContent = STATE.crystals;
-  streakEl.textContent = STATE.streak;
-  // victory audio & animation
-  ensureAudio();
-  if(audioCtx && !STATE.mute) playVictory();
-  showVictoryCard();
-  ariaAnnounce('Mission complete! Great job!');
-}
-
-/* -------------------------
-   Particles & pools
-   ------------------------- */
-function spawnParticle(x,y,vx,vy,life,size,color){
-  if(STATE.particles.length >= CONFIG.particleCap) return;
-  STATE.particles.push({ x, y, vx, vy, life, maxLife: life, size, color, rot: Math.random()*Math.PI*2, rotV: (Math.random()-0.5)*6 });
-}
-
-/* -------------------------
-   Rendering functions
-   ------------------------- */
-function renderBackground(){
-  bgCtx.clearRect(0,0,CONFIG.logicalW,CONFIG.logicalH);
-  const g = bgCtx.createLinearGradient(0,0,0,CONFIG.logicalH);
-  g.addColorStop(0,'#020617'); g.addColorStop(1,'#041026');
-  bgCtx.fillStyle = g; bgCtx.fillRect(0,0,CONFIG.logicalW,CONFIG.logicalH);
-  // stars
-  for(const s of stars){
-    const b = 0.06 + s.z*0.18;
-    bgCtx.fillStyle = `rgba(255,255,255,${b})`;
-    bgCtx.beginPath();
-    bgCtx.ellipse(s.x, s.y, s.size*(1+s.z*1.2), s.size*(1+s.z*1.2), 0, 0, Math.PI*2);
-    bgCtx.fill();
-  }
-}
-
-function renderBattle(){
-  battleCtx.clearRect(0,0,CONFIG.logicalW,CONFIG.logicalH);
-  // Titan core (simple)
-  const x = CONFIG.logicalW*0.5, y = CONFIG.logicalH*0.32;
-  const coreR = 48;
-  const elapsed = STATE.running ? (now() - STATE.mainStart) : 0;
-  const hpPct = STATE.running ? Math.max(0, 1 - (elapsed / STATE.duration)) : 1;
-  const glow = 0.2 + (1 - hpPct) * 1.4;
-  const grad = battleCtx.createRadialGradient(x,y,0,x,y,coreR*3);
-  grad.addColorStop(0, `rgba(255,255,255,${0.9*glow})`);
-  grad.addColorStop(0.3, `rgba(255,120,180,${0.6*glow})`);
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
-  battleCtx.fillStyle = grad;
-  battleCtx.beginPath(); battleCtx.arc(x,y,coreR*3,0,Math.PI*2); battleCtx.fill();
-  battleCtx.beginPath(); battleCtx.arc(x,y,coreR,0,Math.PI*2); battleCtx.fillStyle = 'rgba(255,80,150,0.95)'; battleCtx.fill();
-
-  // particles
-  for(const p of STATE.particles){
-    const lifeRatio = p.life / p.maxLife;
-    battleCtx.globalAlpha = clamp(lifeRatio,0,1);
-    battleCtx.fillStyle = p.color;
-    battleCtx.beginPath();
-    battleCtx.ellipse(p.x, p.y, p.size, p.size, p.rot, 0, Math.PI*2);
-    battleCtx.fill();
-    battleCtx.globalAlpha = 1;
-  }
-}
-
-function renderHUD(){
-  hudCtx.clearRect(0,0,CONFIG.logicalW,CONFIG.logicalH);
-  // subtle glow behind timer
-  hudCtx.save();
-  hudCtx.fillStyle = 'rgba(0,240,255,0.06)';
-  hudCtx.beginPath();
-  hudCtx.ellipse(CONFIG.logicalW/2, 120, 120, 48, 0, 0, Math.PI*2);
-  hudCtx.fill();
-  hudCtx.restore();
-
-  // core gauge lower center
-  const gx = CONFIG.logicalW/2, gy = CONFIG.logicalH - 260, gr = 64;
-  hudCtx.save();
-  hudCtx.lineWidth = 14;
-  hudCtx.strokeStyle = 'rgba(255,255,255,0.06)';
-  hudCtx.beginPath(); hudCtx.arc(gx,gy,gr,-Math.PI*0.75,Math.PI*0.75); hudCtx.stroke();
-  hudCtx.beginPath(); hudCtx.strokeStyle = 'rgba(255,80,150,0.95)'; hudCtx.lineWidth = 14;
-  const end = -Math.PI*0.75 + (Math.PI*1.5) * (1 - STATE.gauge);
-  hudCtx.arc(gx,gy,gr,-Math.PI*0.75,end,true); hudCtx.stroke();
-  hudCtx.restore();
-}
-
-function renderCockpit(){
-  cockpitCtx.clearRect(0,0,CONFIG.logicalW,CONFIG.logicalH);
-  // left/right bezels
-  cockpitCtx.save();
-  cockpitCtx.fillStyle = '#071a2a';
-  roundRect(cockpitCtx, -12, 160, 220, CONFIG.logicalH - 320, 22); cockpitCtx.fill();
-  roundRect(cockpitCtx, CONFIG.logicalW - 208, 160, 220, CONFIG.logicalH - 320, 22); cockpitCtx.fill();
-  // rivets
-  cockpitCtx.fillStyle = 'rgba(255,255,255,0.03)';
-  for(let y=200;y<CONFIG.logicalH-200;y+=36){ cockpitCtx.beginPath(); cockpitCtx.arc(36,y,3,0,Math.PI*2); cockpitCtx.fill(); cockpitCtx.beginPath(); cockpitCtx.arc(CONFIG.logicalW-36,y,3,0,Math.PI*2); cockpitCtx.fill(); }
-  // canopy reflection
-  const grd = cockpitCtx.createRadialGradient(CONFIG.logicalW*0.2, CONFIG.logicalH*0.12, 0, CONFIG.logicalW*0.2, CONFIG.logicalH*0.12, 520);
-  grd.addColorStop(0, 'rgba(255,255,255,0.06)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
-  cockpitCtx.fillStyle = grd; cockpitCtx.fillRect(0,0,CONFIG.logicalW,CONFIG.logicalH);
-  // scratches
-  cockpitCtx.strokeStyle = 'rgba(255,255,255,0.02)'; cockpitCtx.lineWidth = 1;
-  for(let i=0;i<12;i++){ cockpitCtx.beginPath(); const sx = Math.random()*CONFIG.logicalW*0.8 + CONFIG.logicalW*0.1; const sy = Math.random()*CONFIG.logicalH*0.6 + CONFIG.logicalH*0.1; cockpitCtx.moveTo(sx,sy); cockpitCtx.quadraticCurveTo(sx + (Math.random()-0.5)*80, sy + (Math.random()-0.5)*80, sx + (Math.random()-0.5)*160, sy + (Math.random()-0.5)*40); cockpitCtx.stroke(); }
-  // simple hands
-  cockpitCtx.fillStyle = '#071a2a';
-  cockpitCtx.fillRect(CONFIG.logicalW/2 - 160, CONFIG.logicalH - 360, 80, 28);
-  cockpitCtx.fillRect(CONFIG.logicalW/2 + 80, CONFIG.logicalH - 360, 80, 28);
-  cockpitCtx.restore();
-}
-
-/* -------------------------
-   Grain & halftone (throttled)
-   ------------------------- */
-function drawGrain(){
-  const w = grain.width, h = grain.height;
-  const img = grainCtx.createImageData(w,h);
-  const data = img.data;
-  for(let i=0;i<data.length;i+=4){
-    const v = Math.floor(Math.random()*255);
-    data[i] = v; data[i+1] = v; data[i+2] = v; data[i+3] = 12;
-  }
-  grainCtx.putImageData(img,0,0);
-}
-function drawHalftone(){
-  const w = halftone.width, h = halftone.height;
-  halftoneCtx.clearRect(0,0,w,h);
-  halftoneCtx.fillStyle = 'rgba(0,0,0,0.06)';
-  const spacing = 10;
-  for(let y=0;y<h;y+=spacing){
-    for(let x=0;x<w;x+=spacing){
-      const r = (Math.sin((x+y)/40) + 1) * 1.2;
-      halftoneCtx.beginPath();
-      halftoneCtx.arc(x, y, r, 0, Math.PI*2);
-      halftoneCtx.fill();
+    function initStars() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        stars = [];
+        for (let i = 0; i < 200; i++) {
+            stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 2, speed: Math.random() * 0.5 });
+        }
     }
-  }
-}
 
-/* -------------------------
-   Victory overlay
-   ------------------------- */
-function showVictoryCard(){
-  const overlay = document.createElement('div');
-  overlay.style.position = 'absolute';
-  overlay.style.inset = '0';
-  overlay.style.display = 'flex';
-  overlay.style.alignItems = 'center';
-  overlay.style.justifyContent = 'center';
-  overlay.style.zIndex = '999';
-  overlay.style.background = 'linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.6))';
-  overlay.innerHTML = `<div style="text-align:center;color:var(--film-yellow);font-weight:900;font-size:28px;margin-bottom:12px">MISSION COMPLETE</div>
-    <div style="color:var(--rim-cyan);font-weight:900;margin-bottom:12px">+2 bonus crystals • Streak +1</div>
-    <button id="victoryClose" style="padding:12px 18px;border-radius:12px;border:none;background:var(--accent);color:#041026;font-weight:900">CONTINUE</button>`;
-  document.getElementById('app').appendChild(overlay);
-  document.getElementById('victoryClose').addEventListener('click', ()=> overlay.remove());
-}
-
-/* -------------------------
-   Utility helpers
-   ------------------------- */
-function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
-function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
-
-/* -------------------------
-   Main animation loop
-   ------------------------- */
-let lastFrame = performance.now();
-function mainLoop(ts){
-  const nowMs = performance.now();
-  let dt = (nowMs - lastFrame)/1000;
-  lastFrame = nowMs;
-  dt = clamp(dt, 0, 0.05);
-
-  // update stars
-  for(const s of stars){ s.y += s.speed * dt; if(s.y > CONFIG.logicalH + 10){ s.y = -10; s.x = Math.random()*CONFIG.logicalW; s.z = Math.random(); } }
-
-  // update particles
-  for(let i=STATE.particles.length-1;i>=0;i--){
-    const p = STATE.particles[i];
-    p.life -= dt;
-    if(p.life <= 0){ STATE.particles.splice(i,1); continue; }
-    p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 160 * dt; p.rot += p.rotV * dt;
-  }
-
-  // main session logic
-  if(STATE.running && STATE.brushing && !STATE.paused){
-    const elapsed = now() - STATE.mainStart;
-    const remaining = Math.max(0, STATE.duration - elapsed);
-    timerText.textContent = formatTime(remaining);
-    // micro-goal detection
-    const pct = clamp(elapsed / STATE.duration, 0, 1);
-    const segIndex = Math.floor(pct * CONFIG.microSegments);
-    if(segIndex > STATE.segmentsHit && segIndex <= CONFIG.microSegments){
-      STATE.segmentsHit = segIndex;
-      awardMicroReward(segIndex);
+    function animateStars() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "white";
+        stars.forEach(s => {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.fill();
+            s.y += isRunning ? s.speed * 5 : s.speed; // Speed up when brushing
+            if (s.y > canvas.height) s.y = 0;
+        });
+        requestAnimationFrame(animateStars);
     }
-    if(elapsed >= STATE.duration){
-      // finish
-      STATE.running = false;
-      STATE.brushing = false;
-      completeSession();
+
+    // --- TIMER LOGIC ---
+    function updateDisplay() {
+        const m = Math.floor(timeLeft / 60);
+        const s = timeLeft % 60;
+        display.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        
+        // Update Segments (4 quadrants of 30s)
+        for (let i = 1; i <= 4; i++) {
+            const segThreshold = totalSeconds - (i * 30);
+            const fill = document.getElementById(`seg-${i}`);
+            if (timeLeft <= segThreshold) {
+                fill.style.width = "100%";
+            } else if (timeLeft < (totalSeconds - (i-1)*30)) {
+                let segmentProgress = ((totalSeconds - (i-1)*30) - timeLeft) / 30 * 100;
+                fill.style.width = segmentProgress + "%";
+            }
+        }
     }
-  } else if(!STATE.running && !STATE.crawlPlaying){
-    timerText.textContent = formatTime(STATE.duration);
-  }
 
-  // render layers
-  renderBackground();
-  renderBattle();
-  renderHUD();
-  renderCockpit();
+    function startMission() {
+        if (isRunning) return;
+        isRunning = true;
+        startBtn.classList.add('hidden');
+        audioCtx.resume();
+        playTone(440, 'square', 0.2);
 
-  requestAnimationFrame(mainLoop);
-}
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateDisplay();
 
-/* -------------------------
-   Start-up: load state, audio, loops
-   ------------------------- */
-function init(){
-  loadState();
-  ensureAudio();
-  drawHalftone();
-  setInterval(drawGrain, 1000 / CONFIG.grainHz);
-  lastFrame = performance.now();
-  requestAnimationFrame(mainLoop);
-  // small convenience: start intro after short delay
-  setTimeout(()=> startIntroFlow(), 300);
-}
-init();
+            // Periodic Audio Feedback
+            if (timeLeft % 30 === 0 && timeLeft > 0) {
+                playTone(880, 'sine', 0.5); // "Micro-goal" chime
+                crystals += 1;
+                crystalEl.innerText = crystals;
+                localStorage.setItem('crystals', crystals);
+            }
 
-/* -------------------------
-   Small helpers & debug hooks
-   ------------------------- */
-function startIntroFlow(){
-  ensureAudio();
-  letterboxTop.style.opacity = '1'; letterboxBottom.style.opacity = '1';
-  holoCrawl.style.transition = 'none';
-  holoCrawl.style.transform = 'translateY(0%)';
-  STATE.crawlPlaying = true;
-  setTimeout(()=> {
-    holoCrawl.style.transition = `transform ${CONFIG.crawlDuration}s cubic-bezier(.2,.8,.2,1), opacity 300ms`;
-    holoCrawl.style.transform = 'translateY(-260%)';
-    if(audioCtx && !STATE.mute) playTone(1200,0.12,'sawtooth',0.08);
-    setTimeout(()=> {
-      STATE.crawlPlaying = false;
-      letterboxTop.style.opacity = '0'; letterboxBottom.style.opacity = '0';
-      startCountdown();
-    }, CONFIG.crawlDuration * 1000);
-  }, CONFIG.titleHold * 1000);
-}
-
-function startCountdown(){
-  STATE.countdown = CONFIG.countdown;
-  ariaAnnounce('Countdown starting');
-  if(audioCtx && !STATE.mute) playTone(880,0.12,'sine');
-  let t = Math.ceil(STATE.countdown);
-  const interval = setInterval(()=> {
-    t--;
-    if(t > 0){
-      if(audioCtx && !STATE.mute) playTone(880 - (t*40), 0.12, 'square');
-      timerText.textContent = formatTime(STATE.duration + t);
-    } else {
-      clearInterval(interval);
-      if(audioCtx && !STATE.mute) playTone(1200,0.18,'sawtooth');
-      // start main session
-      STATE.duration = parseInt(localStorage.getItem('tb_duration') || CONFIG.defaultDuration,10);
-      STATE.running = true; STATE.brushing = true; STATE.paused = false; STATE.mainStart = now(); STATE.segmentsHit = 0;
-      updateSegments(0);
-      ariaAnnounce('Go! Brush for ' + STATE.duration + ' seconds');
+            if (timeLeft <= 0) {
+                completeMission();
+            }
+        }, 1000);
     }
-  }, 1000);
-}
 
-/* Update segments UI */
-function updateSegments(count){
-  for(let i=0;i<CONFIG.microSegments;i++){
-    if(i < count) segEls[i].classList.add('on'); else segEls[i].classList.remove('on');
-  }
-}
+    function completeMission() {
+        clearInterval(timerInterval);
+        isRunning = false;
+        playTone(1200, 'sine', 1);
+        
+        // Final Rewards
+        crystals += 1; // Last segment crystal
+        streak += 1;
+        localStorage.setItem('crystals', crystals);
+        localStorage.setItem('streak', streak);
+        
+        document.getElementById('victory').style.display = 'flex';
+    }
 
-/* Award micro reward (called when segment reached) */
-function awardMicroReward(segmentIndex){
-  if(segmentIndex <= 0) return;
-  STATE.crystals += 1;
-  crystalsEl.textContent = STATE.crystals;
-  localStorage.setItem('tb_crystals', String(STATE.crystals));
-  // spawn particles
-  for(let i=0;i<18;i++){
-    spawnParticle(CONFIG.logicalW*0.5 + (Math.random()-0.5)*240, CONFIG.logicalH*0.45 + (Math.random()-0.5)*160, (Math.random()-0.5)*240, (Math.random()-0.5)*-240, 0.6 + Math.random()*0.8, 2 + Math.random()*6, Math.random()<0.5 ? '#7afcff' : '#ff3fb5');
-  }
-  ensureAudio();
-  if(audioCtx && !STATE.mute) playChime();
-  updateSegments(segmentIndex);
-  ariaAnnounce(`Nice! ${segmentIndex} of ${CONFIG.microSegments} milestones reached`);
-}
+    // --- INITIALIZE ---
+    window.addEventListener('resize', initStars);
+    startBtn.addEventListener('click', startMission);
+    initStars();
+    animateStars();
 
-/* Complete session */
-function completeSession(){
-  STATE.crystals += 2; STATE.streak += 1; STATE.best = Math.max(STATE.best, STATE.streak);
-  localStorage.setItem('tb_crystals', String(STATE.crystals));
-  localStorage.setItem('tb_streak', String(STATE.streak));
-  localStorage.setItem('tb_best', String(STATE.best));
-  crystalsEl.textContent = STATE.crystals;
-  streakEl.textContent = STATE.streak;
-  ensureAudio();
-  if(audioCtx && !STATE.mute) playVictory();
-  showVictoryCard();
-}
+    // Parental Gate (Simple long-press on invisible area to reset)
+    let gateTimer;
+    document.getElementById('parent-gate').addEventListener('mousedown', () => {
+        gateTimer = setTimeout(() => {
+            if(confirm("Parent: Reset all stats?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }, 3000);
+    });
+    document.getElementById('parent-gate').addEventListener('mouseup', () => clearTimeout(gateTimer));
 
-/* Expose debug hooks */
-window.__TOOTHBRUSH = {
-  state: STATE,
-  start: startIntroFlow,
-  forceComplete: ()=> { STATE.running=false; STATE.brushing=false; completeSession(); }
-};
-
-/* End of file */
 </script>
 </body>
 </html>
