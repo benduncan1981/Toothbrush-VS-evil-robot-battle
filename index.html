@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<title>TITAN OMEGA — CHRONO SYNC TOOTHBRUSH MODE</title>
+<title>TITAN OMEGA — CHRONO SYNC (Cockpit POV)</title>
 <style>
   /* ===========================
-     GLOBAL LAYOUT AND THEME
+     THEME & LAYOUT
      =========================== */
   :root{
     --bg-deep:#020617;
@@ -27,49 +27,43 @@
   .view{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px;box-sizing:border-box}
   .hidden{display:none}
 
-  /* Canvas container */
+  /* Canvas layers: background battle, HUD, cockpit, overlays */
   #screenWrap{position:relative;flex:1;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
-  canvas#screen{width:100%;height:100%;image-rendering:pixelated;display:block;background:linear-gradient(180deg,#020617 0%, #041026 100%);}
+  canvas.layer{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+  canvas#bgCanvas{z-index:10}
+  canvas#battleCanvas{z-index:20}
+  canvas#hudCanvas{z-index:40}
+  canvas#cockpitCanvas{z-index:50}
+  canvas#bloomCanvas{z-index:30;pointer-events:none}
+  canvas#grainCanvas{z-index:80;pointer-events:none;opacity:0.06}
+  canvas#halftoneCanvas{z-index:79;pointer-events:none;opacity:0.18}
 
-  /* Letterbox bars for cinematic framing */
-  .letterbox{position:absolute;left:0;right:0;height:var(--letterbox-height);background:#000;z-index:60;pointer-events:none;opacity:0;transition:opacity 360ms ease}
+  /* Letterbox bars */
+  .letterbox{position:absolute;left:0;right:0;height:var(--letterbox-height);background:#000;z-index:90;pointer-events:none;opacity:0;transition:opacity 360ms ease}
   .letterbox.top{top:0}
   .letterbox.bottom{bottom:0}
 
   /* Title card */
-  #titleCard{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:70;opacity:0;transition:opacity 260ms ease}
+  #titleCard{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:95;opacity:0;transition:opacity 260ms ease}
   #titleCard .titleText{font-size:28px;font-weight:900;color:var(--film-yellow);text-shadow:0 10px 30px rgba(0,0,0,0.7);letter-spacing:2px}
 
-  /* HUD */
-  #hud{position:absolute;left:0;right:0;top:0;padding:12px;display:flex;flex-direction:column;align-items:center;pointer-events:none;z-index:50}
+  /* HUD chrome */
+  #hudUI{position:absolute;left:0;right:0;top:0;padding:12px;display:flex;flex-direction:column;align-items:center;pointer-events:none;z-index:100}
   .topRow{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;pointer-events:auto}
-  .statBox{background:var(--glass);padding:8px 10px;border-radius:10px;border:2px solid rgba(255,255,255,0.04);display:flex;gap:8px;align-items:center;font-weight:800;color:#fff}
+  .statBox{background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);display:flex;gap:8px;align-items:center;font-weight:800;color:#fff}
   .bigTimer{font-size:44px;font-weight:900;letter-spacing:1px;text-shadow:0 0 18px rgba(0,255,255,0.12);display:flex;align-items:center;gap:10px}
   .ring{width:64px;height:64px;position:relative;display:inline-block}
   .timerSubtitle{font-size:10px;opacity:0.9;margin-top:-6px;text-align:center}
 
-  /* Boss HP */
-  #bossBarWrap{position:absolute;top:86px;left:50%;transform:translateX(-50%);width:86%;max-width:380px;pointer-events:none;z-index:50}
-  #bossBar{height:22px;background:linear-gradient(90deg,#2b2b2b,#111);border-radius:12px;overflow:hidden;border:3px solid rgba(0,0,0,0.6)}
-  #bossHP{height:100%;width:100%;background:linear-gradient(90deg,var(--core-pink),#ffb86b);transform-origin:left center;transition:width 0.08s linear}
-  #bossLabel{position:absolute;left:50%;top:-22px;transform:translateX(-50%);font-weight:900;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,0.6);font-size:14px}
-
   /* Controls */
-  #controls{position:absolute;bottom:18px;left:0;right:0;display:flex;justify-content:center;gap:12px;pointer-events:auto;padding:0 18px;box-sizing:border-box;z-index:50}
+  #controls{position:absolute;bottom:18px;left:0;right:0;display:flex;justify-content:center;gap:12px;pointer-events:auto;padding:0 18px;box-sizing:border-box;z-index:100}
   .btn{background:linear-gradient(180deg,#0ff 0%, #7afcff 100%);border-radius:12px;padding:12px 16px;font-weight:900;color:#041026;border:3px solid rgba(0,0,0,0.35);box-shadow:0 8px 18px rgba(0,0,0,0.4);font-size:15px;min-width:110px;text-align:center;user-select:none;touch-action:manipulation}
   .btn.secondary{background:linear-gradient(180deg,var(--core-pink) 0%, #ff8fc9 100%);color:#041026}
   .btn.ghost{background:transparent;border:2px dashed rgba(255,255,255,0.06);color:#fff}
   .btn[aria-disabled="true"],.btn.disabled{opacity:0.35;pointer-events:none;filter:grayscale(0.2) saturate(0.6)}
 
-  /* Intro crawl */
-  .crawlWrap{flex:1;display:flex;align-items:flex-end;justify-content:center;position:relative;overflow:hidden;z-index:40}
-  .crawl{width:100%;max-width:380px;color:var(--film-yellow);transform-origin:center bottom;perspective:900px;font-weight:800;line-height:1.8;text-align:center;letter-spacing:0.6px;text-transform:uppercase}
-  .crawl p{margin:0 0 12px 0;font-size:16px;text-shadow:0 2px 8px rgba(0,0,0,0.6)}
-
-  /* overlays for texture */
-  .scanlines{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(0,0,0,0.06) 50%, rgba(255,255,255,0.01) 51%);background-size:100% 4px;mix-blend-mode:overlay;opacity:0.6;z-index:80}
-  .halftone{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:0.28;z-index:79}
-  .grainCanvas{position:absolute;inset:0;pointer-events:none;z-index:78;opacity:0.06}
+  /* Crawl holo display (inside cockpit) */
+  .holoCrawl{position:absolute;left:50%;transform:translateX(-50%);bottom:18%;width:86%;max-width:380px;z-index:60;color:var(--film-yellow);font-weight:800;line-height:1.6;text-align:center;pointer-events:none}
 
   /* small */
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -77,20 +71,20 @@
 </style>
 </head>
 <body>
-<div id="app" role="application" aria-label="Titan Omega Chrono Sync toothbrush game">
-  <!-- Letterbox bars -->
+<div id="app" role="application" aria-label="Titan Omega Chrono Sync cockpit">
+  <!-- cinematic letterbox bars -->
   <div class="letterbox top" id="letterboxTop" aria-hidden="true"></div>
   <div class="letterbox bottom" id="letterboxBottom" aria-hidden="true"></div>
 
-  <!-- Title card -->
+  <!-- title card -->
   <div id="titleCard" aria-hidden="true"><div class="titleText">MISSION CHRONO SYNC</div></div>
 
-  <!-- Intro -->
+  <!-- main views -->
   <section id="viewIntro" class="view" aria-hidden="false">
     <div style="width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <div style="display:flex;gap:8px;align-items:center">
         <div style="font-weight:900;font-size:18px;color:var(--rim-cyan)">TITAN OMEGA</div>
-        <div style="font-size:12px;opacity:0.9">TOOTHBRUSH MODE</div>
+        <div style="font-size:12px;opacity:0.9">COCKPIT POV</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <label style="font-size:12px;opacity:0.9">CALLSIGN</label>
@@ -98,13 +92,25 @@
       </div>
     </div>
 
-    <div class="crawlWrap" aria-hidden="false">
-      <div id="crawl" class="crawl" aria-live="polite" role="article" aria-label="Prologue" style="transform:translateY(40%) rotateX(40deg) scale(1)">
-        <div style="font-size:20px;font-weight:900;margin-bottom:10px">PROLOGUE</div>
-        <p>THE ORBITING TITAN OMEGA HAS RUPTURED THE CHRONO GRID.</p>
-        <p>A LONE PILOT MUST SYNC THE CHRONO CORE BEFORE THE ORBIT COLLAPSES.</p>
-        <p>SUIT UP. TWO MINUTES OF STEADY RHYTHM WILL RESTORE THE CORE AND BRING THE TITAN DOWN.</p>
-        <p>THIS IS YOUR MISSION. THIS IS YOUR MOMENT.</p>
+    <div id="screenWrap">
+      <!-- layered canvases -->
+      <canvas id="bgCanvas" class="layer" width="430" height="932" aria-hidden="true"></canvas>
+      <canvas id="battleCanvas" class="layer" width="430" height="932" aria-hidden="true"></canvas>
+      <canvas id="bloomCanvas" class="layer" width="430" height="932" aria-hidden="true"></canvas>
+      <canvas id="hudCanvas" class="layer" width="430" height="932" aria-hidden="true"></canvas>
+      <canvas id="cockpitCanvas" class="layer" width="430" height="932" aria-hidden="true"></canvas>
+      <canvas id="grainCanvas" class="layer" width="430" height="932" aria-hidden="true"></canvas>
+      <canvas id="halftoneCanvas" class="layer" width="430" height="932" aria-hidden="true"></canvas>
+
+      <!-- holo crawl shown on cockpit console -->
+      <div class="holoCrawl" id="holoCrawl" aria-hidden="false">
+        <div style="font-size:18px;font-weight:900;margin-bottom:8px;color:var(--film-yellow)">PROLOGUE</div>
+        <div id="crawlText" style="font-size:14px;opacity:0.95;line-height:1.6">
+          THE ORBITING TITAN OMEGA HAS RUPTURED THE CHRONO GRID.<br>
+          A LONE PILOT MUST SYNC THE CHRONO CORE BEFORE THE ORBIT COLLAPSES.<br>
+          SUIT UP. TWO MINUTES OF STEADY RHYTHM WILL RESTORE THE CORE AND BRING THE TITAN DOWN.<br>
+          THIS IS YOUR MISSION. THIS IS YOUR MOMENT.
+        </div>
       </div>
     </div>
 
@@ -119,44 +125,43 @@
     </div>
   </section>
 
-  <!-- Game -->
+  <!-- GAME VIEW (cockpit) -->
   <section id="viewGame" class="view hidden" aria-hidden="true">
-    <div id="screenWrap" aria-hidden="false">
-      <canvas id="screen" width="430" height="932" role="img" aria-label="Game screen"></canvas>
-      <canvas id="grain" class="grainCanvas" width="430" height="932" aria-hidden="true"></canvas>
-      <div class="scanlines" aria-hidden="true"></div>
-      <canvas id="halftone" class="halftone" width="430" height="932" aria-hidden="true"></canvas>
+    <div id="screenWrap">
+      <canvas id="bgCanvas" class="layer" width="430" height="932" aria-hidden="true"></canvas>
+      <canvas id="battleCanvas" class="layer" width="430" height="932" aria-hidden="true"></canvas>
+      <canvas id="bloomCanvas" class="layer" width="430" height="932" aria-hidden="true"></canvas>
+      <canvas id="hudCanvas" class="layer" width="430" height="932" aria-hidden="true"></canvas>
+      <canvas id="cockpitCanvas" class="layer" width="430" height="932" aria-hidden="true"></canvas>
+      <canvas id="grainCanvas" class="layer" width="430" height="932" aria-hidden="true"></canvas>
+      <canvas id="halftoneCanvas" class="layer" width="430" height="932" aria-hidden="true"></canvas>
 
-      <div id="hud" aria-hidden="false">
-        <div class="topRow">
-          <div style="display:flex;gap:8px;align-items:center">
-            <div class="statBox" id="crystalBox" aria-live="polite"><div style="font-size:18px">💎</div><div><div class="label">CRYSTALS</div><div id="crystals" style="font-size:16px">0</div></div></div>
-            <div class="statBox" style="padding:6px 10px"><div style="font-size:12px;opacity:0.9">CALLSIGN</div><div id="pilotName" style="font-weight:900">—</div></div>
-          </div>
+      <div class="holoCrawl" id="holoCrawlGame" aria-hidden="true"></div>
+    </div>
 
-          <div style="display:flex;flex-direction:column;align-items:center">
-            <div class="bigTimer" role="timer" aria-live="assertive" aria-atomic="true">
-              <div class="ring" aria-hidden="true" id="progressRing"></div>
-              <div id="timerText">02:00</div>
-            </div>
-            <div class="timerSubtitle">CHRONO SYNC</div>
-          </div>
-
-          <div class="statBox" id="streakBox" aria-live="polite"><div style="font-size:18px">🔥</div><div><div class="label">STREAK</div><div id="streak" style="font-size:16px">0</div></div></div>
+    <!-- HUD UI (HTML overlay for accessibility & quick updates) -->
+    <div id="hudUI">
+      <div class="topRow">
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="statBox" id="crystalBox" aria-live="polite"><div style="font-size:18px">💎</div><div><div class="label">CRYSTALS</div><div id="crystals" style="font-size:16px">0</div></div></div>
+          <div class="statBox" style="padding:6px 10px"><div style="font-size:12px;opacity:0.9">CALLSIGN</div><div id="pilotName" style="font-weight:900">—</div></div>
         </div>
-      </div>
 
-      <div id="bossBarWrap" aria-hidden="false">
-        <div id="bossLabel">TITAN OMEGA CORE</div>
-        <div id="bossBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-label="Titan Omega Core Health">
-          <div id="bossHP"></div>
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="bigTimer" role="timer" aria-live="assertive" aria-atomic="true">
+            <div class="ring" aria-hidden="true" id="progressRing"></div>
+            <div id="timerText">02:00</div>
+          </div>
+          <div class="timerSubtitle">CHRONO SYNC</div>
         </div>
+
+        <div class="statBox" id="streakBox" aria-live="polite"><div style="font-size:18px">🔥</div><div><div class="label">STREAK</div><div id="streak" style="font-size:16px">0</div></div></div>
       </div>
     </div>
 
     <div id="controls" role="toolbar" aria-label="Game controls">
       <div style="display:flex;gap:8px;align-items:center">
-        <button id="tapBtn" class="btn ghost" aria-label="Fire laser" touch-action="manipulation">FIRE LASER</button>
+        <button id="tapBtn" class="btn ghost" aria-label="Manual diagnostics" touch-action="manipulation">DIAGNOSTICS</button>
         <button id="startBtn" class="btn" aria-label="Engage" touch-action="manipulation">ENGAGE</button>
         <button id="pauseBtn" class="btn secondary" aria-label="Hold" touch-action="manipulation">HOLD</button>
         <button id="backIntroBtn" class="btn ghost" aria-label="Return" touch-action="manipulation">RETURN</button>
@@ -168,7 +173,7 @@
       </div>
     </div>
 
-    <div style="position:absolute;left:12px;bottom:12px;font-size:12px;opacity:0.9;z-index:50">CALLSIGN: <span id="pilotNameFooter">—</span></div>
+    <div style="position:absolute;left:12px;bottom:12px;font-size:12px;opacity:0.9;z-index:100">CALLSIGN: <span id="pilotNameFooter">—</span></div>
   </section>
 </div>
 
@@ -184,14 +189,14 @@ const CONFIG = {
   preCountdown: 5.0,
   duration: 120.0,
   bossMaxHP: 100.0,
-  particlePoolSize: 300,
-  debrisPoolSize: 160,
-  sparklePoolSize: 120,
-  starCount: 160,
-  maxActiveParticles: 220,
-  maxActiveDebris: 140,
+  particlePoolSize: 360,
+  debrisPoolSize: 220,
+  sparklePoolSize: 160,
+  starCount: 220,
+  maxActiveParticles: 260,
+  maxActiveDebris: 200,
   audioEnabledDefault: true,
-  grainUpdateHz: 10,
+  grainHz: 10,
   localKeys: {
     crystals: 'titan_crystals',
     streak: 'titan_streak',
@@ -226,26 +231,40 @@ const STATE = {
   mainStartTime: 0,
   mainElapsed: 0,
   cameraShake: {x:0,y:0,amt:0},
-  dollyScale: 1.0
+  dollyScale: 1.0,
+  gaugeValue: 1.0
 };
 
 /* ===========================
    CANVAS SETUP
    =========================== */
-const canvas = document.getElementById('screen');
-const ctx = canvas.getContext('2d', { alpha: false });
-canvas.width = CONFIG.canvasW;
-canvas.height = CONFIG.canvasH;
+const bgCanvas = document.getElementById('bgCanvas');
+const bgCtx = bgCanvas.getContext('2d', { alpha: false });
+bgCanvas.width = CONFIG.canvasW; bgCanvas.height = CONFIG.canvasH;
 
-const grainCanvas = document.getElementById('grain');
-const gctx = grainCanvas.getContext('2d');
-grainCanvas.width = CONFIG.canvasW;
-grainCanvas.height = CONFIG.canvasH;
+const battleCanvas = document.getElementById('battleCanvas');
+const battleCtx = battleCanvas.getContext('2d', { alpha: true });
+battleCanvas.width = CONFIG.canvasW; battleCanvas.height = CONFIG.canvasH;
 
-const halftoneCanvas = document.getElementById('halftone');
-const hctx = halftoneCanvas.getContext('2d');
-halftoneCanvas.width = CONFIG.canvasW;
-halftoneCanvas.height = CONFIG.canvasH;
+const bloomCanvas = document.getElementById('bloomCanvas');
+const bloomCtx = bloomCanvas.getContext('2d', { alpha: true });
+bloomCanvas.width = CONFIG.canvasW; bloomCanvas.height = CONFIG.canvasH;
+
+const hudCanvas = document.getElementById('hudCanvas');
+const hudCtx = hudCanvas.getContext('2d', { alpha: true });
+hudCanvas.width = CONFIG.canvasW; hudCanvas.height = CONFIG.canvasH;
+
+const cockpitCanvas = document.getElementById('cockpitCanvas');
+const cockpitCtx = cockpitCanvas.getContext('2d', { alpha: true });
+cockpitCanvas.width = CONFIG.canvasW; cockpitCanvas.height = CONFIG.canvasH;
+
+const grainCanvas = document.getElementById('grainCanvas');
+const grainCtx = grainCanvas.getContext('2d', { alpha: true });
+grainCanvas.width = CONFIG.canvasW; grainCanvas.height = CONFIG.canvasH;
+
+const halftoneCanvas = document.getElementById('halftoneCanvas');
+const halftoneCtx = halftoneCanvas.getContext('2d', { alpha: true });
+halftoneCanvas.width = CONFIG.canvasW; halftoneCanvas.height = CONFIG.canvasH;
 
 /* ===========================
    UTILS
@@ -258,7 +277,7 @@ function saveLS(key,val){localStorage.setItem(key,JSON.stringify(val))}
 function loadLS(key,def){try{const v=JSON.parse(localStorage.getItem(key));return v===null?def:v}catch(e){return def}}
 
 /* ===========================
-   AUDIO (procedural WebAudio)
+   AUDIO (procedural)
    =========================== */
 let audioCtx = null;
 let masterGain = null;
@@ -306,7 +325,7 @@ function layeredSting(){
   hit.start(t+0.08); hg.gain.exponentialRampToValueAtTime(0.12, t+0.09); hg.gain.exponentialRampToValueAtTime(0.0001, t+0.5); hit.stop(t+0.6);
 }
 function laserSound(){ if(!STATE.audioReady || STATE.mute) return; playTone(1600 + Math.random()*400, 0.06, 'sawtooth', 0, 0.08); }
-function smallExplode(){ if(!STATE.audioReady || STATE.mute) return; playTone(220 + Math.random()*80, 0.18, 'sine', 0, 0.12); playTone(1200 + Math.random()*400, 0.08, 'triangle', 0.02, 0.06); }
+function thresholdCue(){ if(!STATE.audioReady || STATE.mute) return; playTone(880,0.08,'triangle'); playTone(660,0.12,'sine',0.06,0.08); }
 function finalNukeSound(){ if(!STATE.audioReady || STATE.mute) return; layeredSting(); }
 
 /* ===========================
@@ -334,7 +353,7 @@ const activeDebris = [];
 const activeSparkles = [];
 
 /* ===========================
-   STARS AND BACKGROUND
+   STARS & BACKGROUND
    =========================== */
 const stars = [];
 function initStars(){
@@ -351,13 +370,13 @@ function initStars(){
 }
 
 /* ===========================
-   TITAN AND HERO
+   TITAN & HERO (cockpit POV)
    =========================== */
-const TITAN = { x: CONFIG.canvasW*0.5, y: CONFIG.canvasH*0.28, w: CONFIG.canvasW*0.62, h: 180, coreR: 40, damageState: 0 };
-const HERO = { x: CONFIG.canvasW*0.5, y: CONFIG.canvasH*0.78, w: 60, h: 78, fireCooldown: 0, fireRate: 0.12, jetBoost:0 };
+const TITAN = { x: CONFIG.canvasW*0.5, y: CONFIG.canvasH*0.28, w: CONFIG.canvasW*0.62, h: 180, coreR: 40, damageState: 0, scorch: [] };
+const HERO = { x: CONFIG.canvasW*0.5, y: CONFIG.canvasH*0.78, w: 60, h: 78, fireCooldown: 0, fireRate: 0.12, jetBoost:0, handsAngle:0 };
 
 /* ===========================
-   INPUT AND UI HANDLERS
+   INPUT & UI HANDLERS
    =========================== */
 document.addEventListener('DOMContentLoaded', initHandlers, {passive:true});
 function initHandlers(){
@@ -443,6 +462,7 @@ function initHandlers(){
   drawStaticHUD();
   startGrainLoop();
   drawHalftone();
+  requestAnimationFrame(loop);
   window.__TITAN = { state: STATE, startGame: startPrecountdown, setView, forceVictory: ()=>{ STATE.bossHP = 0; updateBossUI(); endBrushing(true); } };
 }
 
@@ -450,7 +470,11 @@ function initHandlers(){
    UI helpers
    =========================== */
 function updateMuteUI(){ const muteBtn = $('muteBtn'); muteBtn.textContent = STATE.mute ? 'SOUND ON' : 'SILENCE'; muteBtn.setAttribute('aria-pressed', String(STATE.mute)); }
-function updateBossUI(){ const hpPct = clamp(STATE.bossHP / STATE.bossMaxHP, 0, 1); $('bossHP').style.width = (hpPct*100) + '%'; $('bossBar').setAttribute('aria-valuenow', Math.round(hpPct*100)); }
+function updateBossUI(){ const hpPct = clamp(STATE.bossHP / STATE.bossMaxHP, 0, 1); // update HUD gauge smoothing target
+  STATE.gaugeValue += (hpPct - STATE.gaugeValue) * 0.08; // smooth needle
+  $('bossHP') && ($('bossHP').style.width = (hpPct*100) + '%');
+  $('bossBar') && $('bossBar').setAttribute('aria-valuenow', Math.round(hpPct*100));
+}
 function updateTimerUI(remaining){ $('timerText').textContent = fmtTime(Math.ceil(remaining)); $('timerText').setAttribute('aria-live','assertive'); }
 function updateCrystalsUI(){ $('crystals').textContent = STATE.crystals; }
 function updateStreakUI(){ $('streak').textContent = STATE.streak; }
@@ -481,7 +505,7 @@ function setView(v){
 }
 
 /* ===========================
-   CRAWL AND TITLE CARD
+   CRAWL & TITLE CARD (cockpit holo)
    =========================== */
 let crawlTimer = null;
 function startIntroFlow(){
@@ -490,33 +514,28 @@ function startIntroFlow(){
   const title = $('titleCard');
   const top = $('letterboxTop');
   const bottom = $('letterboxBottom');
-  // show letterbox and title
   top.style.opacity = '1'; bottom.style.opacity = '1';
   title.style.opacity = '1';
-  // hold title then start crawl
   setTimeout(()=>{
     title.style.opacity = '0';
     playCrawl(false);
   }, CONFIG.titleCardHold * 1000);
 }
 function playCrawl(skip=false){
-  const crawlEl = $('crawl');
+  const holo = $('holoCrawl');
   const duration = skip ? 0.05 : CONFIG.crawlDuration;
-  // Reset transform
-  crawlEl.style.transition = 'none';
-  crawlEl.style.transform = 'translateY(40%) rotateX(40deg) scale(1)';
-  void crawlEl.offsetWidth;
-  // Start slow cinematic crawl
-  crawlEl.style.transition = `transform ${duration}s cubic-bezier(.2,.8,.2,1)`;
-  crawlEl.style.transform = 'translateY(-260%) rotateX(40deg) scale(0.55)';
-  // ensure letterbox visible
+  holo.style.transition = 'none';
+  holo.style.transform = 'translateY(40%)';
+  void holo.offsetWidth;
+  holo.style.transition = `transform ${duration}s cubic-bezier(.2,.8,.2,1), opacity 300ms`;
+  holo.style.transform = 'translateY(-260%)';
+  holo.style.opacity = '1';
   $('letterboxTop').style.opacity = '1'; $('letterboxBottom').style.opacity = '1';
   if(STATE.audioReady && !STATE.mute) layeredSting();
   STATE.crawlPlaying = true;
   clearTimeout(crawlTimer);
   crawlTimer = setTimeout(()=>{
     STATE.crawlPlaying = false;
-    // fade letterbox after crawl
     setTimeout(()=>{ $('letterboxTop').style.opacity = '0'; $('letterboxBottom').style.opacity = '0'; }, 220);
     startPrecountdown();
   }, Math.max(50, duration*1000));
@@ -559,7 +578,7 @@ function skipCountdownOrCrawl(){
   }
 }
 
-/* Countdown visual overlay */
+/* Countdown overlay */
 let countdownOverlayTimer = null;
 function startCountdownVisual(seconds){
   const overlay = document.createElement('div');
@@ -592,11 +611,7 @@ function startCountdownVisual(seconds){
 }
 
 /* ===========================
-   MAIN TIMER AND DETERMINISTIC DRAIN
-   ===========================
-   drainPerSecond = bossMaxHP / duration
-   Each frame: bossHP -= drainPerSecond * dt
-   Clamp dt to avoid large jumps after tab suspension
+   MAIN TIMER & DRAIN (deterministic)
    =========================== */
 let mainStartTime = 0;
 function startMainTimer(){
@@ -614,7 +629,7 @@ function startMainTimer(){
 }
 
 /* ===========================
-   TAP ACTION (visual only)
+   TAP (diagnostics) - visual only
    =========================== */
 function handleTap(){
   if(STATE.brushing) return;
@@ -657,21 +672,22 @@ function spawnSparkle(x,y){
 }
 
 /* ===========================
-   UPDATE LOOP
+   UPDATE (per-frame)
    =========================== */
 function update(dt){
   dt = clamp(dt, 0, 0.05);
 
-  // Stars parallax
+  // stars parallax
   for(let s of stars){
     s.y += s.speed * dt;
     if(s.y > CONFIG.canvasH + 10){ s.y = -10; s.x = Math.random()*CONFIG.canvasW; s.z = Math.random(); }
   }
 
-  // Hero idle and firing visuals
+  // hero idle/hands
   HERO.fireCooldown = Math.max(0, HERO.fireCooldown - dt);
   if(STATE.brushing){
     HERO.jetBoost = clamp(HERO.jetBoost + dt*2, 0, 1);
+    HERO.handsAngle = Math.sin(now()*6) * 0.06;
     if(Math.random() < 0.18){
       const hitX = TITAN.x + (Math.random()-0.5)*(TITAN.w*0.45);
       const hitY = TITAN.y + (Math.random()-0.5)*(TITAN.h*0.35);
@@ -683,13 +699,14 @@ function update(dt){
     }
   } else {
     HERO.jetBoost = clamp(HERO.jetBoost - dt*2, 0, 1);
+    HERO.handsAngle *= 0.9;
     if(HERO.fireCooldown <= 0){
       HERO.fireCooldown = HERO.fireRate;
       spawnParticle(HERO.x, HERO.y - 10, (Math.random()-0.5)*20, -120 + Math.random()*-40, 0.18, 1.5, '#7afcff');
     }
   }
 
-  // Main deterministic drain
+  // deterministic drain
   if(STATE.running && STATE.brushing && !STATE.paused){
     STATE.bossHP -= STATE.drainPerSecond * dt;
     if(STATE.bossHP <= 0){
@@ -702,23 +719,23 @@ function update(dt){
     const remaining = Math.max(0, CONFIG.duration - STATE.mainElapsed);
     updateTimerUI(remaining);
 
-    // damage thresholds and effects
+    // thresholds
     const hpPct = STATE.bossHP / STATE.bossMaxHP;
     const prevState = TITAN.damageState;
     if(hpPct <= 0.75 && hpPct > 0.5) TITAN.damageState = 1;
     else if(hpPct <= 0.5 && hpPct > 0.25) TITAN.damageState = 2;
     else if(hpPct <= 0.25) TITAN.damageState = 3;
     if(TITAN.damageState !== prevState){
-      for(let i=0;i<14;i++){
+      for(let i=0;i<18;i++){
         const ang = Math.random()*Math.PI*2;
-        const spd = 80 + Math.random()*320;
-        spawnDebris(TITAN.x + (Math.random()-0.5)*TITAN.w*0.6, TITAN.y + (Math.random()-0.5)*TITAN.h*0.6, Math.cos(ang)*spd, Math.sin(ang)*spd - 40, 0.8 + Math.random()*1.2, 6 + Math.random()*10, '#cfcfcf');
+        const spd = 120 + Math.random()*420;
+        spawnDebris(TITAN.x + (Math.random()-0.5)*TITAN.w*0.6, TITAN.y + (Math.random()-0.5)*TITAN.h*0.6, Math.cos(ang)*spd, Math.sin(ang)*spd - 40, 0.8 + Math.random()*1.6, 6 + Math.random()*12, '#cfcfcf');
       }
-      if(STATE.audioReady && !STATE.mute) smallExplode();
-      STATE.cameraShake.amt = 6 + TITAN.damageState*8;
+      if(STATE.audioReady && !STATE.mute) thresholdCue();
+      STATE.cameraShake.amt = 6 + TITAN.damageState*10;
     }
 
-    // dolly zoom when critical
+    // dolly zoom critical
     if(hpPct < 0.30 && !STATE.reducedMotion){
       STATE.dollyScale = clamp(STATE.dollyScale + dt*0.006, 1.0, 1.06);
     } else {
@@ -728,7 +745,7 @@ function update(dt){
     STATE.cameraShake.amt = Math.max(0, STATE.cameraShake.amt - dt*6);
   }
 
-  // Particles update
+  // particles
   for(let i=activeParticles.length-1;i>=0;i--){
     const p = activeParticles[i];
     p.life -= dt;
@@ -743,7 +760,7 @@ function update(dt){
     p.rot += p.rotV * dt;
   }
 
-  // Debris update
+  // debris
   for(let i=activeDebris.length-1;i>=0;i--){
     const d = activeDebris[i];
     d.life -= dt;
@@ -758,7 +775,7 @@ function update(dt){
     d.rot += d.rotV * dt;
   }
 
-  // Sparkles
+  // sparkles
   for(let i=activeSparkles.length-1;i>=0;i--){
     const s = activeSparkles[i];
     s.age += dt;
@@ -774,7 +791,7 @@ function update(dt){
 }
 
 /* ===========================
-   END BRUSHING AND FINAL EXPLOSION
+   END BRUSHING & FINAL EXPLOSION
    =========================== */
 function endBrushing(victory){
   STATE.running = false;
@@ -806,86 +823,173 @@ function endBrushing(victory){
 let finalExplosionState = {phase:0, t:0, active:false};
 function triggerFinalExplosion(){
   finalExplosionState = {phase:0, t:0, active:true};
-  // spawn initial debris
-  for(let i=0;i<220;i++){
+  for(let i=0;i<320;i++){
     const ang = Math.random()*Math.PI*2;
-    const spd = 200 + Math.random()*1600;
-    spawnDebris(TITAN.x, TITAN.y, Math.cos(ang)*spd, Math.sin(ang)*spd - 80, 1.2 + Math.random()*2.2, 6 + Math.random()*12, '#ffd1e8');
+    const spd = 200 + Math.random()*2200;
+    spawnDebris(TITAN.x, TITAN.y, Math.cos(ang)*spd, Math.sin(ang)*spd - 80, 1.2 + Math.random()*2.2, 6 + Math.random()*14, '#ffd1e8');
   }
 }
 
 /* ===========================
-   RENDER
+   RENDER: compose layers
    =========================== */
 function render(){
-  // apply dolly scale and camera shake
-  const shakeAmt = STATE.cameraShake.amt;
-  const sx = (Math.random()-0.5) * shakeAmt;
-  const sy = (Math.random()-0.5) * shakeAmt;
-  const scale = STATE.dollyScale;
-
-  ctx.save();
-  ctx.setTransform(scale,0,0,scale, (1-scale)*canvas.width/2 + sx, (1-scale)*canvas.height/2 + sy );
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
   // background gradient
-  const g = ctx.createLinearGradient(0,0,0,canvas.height);
+  bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
+  const g = bgCtx.createLinearGradient(0,0,bgCanvas.width,bgCanvas.height);
   g.addColorStop(0,'#020617'); g.addColorStop(1,'#041026');
-  ctx.fillStyle = g;
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  bgCtx.fillStyle = g;
+  bgCtx.fillRect(0,0,bgCanvas.width,bgCanvas.height);
 
   // stars
+  bgCtx.save();
   for(let s of stars){
     const b = 0.06 + s.z*0.18;
-    ctx.fillStyle = `rgba(255,255,255,${b})`;
+    bgCtx.fillStyle = `rgba(255,255,255,${b})`;
     const size = s.size * (1 + s.z*1.2);
-    ctx.beginPath();
-    ctx.ellipse(s.x, s.y, size, size, 0, 0, Math.PI*2);
-    ctx.fill();
+    bgCtx.beginPath();
+    bgCtx.ellipse(s.x, s.y, size, size, 0, 0, Math.PI*2);
+    bgCtx.fill();
   }
+  bgCtx.restore();
 
-  // speed lines when brushing
-  if(STATE.brushing){
-    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-    ctx.lineWidth = 2;
-    for(let i=0;i<10;i++){
+  // battle layer (Titan & particles)
+  battleCtx.clearRect(0,0,battleCanvas.width,battleCanvas.height);
+  drawTitanToBattle(battleCtx);
+  drawParticlesToBattle(battleCtx);
+
+  // bloom: draw bright elements to bloom canvas (simple additive)
+  bloomCtx.clearRect(0,0,bloomCanvas.width,bloomCanvas.height);
+  drawBloom(bloomCtx);
+
+  // HUD layer
+  hudCtx.clearRect(0,0,hudCanvas.width,hudCanvas.height);
+  drawHUD(hudCtx);
+
+  // cockpit layer (bezel, hands, canopy)
+  cockpitCtx.clearRect(0,0,cockpitCanvas.width,cockpitCanvas.height);
+  drawCockpit(cockpitCtx);
+
+  // grain & halftone overlays are pre-rendered; they sit on top
+
+  // final explosion overlay handling
+  if(finalExplosionState.active){
+    finalExplosionState.t += 1/60;
+    if(finalExplosionState.phase === 0){
+      // flash overlay on HUD canvas for immediate effect
+      hudCtx.save();
+      hudCtx.fillStyle = 'rgba(255,255,255,0.95)';
+      hudCtx.fillRect(0,0,hudCanvas.width,hudCanvas.height);
+      hudCtx.restore();
+      finalExplosionState.phase = 1;
+      finalExplosionState.t = 0;
+    } else if(finalExplosionState.phase === 1){
+      const t = finalExplosionState.t;
+      const maxT = 0.6;
+      const r = (t/maxT) * Math.max(battleCanvas.width, battleCanvas.height) * 1.2;
+      battleCtx.save();
+      battleCtx.beginPath();
+      battleCtx.strokeStyle = `rgba(255,200,220,${1 - t/maxT})`;
+      battleCtx.lineWidth = 8 + (1 - t/maxT)*40;
+      battleCtx.arc(TITAN.x, TITAN.y, r, 0, Math.PI*2);
+      battleCtx.stroke();
+      battleCtx.restore();
+      if(t > maxT){
+        finalExplosionState.phase = 2;
+        finalExplosionState.t = 0;
+      }
+    } else if(finalExplosionState.phase === 2){
+      const t = finalExplosionState.t;
+      if(t > 3.2){
+        finalExplosionState.active = false;
+        showVictoryOverlay();
+      }
+    }
+  }
+}
+
+/* Draw Titan to battle canvas with scorch marks and weak rings */
+function drawTitanToBattle(ctx){
+  const x = TITAN.x, y = TITAN.y, w = TITAN.w, h = TITAN.h;
+  ctx.save();
+  // body
+  roundRect(ctx, x - w/2, y - h/2, w, h, 18);
+  ctx.fillStyle = '#0b1220';
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#0a0a0a';
+  ctx.stroke();
+
+  // seams and rivets
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  for(let i= -1; i<=1; i++){
+    ctx.beginPath();
+    ctx.moveTo(x - w*0.45, y + i*(h*0.18));
+    ctx.lineTo(x + w*0.45, y + i*(h*0.18));
+    ctx.stroke();
+  }
+  for(let rx=x - w*0.42; rx<=x + w*0.42; rx+=24){
+    for(let ry=y - h*0.42; ry<=y + h*0.42; ry+=36){
       ctx.beginPath();
-      const x = canvas.width * 0.6 + i*6;
-      ctx.moveTo(x, 40 + (i%2)*6);
-      ctx.lineTo(x + 40, 10 + (i%3)*8);
-      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      ctx.arc(rx, ry, 2, 0, Math.PI*2);
+      ctx.fill();
     }
   }
 
-  // Titan
-  drawTitan();
+  // core glow and pulsing rings
+  const hpPct = clamp(STATE.bossHP / STATE.bossMaxHP, 0, 1);
+  const glow = 0.2 + (1 - hpPct) * 1.4;
+  const coreR = TITAN.coreR;
+  const grad = ctx.createRadialGradient(x, y, 6, x, y, coreR*3);
+  grad.addColorStop(0, `rgba(255,255,255,${0.9*glow})`);
+  grad.addColorStop(0.3, `rgba(255,120,180,${0.6*glow})`);
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, coreR*3, 0, Math.PI*2);
+  ctx.fill();
 
-  // Hero
-  drawHero();
-
-  // Laser beam
-  if(STATE.brushing){
-    const px = HERO.x, py = HERO.y - HERO.h*0.28;
-    const tx = TITAN.x, ty = TITAN.y;
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    const grad = ctx.createLinearGradient(px, py, tx, ty);
-    grad.addColorStop(0, 'rgba(0,240,255,0.95)');
-    grad.addColorStop(0.5, 'rgba(255,63,181,0.95)');
-    grad.addColorStop(1, 'rgba(255,255,255,0.6)');
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = 8;
+  // pulsing rings
+  const t = now();
+  for(let i=0;i<3;i++){
+    const pulse = 0.6 + 0.6*Math.sin(t*2.6 + i*1.2);
     ctx.beginPath();
-    ctx.moveTo(px, py);
-    const midx = (px + tx)/2 + Math.sin(now()*12)*6;
-    const midy = (py + ty)/2 + Math.cos(now()*10)*6;
-    ctx.quadraticCurveTo(midx, midy, tx, ty);
+    ctx.strokeStyle = `rgba(255,${120 + i*30},${180 - i*20},${0.12 + (1-hpPct)*0.6 * (1 - i*0.18)})`;
+    ctx.lineWidth = 2 + i;
+    ctx.arc(x,y, coreR + 8 + i*12 + pulse*6, 0, Math.PI*2);
     ctx.stroke();
-    ctx.restore();
   }
 
+  // core
+  ctx.beginPath();
+  ctx.arc(x,y,coreR,0,Math.PI*2);
+  ctx.fillStyle = `rgba(255,80,150,${0.95})`;
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#fff';
+  ctx.stroke();
+
+  // scorch marks persisted
+  for(const s of TITAN.scorch){
+    const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
+    grd.addColorStop(0, 'rgba(0,0,0,0.6)');
+    grd.addColorStop(0.6, 'rgba(0,0,0,0.25)');
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.ellipse(s.x, s.y, s.r, s.r*0.6, s.rot, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+/* Draw particles and debris to battle canvas */
+function drawParticlesToBattle(ctx){
   // debris
-  for(let d of activeDebris){
+  for(const d of activeDebris){
     ctx.save();
     ctx.translate(d.x, d.y);
     ctx.rotate(d.rot);
@@ -910,7 +1014,7 @@ function render(){
   }
 
   // particles
-  for(let p of activeParticles){
+  for(const p of activeParticles){
     const lifeRatio = p.life / p.maxLife;
     ctx.globalAlpha = clamp(lifeRatio,0,1);
     ctx.fillStyle = p.color;
@@ -921,7 +1025,7 @@ function render(){
   }
 
   // sparkles
-  for(let s of activeSparkles){
+  for(const s of activeSparkles){
     const t = s.age / s.life;
     const alpha = 1 - t;
     ctx.save();
@@ -938,292 +1042,195 @@ function render(){
     ctx.fill();
     ctx.restore();
   }
-
-  // film scanlines overlay drawn on top of canvas content
-  ctx.restore();
-
-  // final explosion sequence rendering (post-canvas overlay effects)
-  if(finalExplosionState.active){
-    finalExplosionState.t += 1/60;
-    if(finalExplosionState.phase === 0){
-      // flash
-      ctx.save();
-      ctx.fillStyle = 'rgba(255,255,255,0.95)';
-      ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.restore();
-      finalExplosionState.phase = 1;
-      finalExplosionState.t = 0;
-    } else if(finalExplosionState.phase === 1){
-      const t = finalExplosionState.t;
-      const maxT = 0.6;
-      const r = (t/maxT) * Math.max(canvas.width, canvas.height) * 1.2;
-      ctx.save();
-      ctx.beginPath();
-      ctx.strokeStyle = `rgba(255,200,220,${1 - t/maxT})`;
-      ctx.lineWidth = 8 + (1 - t/maxT)*40;
-      ctx.arc(TITAN.x, TITAN.y, r, 0, Math.PI*2);
-      ctx.stroke();
-      ctx.restore();
-      if(t < 0.2 && Math.random() < 0.6){
-        const ang = Math.random()*Math.PI*2;
-        spawnDebris(TITAN.x, TITAN.y, Math.cos(ang)*(200+Math.random()*600), Math.sin(ang)*(200+Math.random()*600)-80, 1.2 + Math.random()*1.8, 6 + Math.random()*10, '#ffd1e8');
-      }
-      if(t > maxT){
-        finalExplosionState.phase = 2;
-        finalExplosionState.t = 0;
-      }
-    } else if(finalExplosionState.phase === 2){
-      const t = finalExplosionState.t;
-      if(t < 4 && Math.random() < 0.3){
-        spawnParticle(TITAN.x + (Math.random()-0.5)*TITAN.w, TITAN.y + (Math.random()-0.5)*TITAN.h, (Math.random()-0.5)*40, -40 - Math.random()*40, 2 + Math.random()*2, 6 + Math.random()*8, 'rgba(80,80,90,0.6)');
-      }
-      if(t > 3.2){
-        finalExplosionState.active = false;
-        showVictoryOverlay();
-      }
-    }
-  }
 }
 
-/* Draw Titan with textures, seams, rivets, and pulsing weak rings */
-function drawTitan(){
-  const x = TITAN.x, y = TITAN.y, w = TITAN.w, h = TITAN.h;
-  // base shell
-  ctx.save();
-  ctx.shadowColor = 'rgba(255,80,150,0.12)';
-  ctx.shadowBlur = 18;
-  roundRect(ctx, x - w/2, y - h/2, w, h, 18);
-  ctx.fillStyle = '#0b1220';
-  ctx.fill();
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = '#0a0a0a';
-  ctx.stroke();
-  ctx.restore();
-
-  // panel seams and rivets
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-  ctx.lineWidth = 1;
-  // horizontal seams
-  for(let i= -1; i<=1; i++){
-    ctx.beginPath();
-    ctx.moveTo(-w*0.45, i*(h*0.18));
-    ctx.lineTo(w*0.45, i*(h*0.18));
-    ctx.stroke();
-  }
-  // rivets
-  for(let rx=-w*0.42; rx<=w*0.42; rx+=24){
-    for(let ry=-h*0.42; ry<=h*0.42; ry+=36){
-      ctx.beginPath();
-      ctx.fillStyle = 'rgba(255,255,255,0.03)';
-      ctx.arc(rx, ry, 2, 0, Math.PI*2);
-      ctx.fill();
-    }
-  }
-
-  // core glow with pulsing weak rings
-  const hpPct = clamp(STATE.bossHP / STATE.bossMaxHP, 0, 1);
-  const glow = 0.2 + (1 - hpPct) * 1.4;
-  const coreR = TITAN.coreR;
-  const grad = ctx.createRadialGradient(0,0,6,0,0,coreR*3);
-  grad.addColorStop(0, `rgba(255,255,255,${0.9*glow})`);
-  grad.addColorStop(0.3, `rgba(255,120,180,${0.6*glow})`);
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = grad;
+/* Simple bloom: draw bright core to bloom canvas (cheap) */
+function drawBloom(ctx){
+  // draw a soft glow around Titan core
+  const x = TITAN.x, y = TITAN.y, coreR = TITAN.coreR;
+  const grd = ctx.createRadialGradient(x, y, 0, x, y, coreR*6);
+  grd.addColorStop(0, 'rgba(255,220,240,0.9)');
+  grd.addColorStop(0.2, 'rgba(255,120,180,0.45)');
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grd;
   ctx.beginPath();
-  ctx.arc(0, 0, coreR*3, 0, Math.PI*2);
+  ctx.arc(x, y, coreR*6, 0, Math.PI*2);
   ctx.fill();
-
-  // pulsing rings
-  const t = now();
-  for(let i=0;i<3;i++){
-    const pulse = 0.6 + 0.6*Math.sin(t*2.6 + i*1.2);
-    ctx.beginPath();
-    ctx.strokeStyle = `rgba(255,${120 + i*30},${180 - i*20},${0.12 + (1-hpPct)*0.6 * (1 - i*0.18)})`;
-    ctx.lineWidth = 2 + i;
-    ctx.arc(0,0, coreR + 8 + i*12 + pulse*6, 0, Math.PI*2);
-    ctx.stroke();
-  }
-
-  // core circle
-  ctx.beginPath();
-  ctx.arc(0,0,coreR,0,Math.PI*2);
-  ctx.fillStyle = `rgba(255,80,150,${0.95})`;
-  ctx.fill();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = '#fff';
-  ctx.stroke();
-
-  // damage overlays
-  if(TITAN.damageState >= 1){
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.beginPath();
-    ctx.ellipse(-w*0.12, -h*0.08, 28, 12, -0.6, 0, Math.PI*2);
-    ctx.fill();
-  }
-  if(TITAN.damageState >= 2){
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.beginPath();
-    ctx.moveTo(w*0.12, -h*0.05);
-    ctx.lineTo(w*0.28, -h*0.02);
-    ctx.lineTo(w*0.18, h*0.06);
-    ctx.lineTo(w*0.06, h*0.02);
-    ctx.closePath();
-    ctx.fill();
-  }
-  if(TITAN.damageState >= 3){
-    ctx.fillStyle = '#222';
-    ctx.fillRect(-w*0.18, -h*0.06, w*0.36, h*0.12);
-    for(let i=0;i<6;i++){
-      ctx.strokeStyle = i%2 ? '#ff3fb5' : '#00f0ff';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-w*0.16 + i*8, -h*0.04);
-      ctx.lineTo(-w*0.16 + i*8 + Math.sin(i + Date.now()/400)*6, h*0.04);
-      ctx.stroke();
-    }
-  }
-  ctx.restore();
 }
 
-/* Draw hero exo-suit with visor rim and holo reticle */
-function drawHero(){
-  const x = HERO.x, y = HERO.y;
-  ctx.save();
-  ctx.translate(x, y);
-
-  // body shadow
-  ctx.fillStyle = '#071a2a';
-  roundRect(ctx, -HERO.w/2 - 2, -HERO.h/2 - 2, HERO.w + 4, HERO.h + 4, 8);
-  ctx.fill();
-
-  // suit base
-  roundRect(ctx, -HERO.w/2, -HERO.h/2, HERO.w, HERO.h, 8);
-  ctx.fillStyle = '#0ff';
-  ctx.fill();
-
-  // chest plate
-  ctx.fillStyle = '#041026';
-  roundRect(ctx, -HERO.w/4, -HERO.h/4, HERO.w/2, HERO.h/3, 6);
-  ctx.fill();
-
-  // helmet
-  ctx.beginPath();
-  ctx.ellipse(0, -HERO.h/2 - 8, 22, 18, 0, 0, Math.PI*2);
-  ctx.fillStyle = '#0b1220';
-  ctx.fill();
-  // visor with rim light
-  ctx.beginPath();
-  ctx.ellipse(0, -HERO.h/2 - 8, 14, 10, 0, 0, Math.PI*2);
-  ctx.fillStyle = 'rgba(0,240,255,0.95)';
-  ctx.fill();
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  // emblem
-  ctx.fillStyle = '#ff3fb5';
-  ctx.beginPath();
-  ctx.arc(0, -HERO.h/8, 6, 0, Math.PI*2);
-  ctx.fill();
-
-  // jetpack
-  ctx.fillStyle = '#071a2a';
-  ctx.fillRect(-HERO.w/2 - 6, -HERO.h/4, 12, HERO.h/2);
-  ctx.fillRect(HERO.w/2 - 6, -HERO.h/4, 12, HERO.h/2);
-
-  // thruster flame when firing or boost
-  if(HERO.jetBoost > 0){
-    ctx.save();
-    ctx.globalAlpha = HERO.jetBoost;
-    const flameGrad = ctx.createLinearGradient(-6, HERO.h/4, 6, HERO.h/2 + 20);
-    flameGrad.addColorStop(0, '#ffb86b');
-    flameGrad.addColorStop(1, '#ff3fb5');
-    ctx.fillStyle = flameGrad;
-    ctx.beginPath();
-    ctx.ellipse(0, HERO.h/2 + 6, 10 + HERO.jetBoost*8, 18 + HERO.jetBoost*12, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  // holo reticle above head
-  ctx.restore();
-  if(!STATE.reducedMotion){
-    ctx.save();
-    const rx = x, ry = y - HERO.h - 18;
-    ctx.globalAlpha = 0.9;
-    ctx.strokeStyle = 'rgba(0,240,255,0.9)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(rx, ry, 18 + Math.sin(now()*6)*2, 0, Math.PI*2);
-    ctx.stroke();
-    ctx.restore();
-  }
-}
-
-/* Timer ring */
-function drawTimerRing(){
-  const ring = $('progressRing');
+/* HUD drawing (radial gauge, timer ring, lamps) */
+function drawHUD(ctx){
+  const w = hudCanvas.width, h = hudCanvas.height;
+  // central timer ring
   const remaining = STATE.running && STATE.brushing ? Math.max(0, CONFIG.duration - (now() - STATE.mainStartTime)) : CONFIG.duration;
   const pct = clamp(remaining / CONFIG.duration, 0, 1);
-  const size = 64;
-  const stroke = 6;
-  const r = (size - stroke)/2;
-  const c = 2*Math.PI*r;
-  const dash = c * pct;
-  const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-    <defs><filter id="g"><feGaussianBlur stdDeviation="3" result="b"/></filter></defs>
-    <circle cx="${size/2}" cy="${size/2}" r="${r}" stroke="rgba(255,255,255,0.06)" stroke-width="${stroke}" fill="none"/>
-    <circle cx="${size/2}" cy="${size/2}" r="${r}" stroke="${STATE.highContrast ? '#fff' : '#00f0ff'}" stroke-width="${stroke}" stroke-linecap="round" fill="none"
-      stroke-dasharray="${dash} ${c-dash}" transform="rotate(-90 ${size/2} ${size/2})" style="filter:url(#g);opacity:0.95"/>
-  </svg>`;
-  ring.innerHTML = svg;
+  const cx = w/2, cy = 90;
+  // ring background
+  ctx.save();
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 28, 0, Math.PI*2);
+  ctx.stroke();
+  // ring progress
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(0,240,255,0.95)';
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.arc(cx, cy, 28, -Math.PI/2, -Math.PI/2 + Math.PI*2*pct);
+  ctx.stroke();
+  ctx.restore();
+
+  // core lock gauge (lower center)
+  const gx = w/2, gy = h - 160, gr = 48;
+  const gaugePct = clamp(STATE.bossHP / STATE.bossMaxHP, 0, 1);
+  // background arc
+  ctx.save();
+  ctx.lineWidth = 10;
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.beginPath();
+  ctx.arc(gx, gy, gr, -Math.PI*0.75, Math.PI*0.75);
+  ctx.stroke();
+  // active arc
+  ctx.beginPath();
+  ctx.strokeStyle = `rgba(255,80,150,0.95)`;
+  ctx.lineWidth = 10;
+  const end = -Math.PI*0.75 + (Math.PI*1.5) * (1 - gaugePct);
+  ctx.arc(gx, gy, gr, -Math.PI*0.75, end, true);
+  ctx.stroke();
+  // needle (smoothed)
+  const needlePct = 1 - STATE.gaugeValue;
+  const angle = -Math.PI*0.75 + (Math.PI*1.5) * needlePct;
+  ctx.translate(gx, gy);
+  ctx.rotate(angle);
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.moveTo(0, -6);
+  ctx.lineTo(gr + 6, 0);
+  ctx.lineTo(0, 6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // top label
+  ctx.save();
+  ctx.font = '700 14px system-ui';
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.textAlign = 'center';
+  ctx.fillText('TITAN OMEGA CORE', w/2, 40);
+  ctx.restore();
+
+  // small HP bar under label
+  const barW = 220, barH = 10;
+  const bx = (w - barW)/2, by = 52;
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  roundRect(ctx, bx, by, barW, barH, 6);
+  ctx.fill();
+  ctx.fillStyle = 'linear-gradient(90deg,#ff3fb5,#ffb86b)';
+  ctx.fillStyle = '#ff6fa0';
+  ctx.fillRect(bx, by, barW * (STATE.bossHP/STATE.bossMaxHP), barH);
+  ctx.restore();
+
+  // warning lamps cluster
+  const lampX = w - 110, lampY = 60;
+  drawLamp(ctx, lampX, lampY, 'ARM', STATE.bossHP/STATE.bossMaxHP < 0.95);
+  drawLamp(ctx, lampX, lampY + 28, 'SYNC', STATE.bossHP/STATE.bossMaxHP < 0.75);
+  drawLamp(ctx, lampX, lampY + 56, 'CRIT', STATE.bossHP/STATE.bossMaxHP < 0.25);
+}
+
+/* lamp helper */
+function drawLamp(ctx, x, y, label, on){
+  ctx.save();
+  ctx.fillStyle = on ? (label==='CRIT' ? '#ff3fb5' : '#00f0ff') : 'rgba(255,255,255,0.06)';
+  ctx.beginPath();
+  ctx.arc(x, y, 10, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.font = '700 10px system-ui';
+  ctx.textAlign = 'left';
+  ctx.fillText(' ' + label, x + 14, y + 4);
+  ctx.restore();
+}
+
+/* cockpit drawing: bezel, hands, canopy scratches */
+function drawCockpit(ctx){
+  const w = cockpitCanvas.width, h = cockpitCanvas.height;
+  // left/right bezels
+  ctx.save();
+  ctx.fillStyle = '#071a2a';
+  roundRect(ctx, -6, 80, 120, h - 160, 18);
+  ctx.fill();
+  roundRect(ctx, w - 114, 80, 120, h - 160, 18);
+  ctx.fill();
+
+  // rivets
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  for(let y=110;y<h-110;y+=28){ ctx.beginPath(); ctx.arc(18, y, 2, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(w-18, y, 2, 0, Math.PI*2); ctx.fill(); }
+
+  // canopy reflection
+  const grd = ctx.createRadialGradient(w*0.2, h*0.15, 0, w*0.2, h*0.15, 260);
+  grd.addColorStop(0, 'rgba(255,255,255,0.06)');
+  grd.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0,0,w,h);
+
+  // scratches (procedural)
+  ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+  ctx.lineWidth = 1;
+  for(let i=0;i<12;i++){
+    ctx.beginPath();
+    const sx = Math.random()*w*0.8 + w*0.1;
+    const sy = Math.random()*h*0.6 + h*0.1;
+    ctx.moveTo(sx, sy);
+    ctx.quadraticCurveTo(sx + (Math.random()-0.5)*40, sy + (Math.random()-0.5)*40, sx + (Math.random()-0.5)*80, sy + (Math.random()-0.5)*20);
+    ctx.stroke();
+  }
+
+  // pilot hands (simple shapes)
+  const hx = HERO.x, hy = HERO.y + 20;
+  ctx.save();
+  ctx.translate(hx, hy);
+  ctx.rotate(HERO.handsAngle || 0);
+  ctx.fillStyle = '#071a2a';
+  roundRect(ctx, -60, -10, 40, 20, 6);
+  roundRect(ctx, 20, -10, 40, 20, 6);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
 }
 
 /* ===========================
-   LOOP
-   =========================== */
-function loop(ts){
-  const nowMs = performance.now();
-  let dt = (nowMs - STATE.lastTime)/1000;
-  STATE.lastTime = nowMs;
-  dt = clamp(dt, 0, 0.05);
-  if(!STATE.paused) update(dt);
-  render();
-  requestAnimationFrame(loop);
-}
-
-/* ===========================
-   FILM GRAIN AND HALFTONE
+   FILM GRAIN & HALFTONE
    =========================== */
 let grainInterval = null;
 function startGrainLoop(){
   if(grainInterval) clearInterval(grainInterval);
   drawGrain();
-  grainInterval = setInterval(drawGrain, 1000 / CONFIG.grainUpdateHz);
+  grainInterval = setInterval(drawGrain, 1000 / CONFIG.grainHz);
 }
 function drawGrain(){
   const w = grainCanvas.width, h = grainCanvas.height;
-  const img = gctx.createImageData(w, h);
+  const img = grainCtx.createImageData(w, h);
   const data = img.data;
   for(let i=0;i<data.length;i+=4){
     const v = Math.floor((Math.random()*255));
-    data[i] = v; data[i+1] = v; data[i+2] = v; data[i+3] = 12; // low alpha
+    data[i] = v; data[i+1] = v; data[i+2] = v; data[i+3] = 12;
   }
-  gctx.putImageData(img, 0, 0);
+  grainCtx.putImageData(img, 0, 0);
 }
 function drawHalftone(){
   const w = halftoneCanvas.width, h = halftoneCanvas.height;
-  hctx.clearRect(0,0,w,h);
-  hctx.fillStyle = 'rgba(0,0,0,0.06)';
+  halftoneCtx.clearRect(0,0,w,h);
+  halftoneCtx.fillStyle = 'rgba(0,0,0,0.06)';
   const spacing = 8;
   for(let y=0;y<h;y+=spacing){
     for(let x=0;x<w;x+=spacing){
       const r = (Math.sin((x+y)/40) + 1) * 1.2;
-      hctx.beginPath();
-      hctx.arc(x, y, r, 0, Math.PI*2);
-      hctx.fill();
+      halftoneCtx.beginPath();
+      halftoneCtx.arc(x, y, r, 0, Math.PI*2);
+      halftoneCtx.fill();
     }
   }
 }
@@ -1265,19 +1272,32 @@ function resetBoss(){
   STATE.bossHP = STATE.bossMaxHP = CONFIG.bossMaxHP;
   STATE.drainPerSecond = CONFIG.bossMaxHP / CONFIG.duration;
   TITAN.damageState = 0;
+  TITAN.scorch = [];
   updateBossUI();
 }
 
 /* ===========================
-   INITIALIZE
+   MAIN LOOP
    =========================== */
+function loop(ts){
+  const nowMs = performance.now();
+  let dt = (nowMs - STATE.lastTime)/1000;
+  STATE.lastTime = nowMs;
+  dt = clamp(dt, 0, 0.05);
+  if(!STATE.paused) update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* Initialize */
 (function init(){
   resetBoss();
   initStars();
   STATE.lastTime = performance.now();
+  startGrainLoop();
+  drawHalftone();
   requestAnimationFrame(loop);
 })();
-
 </script>
 </body>
 </html>
