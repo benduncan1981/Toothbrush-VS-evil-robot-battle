@@ -15,6 +15,7 @@
     --neon:#00f0ff;
     --pink:#ff3fb5;
     --accent:#7afcff;
+    --film-yellow:#FFE08A;
     --glass: rgba(255,255,255,0.04);
   }
   html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; -webkit-font-smoothing:antialiased;}
@@ -33,6 +34,7 @@
   .statBox{background:var(--glass);padding:8px 10px;border-radius:10px;border:2px solid rgba(255,255,255,0.04);display:flex;gap:8px;align-items:center;font-weight:800;color:#fff}
   .bigTimer{font-size:44px;font-weight:900;letter-spacing:1px;text-shadow:0 0 12px rgba(0,255,255,0.18);display:flex;align-items:center;gap:10px}
   .ring{width:64px;height:64px;position:relative;display:inline-block}
+  .timerSubtitle{font-size:10px;opacity:0.9;margin-top:-6px;text-align:center}
 
   /* Boss HP */
   #bossBarWrap{position:absolute;top:86px;left:50%;transform:translateX(-50%);width:86%;max-width:380px;pointer-events:none}
@@ -50,9 +52,18 @@
   /* Intro crawl */
   #intro{background:linear-gradient(180deg,#020617 0%, #041026 100%);align-items:stretch;padding:18px}
   .crawlWrap{flex:1;display:flex;align-items:flex-end;justify-content:center;position:relative;overflow:hidden}
-  .crawl{width:100%;max-width:380px;color:#ffd;transform-origin:center bottom;perspective:800px;font-weight:800;line-height:1.4;text-align:center}
-  .crawl p{margin:0 0 12px 0;font-size:18px;text-shadow:0 2px 8px rgba(0,0,0,0.6)}
-  .crawl .title{font-size:20px;color:var(--accent);letter-spacing:1px}
+  .crawl{width:100%;max-width:380px;color:var(--film-yellow);transform-origin:center bottom;perspective:800px;font-weight:800;line-height:1.6;text-align:center;letter-spacing:0.6px}
+  .crawl p{margin:0 0 12px 0;font-size:16px;text-shadow:0 2px 8px rgba(0,0,0,0.6)}
+  .crawl .title{font-size:22px;color:var(--film-yellow);letter-spacing:2px;font-weight:900}
+
+  /* cinematic title card */
+  #titleCard{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:40}
+  #titleCard .titleText{font-size:28px;font-weight:900;color:var(--film-yellow);text-shadow:0 8px 24px rgba(0,0,0,0.7);letter-spacing:2px}
+
+  /* letterbox bars */
+  .letterbox{position:absolute;left:0;right:0;height:12%;background:#000;z-index:50;pointer-events:none;opacity:0;transition:opacity 300ms}
+  .letterbox.top{top:0}
+  .letterbox.bottom{bottom:0}
 
   /* overlays */
   .scanlines{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(0,0,0,0.06) 50%, rgba(255,255,255,0.01) 51%);background-size:100% 4px;mix-blend-mode:overlay;opacity:0.6}
@@ -70,36 +81,46 @@
 </head>
 <body>
 <div id="app" role="application" aria-label="Titan Omega Chrono Sync toothbrush game">
+  <!-- cinematic letterbox bars -->
+  <div class="letterbox top" id="letterboxTop" aria-hidden="true"></div>
+  <div class="letterbox bottom" id="letterboxBottom" aria-hidden="true"></div>
+
+  <!-- TITLE CARD (brief) -->
+  <div id="titleCard" aria-hidden="true" style="opacity:0">
+    <div class="titleText">MISSION CHRONO SYNC</div>
+  </div>
+
   <!-- INTRO VIEW -->
   <section id="viewIntro" class="view" aria-hidden="false">
     <div style="width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <div style="display:flex;gap:8px;align-items:center">
         <div style="font-weight:900;font-size:18px;color:var(--accent)">TITAN OMEGA</div>
-        <div style="font-size:12px;opacity:0.9">CHRONO SYNC</div>
+        <div style="font-size:12px;opacity:0.9">TOOTHBRUSH MODE</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <label style="font-size:12px;opacity:0.9">Pilot</label>
-        <input id="pilotInput" type="text" inputmode="text" placeholder="Your name" style="padding:6px 8px;border-radius:8px;border:2px solid rgba(255,255,255,0.06);background:transparent;color:#fff;font-weight:700;min-width:120px" />
+        <label style="font-size:12px;opacity:0.9">CALLSIGN</label>
+        <input id="pilotInput" type="text" inputmode="text" placeholder="ENTER CALLSIGN" style="padding:6px 8px;border-radius:8px;border:2px solid rgba(255,255,255,0.06);background:transparent;color:#fff;font-weight:700;min-width:120px" />
       </div>
     </div>
 
     <div class="crawlWrap" aria-hidden="false">
       <!-- cinematic Star-Wars-esque crawl: slanted perspective -->
-      <div id="crawl" class="crawl" aria-live="polite" role="article" aria-label="Mission briefing" style="transform:translateY(40%) rotateX(28deg) scale(1)">
-        <div class="title">MISSION: CHRONO SYNC</div>
-        <p style="font-size:16px;opacity:0.95">A rogue Titan Omega drifts through orbit, corrupting the Chrono Grid. The Chrono Core must be synced before the orbit collapses.</p>
-        <p style="font-size:16px">Pilot, suit up. You are the exo‑suit hero — a kid with a brave heart and a neon laser. Two minutes of steady brushing will sync the core and bring the Titan down.</p>
-        <p style="font-size:14px;opacity:0.9">This cinematic crawl is editable in the source. Default duration 5 seconds. Reduced motion available.</p>
+      <div id="crawl" class="crawl" aria-live="polite" role="article" aria-label="Prologue" style="transform:translateY(40%) rotateX(28deg) scale(1)">
+        <div class="title">PROLOGUE</div>
+        <p>THE ORBITING TITAN OMEGA HAS RUPTURED THE CHRONO GRID.</p>
+        <p>A LONE PILOT MUST SYNC THE CHRONO CORE BEFORE THE ORBIT COLLAPSES.</p>
+        <p>SUIT UP. TWO MINUTES OF STEADY RHYTHM WILL RESTORE THE CORE AND BRING THE TITAN DOWN.</p>
+        <p>THIS IS YOUR MISSION. THIS IS YOUR MOMENT.</p>
       </div>
     </div>
 
     <div style="display:flex;gap:10px;justify-content:center;padding:12px">
-      <button id="startIntroBtn" class="btn" aria-label="Start mission" touch-action="manipulation">START MISSION</button>
-      <button id="skipIntroBtn" class="btn secondary" aria-label="Skip intro" touch-action="manipulation">SKIP INTRO</button>
+      <button id="startIntroBtn" class="btn" aria-label="Launch mission" touch-action="manipulation">LAUNCH MISSION</button>
+      <button id="skipIntroBtn" class="btn secondary" aria-label="Skip prologue" touch-action="manipulation">SKIP PROLOGUE</button>
     </div>
 
     <div style="display:flex;gap:12px;justify-content:center;align-items:center;margin-top:6px">
-      <label style="display:flex;gap:6px;align-items:center"><input id="reducedMotion" type="checkbox" /> Reduced motion</label>
+      <label style="display:flex;gap:6px;align-items:center"><input id="reducedMotion" type="checkbox" /> Cinematic Motion</label>
       <label style="display:flex;gap:6px;align-items:center"><input id="highContrast" type="checkbox" /> High contrast</label>
     </div>
   </section>
@@ -114,22 +135,25 @@
       <div id="hud" aria-hidden="false">
         <div class="topRow">
           <div style="display:flex;gap:8px;align-items:center">
-            <div class="statBox" id="crystalBox" aria-live="polite"><div style="font-size:18px">💎</div><div><div class="label">Crystals</div><div id="crystals" style="font-size:16px">0</div></div></div>
-            <div class="heroPortrait" title="Pilot portrait" id="heroPortrait">👦</div>
+            <div class="statBox" id="crystalBox" aria-live="polite"><div style="font-size:18px">💎</div><div><div class="label">CRYSTALS</div><div id="crystals" style="font-size:16px">0</div></div></div>
+            <div class="heroPortrait" title="Pilot callsign" id="heroPortrait">👦</div>
           </div>
 
-          <div class="bigTimer" role="timer" aria-live="assertive" aria-atomic="true">
-            <div class="ring" aria-hidden="true" id="progressRing"></div>
-            <div id="timerText">02:00</div>
+          <div style="display:flex;flex-direction:column;align-items:center">
+            <div class="bigTimer" role="timer" aria-live="assertive" aria-atomic="true">
+              <div class="ring" aria-hidden="true" id="progressRing"></div>
+              <div id="timerText">02:00</div>
+            </div>
+            <div class="timerSubtitle">CHRONO SYNC</div>
           </div>
 
-          <div class="statBox" id="streakBox" aria-live="polite"><div style="font-size:18px">🔥</div><div><div class="label">Streak</div><div id="streak" style="font-size:16px">0</div></div></div>
+          <div class="statBox" id="streakBox" aria-live="polite"><div style="font-size:18px">🔥</div><div><div class="label">STREAK</div><div id="streak" style="font-size:16px">0</div></div></div>
         </div>
       </div>
 
       <div id="bossBarWrap" aria-hidden="false">
-        <div id="bossLabel">TITAN CORE</div>
-        <div id="bossBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-label="Titan health">
+        <div id="bossLabel">TITAN OMEGA CORE</div>
+        <div id="bossBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-label="Titan Omega Core Health">
           <div id="bossHP"></div>
         </div>
       </div>
@@ -137,19 +161,19 @@
 
     <div id="controls" role="toolbar" aria-label="Game controls">
       <div style="display:flex;gap:8px;align-items:center">
-        <button id="tapBtn" class="btn ghost" aria-label="Tap for sparkle" touch-action="manipulation">TAP FOR SPARKLE</button>
-        <button id="startBtn" class="btn" aria-label="Start brushing" touch-action="manipulation">START</button>
-        <button id="pauseBtn" class="btn secondary" aria-label="Pause" touch-action="manipulation">PAUSE</button>
-        <button id="backIntroBtn" class="btn ghost" aria-label="Back to intro" touch-action="manipulation">BACK</button>
+        <button id="tapBtn" class="btn ghost" aria-label="Fire laser" touch-action="manipulation">FIRE LASER</button>
+        <button id="startBtn" class="btn" aria-label="Engage" touch-action="manipulation">ENGAGE</button>
+        <button id="pauseBtn" class="btn secondary" aria-label="Hold" touch-action="manipulation">HOLD</button>
+        <button id="backIntroBtn" class="btn ghost" aria-label="Return" touch-action="manipulation">RETURN</button>
       </div>
       <div style="height:8px"></div>
       <div style="display:flex;gap:8px;align-items:center">
-        <button id="muteBtn" class="btn ghost" aria-label="Mute" touch-action="manipulation">MUTE</button>
-        <button id="skipBtn" class="btn ghost" aria-label="Skip countdown" touch-action="manipulation">SKIP</button>
+        <button id="muteBtn" class="btn ghost" aria-label="Silence" touch-action="manipulation">SILENCE</button>
+        <button id="skipBtn" class="btn ghost" aria-label="Skip count" touch-action="manipulation">SKIP COUNT</button>
       </div>
     </div>
 
-    <div style="position:absolute;left:12px;bottom:12px;font-size:12px;opacity:0.9">Pilot: <span id="pilotName">—</span></div>
+    <div style="position:absolute;left:12px;bottom:12px;font-size:12px;opacity:0.9">CALLSIGN: <span id="pilotName">—</span></div>
   </section>
 </div>
 
@@ -164,6 +188,7 @@ const CONFIG = {
   canvasW: 430,
   canvasH: 932,
   crawlDuration: 5.0,
+  titleCardHold: 0.8,
   preCountdown: 5.0,
   duration: 120.0,
   bossMaxHP: 100.0,
@@ -316,82 +341,6 @@ function initStars(){
 const TITAN = { x: CONFIG.canvasW*0.5, y: CONFIG.canvasH*0.28, w: CONFIG.canvasW*0.6, h: 160, coreR: 36, damageState: 0 };
 const HERO = { x: CONFIG.canvasW*0.5, y: CONFIG.canvasH*0.78, w: 56, h: 72, fireCooldown: 0, fireRate: 0.12, jetBoost:0 };
 
-/* Draw a more detailed exo-suit hero (kid) with helmet, visor, jetpack and muzzle flash */
-function drawHero(){
-  const x = HERO.x, y = HERO.y;
-  ctx.save();
-  ctx.translate(x, y);
-
-  // body shadow
-  ctx.fillStyle = '#071a2a';
-  roundRect(ctx, -HERO.w/2 - 2, -HERO.h/2 - 2, HERO.w + 4, HERO.h + 4, 8);
-  ctx.fill();
-
-  // suit base
-  roundRect(ctx, -HERO.w/2, -HERO.h/2, HERO.w, HERO.h, 8);
-  ctx.fillStyle = '#0ff';
-  ctx.fill();
-
-  // chest plate
-  ctx.fillStyle = '#041026';
-  roundRect(ctx, -HERO.w/4, -HERO.h/4, HERO.w/2, HERO.h/3, 6);
-  ctx.fill();
-
-  // helmet
-  ctx.beginPath();
-  ctx.ellipse(0, -HERO.h/2 - 8, 22, 18, 0, 0, Math.PI*2);
-  ctx.fillStyle = '#0b1220';
-  ctx.fill();
-  // visor
-  ctx.beginPath();
-  ctx.ellipse(0, -HERO.h/2 - 8, 14, 10, 0, 0, Math.PI*2);
-  ctx.fillStyle = 'rgba(0,240,255,0.95)';
-  ctx.fill();
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  // jetpack (back)
-  ctx.fillStyle = '#071a2a';
-  ctx.fillRect(-HERO.w/2 - 6, -HERO.h/4, 12, HERO.h/2);
-  ctx.fillRect(HERO.w/2 - 6, -HERO.h/4, 12, HERO.h/2);
-
-  // small thruster flame when firing or boost
-  if(HERO.jetBoost > 0){
-    ctx.save();
-    ctx.globalAlpha = HERO.jetBoost;
-    const flameGrad = ctx.createLinearGradient(-6, HERO.h/4, 6, HERO.h/2 + 20);
-    flameGrad.addColorStop(0, '#ffb86b');
-    flameGrad.addColorStop(1, '#ff3fb5');
-    ctx.fillStyle = flameGrad;
-    ctx.beginPath();
-    ctx.ellipse(0, HERO.h/2 + 6, 10 + HERO.jetBoost*8, 18 + HERO.jetBoost*12, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  ctx.restore();
-
-  // muzzle flash and laser origin
-  if(STATE.brushing){
-    // beam origin slightly above hero center
-    const ox = x;
-    const oy = y - HERO.h*0.28;
-    // small muzzle flash
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    const g = ctx.createRadialGradient(ox, oy, 0, ox, oy, 28);
-    g.addColorStop(0, 'rgba(255,255,255,0.9)');
-    g.addColorStop(0.2, 'rgba(255,200,220,0.8)');
-    g.addColorStop(1, 'rgba(255,63,181,0.0)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(ox, oy, 28, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
-}
-
 /* ===========================
    INPUT
    =========================== */
@@ -483,7 +432,7 @@ function initHandlers(){
 /* ===========================
    UI helpers
    =========================== */
-function updateMuteUI(){ const muteBtn = $('muteBtn'); muteBtn.textContent = STATE.mute ? 'UNMUTE' : 'MUTE'; muteBtn.setAttribute('aria-pressed', String(STATE.mute)); }
+function updateMuteUI(){ const muteBtn = $('muteBtn'); muteBtn.textContent = STATE.mute ? 'SOUND ON' : 'SILENCE'; muteBtn.setAttribute('aria-pressed', String(STATE.mute)); }
 function updateBossUI(){ const hpPct = clamp(STATE.bossHP / STATE.bossMaxHP, 0, 1); $('bossHP').style.width = (hpPct*100) + '%'; $('bossBar').setAttribute('aria-valuenow', Math.round(hpPct*100)); }
 function updateTimerUI(remaining){ $('timerText').textContent = fmtTime(Math.ceil(remaining)); $('timerText').setAttribute('aria-live','assertive'); }
 function updateCrystalsUI(){ $('crystals').textContent = STATE.crystals; }
@@ -520,22 +469,43 @@ function setView(v){
 let crawlTimer = null;
 function startIntroFlow(){
   ensureAudio();
-  setView('intro');
-  playCrawl(false);
+  // show title card briefly, letterbox in, then crawl
+  const title = $('titleCard');
+  const top = $('letterboxTop');
+  const bottom = $('letterboxBottom');
+  title.style.transition = 'opacity 200ms';
+  top.style.transition = 'opacity 200ms';
+  bottom.style.transition = 'opacity 200ms';
+  top.style.opacity = '1'; bottom.style.opacity = '1';
+  title.style.opacity = '1';
+  setTimeout(()=>{
+    title.style.opacity = '0';
+    // start crawl after title hold
+    setTimeout(()=>{ playCrawl(false); }, CONFIG.titleCardHold*1000);
+  }, CONFIG.titleCardHold*1000 + 80);
 }
 function playCrawl(skip=false){
   const crawlEl = $('crawl');
   const duration = skip ? 0.05 : CONFIG.crawlDuration;
-  // Reset and apply perspective transform for cinematic slant
+  // Reset transform
   crawlEl.style.transition = 'none';
   crawlEl.style.transform = 'translateY(40%) rotateX(28deg) scale(1)';
   void crawlEl.offsetWidth;
-  crawlEl.style.transition = `transform ${duration}s linear`;
+  // Start animation
+  crawlEl.style.transition = `transform ${duration}s cubic-bezier(.2,.8,.2,1)`;
   crawlEl.style.transform = 'translateY(-220%) rotateX(28deg) scale(0.6)';
+  // letterbox stays visible during crawl
+  const top = $('letterboxTop'), bottom = $('letterboxBottom');
+  top.style.opacity = '1'; bottom.style.opacity = '1';
   if(STATE.audioReady && !STATE.mute) { tone(1200,0.12,'sawtooth'); tone(1600,0.08,'sine',0.08); }
   STATE.crawlPlaying = true;
   clearTimeout(crawlTimer);
-  crawlTimer = setTimeout(()=>{ STATE.crawlPlaying = false; startPrecountdown(); }, Math.max(50, duration*1000));
+  crawlTimer = setTimeout(()=>{
+    STATE.crawlPlaying = false;
+    // fade letterbox out
+    top.style.opacity = '0'; bottom.style.opacity = '0';
+    startPrecountdown();
+  }, Math.max(50, duration*1000));
 }
 
 /* ===========================
@@ -632,7 +602,7 @@ function startMainTimer(){
 }
 
 /* ===========================
-   TAP ACTION (sparkles) - disabled during brushing
+   TAP ACTION (visual only)
    =========================== */
 function handleTap(){
   if(STATE.brushing) return;
@@ -689,9 +659,7 @@ function update(dt){
   // Hero idle and firing visuals
   HERO.fireCooldown = Math.max(0, HERO.fireCooldown - dt);
   if(STATE.brushing){
-    // hero jet boost subtle when firing
     HERO.jetBoost = clamp(HERO.jetBoost + dt*2, 0, 1);
-    // spawn continuous laser impact visuals on titan
     if(Math.random() < 0.18){
       const hitX = TITAN.x + (Math.random()-0.5)*(TITAN.w*0.45);
       const hitY = TITAN.y + (Math.random()-0.5)*(TITAN.h*0.35);
@@ -1002,7 +970,7 @@ function render(){
   }
 }
 
-/* Draw Titan with visible damage */
+/* Draw Titan with visible damage and pulsing weak-point rings */
 function drawTitan(){
   const x = TITAN.x, y = TITAN.y, w = TITAN.w, h = TITAN.h;
   ctx.save();
@@ -1029,6 +997,17 @@ function drawTitan(){
   ctx.beginPath();
   ctx.arc(0, 0, coreR*3, 0, Math.PI*2);
   ctx.fill();
+
+  // pulsing weak-point rings (Star-Wars-esque visual cue)
+  const t = now();
+  for(let i=0;i<3;i++){
+    const pulse = 0.6 + 0.4*Math.sin(t*3 + i*1.2);
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(255,${120 + i*30},${180 - i*20},${0.12 + (1-hpPct)*0.6 * (1 - i*0.18)})`;
+    ctx.lineWidth = 2 + i;
+    ctx.arc(0,0, coreR + 8 + i*10 + pulse*6, 0, Math.PI*2);
+    ctx.stroke();
+  }
 
   ctx.beginPath();
   ctx.arc(0,0,coreR,0,Math.PI*2);
@@ -1067,6 +1046,86 @@ function drawTitan(){
     }
   }
   ctx.restore();
+}
+
+/* Draw hero exo-suit with visor rim light */
+function drawHero(){
+  const x = HERO.x, y = HERO.y;
+  ctx.save();
+  ctx.translate(x, y);
+
+  // body shadow
+  ctx.fillStyle = '#071a2a';
+  roundRect(ctx, -HERO.w/2 - 2, -HERO.h/2 - 2, HERO.w + 4, HERO.h + 4, 8);
+  ctx.fill();
+
+  // suit base
+  roundRect(ctx, -HERO.w/2, -HERO.h/2, HERO.w, HERO.h, 8);
+  ctx.fillStyle = '#0ff';
+  ctx.fill();
+
+  // chest plate
+  ctx.fillStyle = '#041026';
+  roundRect(ctx, -HERO.w/4, -HERO.h/4, HERO.w/2, HERO.h/3, 6);
+  ctx.fill();
+
+  // helmet
+  ctx.beginPath();
+  ctx.ellipse(0, -HERO.h/2 - 8, 22, 18, 0, 0, Math.PI*2);
+  ctx.fillStyle = '#0b1220';
+  ctx.fill();
+  // visor with rim light
+  ctx.beginPath();
+  ctx.ellipse(0, -HERO.h/2 - 8, 14, 10, 0, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,240,255,0.95)';
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // small emblem (heroic)
+  ctx.fillStyle = '#ff3fb5';
+  ctx.beginPath();
+  ctx.arc(0, -HERO.h/8, 6, 0, Math.PI*2);
+  ctx.fill();
+
+  // jetpack (back)
+  ctx.fillStyle = '#071a2a';
+  ctx.fillRect(-HERO.w/2 - 6, -HERO.h/4, 12, HERO.h/2);
+  ctx.fillRect(HERO.w/2 - 6, -HERO.h/4, 12, HERO.h/2);
+
+  // thruster flame when firing or boost
+  if(HERO.jetBoost > 0){
+    ctx.save();
+    ctx.globalAlpha = HERO.jetBoost;
+    const flameGrad = ctx.createLinearGradient(-6, HERO.h/4, 6, HERO.h/2 + 20);
+    flameGrad.addColorStop(0, '#ffb86b');
+    flameGrad.addColorStop(1, '#ff3fb5');
+    ctx.fillStyle = flameGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, HERO.h/2 + 6, 10 + HERO.jetBoost*8, 18 + HERO.jetBoost*12, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  ctx.restore();
+
+  // muzzle flash and laser origin
+  if(STATE.brushing){
+    const ox = x;
+    const oy = y - HERO.h*0.28;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(ox, oy, 0, ox, oy, 28);
+    g.addColorStop(0, 'rgba(255,255,255,0.9)');
+    g.addColorStop(0.2, 'rgba(255,200,220,0.8)');
+    g.addColorStop(1, 'rgba(255,63,181,0.0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(ox, oy, 28, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
 }
 
 /* Timer ring (SVG) */
@@ -1133,8 +1192,8 @@ function showVictoryOverlay(){
   overlay.style.zIndex='999';
   overlay.style.flexDirection='column';
   overlay.style.background='linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.6))';
-  overlay.innerHTML = `<div style="font-size:36px;font-weight:900;color:#fff;text-shadow:0 6px 18px rgba(0,0,0,0.6);margin-bottom:12px">TITAN DOWN</div>
-    <div style="font-size:18px;font-weight:900;color:var(--accent);margin-bottom:8px">+5 💎  •  Streak +1</div>
+  overlay.innerHTML = `<div style="font-size:32px;font-weight:900;color:var(--film-yellow);text-shadow:0 6px 18px rgba(0,0,0,0.6);margin-bottom:12px">TITAN OMEGA FALLEN</div>
+    <div style="font-size:16px;font-weight:900;color:var(--accent);margin-bottom:8px">+5 CRYSTALS • STREAK +1</div>
     <button id="closeVictory" class="btn" style="min-width:160px">CONTINUE</button>`;
   $('screenWrap').appendChild(overlay);
   $('closeVictory').addEventListener('click', ()=>{ overlay.remove(); });
@@ -1156,9 +1215,7 @@ window.__TITAN.setView = setView;
 window.__TITAN.resetBoss = resetBoss;
 window.__TITAN.forceVictory = ()=>{ STATE.bossHP = 0; updateBossUI(); endBrushing(true); };
 
-/* ===========================
-   Helper functions used earlier but declared after for clarity
-   =========================== */
+/* Helper functions declared after for clarity */
 function resetBoss(){
   STATE.bossHP = STATE.bossMaxHP = CONFIG.bossMaxHP;
   STATE.drainPerSecond = CONFIG.bossMaxHP / CONFIG.duration;
